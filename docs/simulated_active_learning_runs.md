@@ -1,9 +1,27 @@
-# Simulated-label AstroMiNN active-learning runs
+# Experiment A: simulated-label AstroMiNN active-learning runs
 
 The retrospective runner treats the audited BOOM/TNS labels as a hidden
 oracle. A strategy sees only model predictions until an object is selected.
 Each strategy owns an isolated pool state, cumulative labeled set, model
 checkpoints, and evaluation history.
+
+This guide uses the extracted `al_pipeline` package in the `al-pipeline`
+environment. Current Delta dataset, checkpoint, and legacy model-code paths
+are retained. Activate the environment and define the per-process runtime
+helper before using the commands below:
+
+```bash
+conda activate al-pipeline
+cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
+
+al_python() {
+  env LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}" python "$@"
+}
+```
+
+Repeat this setup in the compute-node shell before training. See
+[Delta installation](delta_installation.md) for the runtime workaround,
+first-time installation, and suite/resume rules.
 
 ## One cycle
 
@@ -94,92 +112,91 @@ set. Experiment B therefore has a separate manifest/bootstrap runner; see
 
 ## Safe launch interface
 
-### Expand the labelled pool to all early-alert stages
+### Existing audited pool and its preparation
 
 Notebook 12 intentionally materialized one latest compatible sample per
-object. Before training, expand that audited pool so every acquired object
-contributes every reconstructable stage up to its acquisition stage, with the
-historical zero-based AstroMiNN limit `alert <= 10`:
+object. The expanded pool already exists at the path in the launch commands
+below. Reuse it for extraction checks and reproduction; rebuilding it or
+querying BOOM is not part of the migration. Notebooks 11/12 remain in the
+original checkout and are not included in this repository.
 
-```bash
-python scripts/materialize_boom_all_early_alert_pool.py \
-  --registry configs/delta.toml
-```
+The original preparation expanded each object to every reconstructable stage
+up to its acquisition stage, with the historical zero-based AstroMiNN limit
+`alert <= 10`. It reused the 463 validated latest samples, retained validated
+partial earlier-stage samples after interrupted BOOM queries, and wrote
+`candidate_pool.csv` after materialization. It never used detections after a
+reconstructed alert's JD.
 
-This command is preflight-only. Review the object count, planned sample count,
-samples-per-object distribution, class counts, and the number of objects with
-non-contiguous cached stages. Then materialize on a CPU allocation with a
-valid `BABAMUL_API_TOKEN`:
-
-```bash
-python scripts/materialize_boom_all_early_alert_pool.py \
-  --registry configs/delta.toml \
-  --materialize
-```
-
-The operation is resume-safe. It reuses the 463 already validated latest
-samples, retains validated partial earlier-stage samples after an interrupted
-BOOM query, and writes `candidate_pool.csv` only after every planned sample is
-present. It never uses detections after a reconstructed alert's JD.
-
-The current BOOM audit finds 113 earlier stages whose science cutouts violate
-the historical input contract (non-finite pixels or non-63x63 shape). They are
-not imputed, padded, or repaired. After the strict run records those failures,
-`--finalize-invalid-stages` explicitly certifies their exclusion and writes a
+The BOOM audit found 113 earlier stages whose science cutouts violated the
+historical input contract (non-finite pixels or non-63x63 shape). They were
+not imputed, padded, or repaired. Their explicit exclusion was recorded in a
 separate rejection table. The resulting pool contains 463 objects and 2,450
 model-ready packets.
 
-Finally, on a CPU or GPU allocation, require frozen-model parity for every
-object's latest sample:
+The materialization script remains available if a future pool rebuild is
+needed. Inspect its options first:
 
 ```bash
-python scripts/materialize_boom_all_early_alert_pool.py \
-  --registry configs/delta.toml \
-  --materialize \
-  --run-parity \
-  --device cuda
+al_python scripts/materialize_boom_all_early_alert_pool.py --help
 ```
 
-Do not start adaptive training unless `parity_summary.json` reports
-`"passed": true`, `"mismatches": 0`, and a zero (or tolerance-level) maximum
-prediction difference.
+For a rebuild, choose new `--target-pool-id` and `--parity-run-id` values (or
+explicit new output paths). Materializing missing cutouts requires a valid
+`BABAMUL_API_TOKEN`. Review the reconstruction audit and rejection table
+before using `--finalize-invalid-stages`. Before adopting the rebuilt pool,
+require latest-stage frozen-model parity with `"passed": true`,
+`"mismatches": 0`, and a zero or tolerance-level prediction difference.
 
-### Launch an adaptive suite
+### Full-budget preflight and launch
 
-The script defaults to preflight-only mode:
+The saved reference policy is warm-start training, equal-object weighting for
+new acquisitions, a fixed 20% holdout with seed 135, six cycles of 50 objects,
+and a maximum of 15 epochs with patience 5. Preserve these settings for a
+reproduction run. The script defaults to preflight-only mode:
 
 ```bash
-python scripts/run_astrominn_simulated_al.py \
+al_python scripts/run_astrominn_simulated_al.py \
   --registry configs/delta.toml \
   --pool /work/hdd/bcrv/dkourtesis/applecider_adaptive/pools/boom_tns_new_labelled_early10_allavailable_v1 \
   --hidden-labels /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv \
-  --suite-id astrominn_boom_tns_al_v1 \
+  --suite-id al_pipeline_experiment_a_v1 \
+  --strategies random margin entropy \
   --acquisition-size 50 \
   --max-cycles 6 \
   --max-epochs 15 \
   --patience 5 \
+  --batch-size 512 \
+  --validation-batch-size 2048 \
+  --learning-rate 0.0001 \
   --new-object-weighting equal_object \
-  --holdout-fraction 0.2 \
+  --holdout-fraction 0.20 \
   --holdout-seed 135 \
   --seed 135 \
-  --training-initialization warm_start
+  --training-initialization warm_start \
+  --device cpu
 ```
 
-The command validates paths and prints the exact strategy, storage, data,
-budget, holdout, and training policy. Add `--run` only after that output has
-been reviewed. The three strategies run sequentially to avoid oversubscribing
-one GPU.
+The command validates paths and prints the strategy, storage, data, budget,
+holdout, and training policy. It can materialize the small holdout manifest;
+it does not perform inference or training. For the unchanged current pool,
+expect 463 candidate objects, 2,450 samples, 92 holdout objects, and 371
+acquisition objects. The holdout contains 72 SN I and 20 SN II objects.
+
+After reviewing the preflight, run the same command inside a GPU allocation,
+change `--device cpu` to `--device cuda`, and append `--run`. Keep the same
+suite ID and all other settings. The three strategies run sequentially on
+one GPU. If the example suite ID already contains another experiment's
+products, choose an unused ID for both preflight and training.
 
 `fisher` is available through `--strategies` but intentionally excluded from
-the default and first policy pilot. After the original three strategies have
-completed one clean cycle, it can be launched alone with
-`--strategies fisher`, or included in a final comparison with
+the saved three-strategy comparison. Use a separate suite ID when introducing
+it, either with `--strategies fisher` or
 `--strategies random margin entropy fisher`.
 
 `--holdout-seed` controls only the object IDs in the new-data holdout. Keep it
 at 135 for every independent training seed so all runs are compared on exactly
-the same objects. `--seed` controls the training and acquisition randomness
-and should change between repeated runs.
+the same objects. `--seed` controls training and acquisition randomness;
+use a separate suite when changing it.
 
 `--new-object-weighting equal_object` leaves every historical row at unit
 weight and gives each newly acquired object a total weight equal to the
@@ -188,20 +205,43 @@ object's retrievable alert packets. This keeps all valid early-alert data
 without allowing BOOM archival coverage to determine an object's total
 training influence.
 
-## Decisions required before the final experiment
+### Separate one-epoch execution check
 
-The machinery intentionally does not hard-code the following scientific
-choices:
+This separate suite exercises inference, entropy selection, label reveal,
+warm-start training, and evaluation. Run inside a GPU allocation after the
+runtime setup above:
 
-- sequential warm-starting versus restarting from the baseline checkpoint;
-- epochs/patience and whether 50 newly acquired samples need explicit replay
-  or oversampling relative to the 29,161 historical sample rows;
-- whether to reserve a fixed new-data holdout in addition to the immutable
-  historical test split;
-- number of cycles and independent seeds.
+```bash
+al_python -u scripts/run_astrominn_simulated_al.py \
+  --registry configs/delta.toml \
+  --pool /work/hdd/bcrv/dkourtesis/applecider_adaptive/pools/boom_tns_new_labelled_early10_allavailable_v1 \
+  --hidden-labels /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv \
+  --suite-id al_pipeline_check_a_v1 \
+  --strategies entropy \
+  --acquisition-size 50 \
+  --max-cycles 1 \
+  --seed 135 \
+  --training-initialization warm_start \
+  --max-epochs 1 \
+  --patience 1 \
+  --new-object-weighting equal_object \
+  --holdout-fraction 0.20 \
+  --holdout-seed 135 \
+  --device cuda \
+  --run
+```
 
-The all-stage materialization and fixed-holdout decisions are now explicit.
-The remaining policy choice should be made from a one-cycle pilot: inspect the
-training/validation loss history, chosen best epoch, historical validation and
-test metrics, new-holdout metrics, and wall time before fixing the final epoch
-budget and running all strategies.
+Successful completion prints `"entropy": [1]`. The one-epoch metrics check
+execution only; they are not full-budget reproduction results. Keep this
+suite separate from the full-budget suite even after the check passes.
+
+## Later scientific policy changes
+
+The reference policy above records the existing experiment rather than
+making new scientific choices during extraction. The machinery still makes
+initialization, epochs/patience, weighting/replay, fixed holdout, cycle budget,
+and independent seeds explicit configuration choices. For later policy
+studies, use separate suites and inspect training/validation loss, chosen
+best epoch, validation metrics, and wall time before freezing the policy.
+Preserve fixed holdout IDs across paired seeds and keep test metrics out of
+tuning.

@@ -49,8 +49,16 @@ pretend the retrospective manifest schema is domain-independent.
 
 Launchers retain their argument names. Change the registry argument to
 `configs/delta.toml`. Omitting `--run` retains each launcher's existing preflight
-behavior; B's preflight can materialize its deterministic split, so use a new
-suite ID for extraction checks.
+behavior; A can materialize its holdout and B its deterministic split, so use
+fresh suite IDs for new checks. The guides use the `al-pipeline` environment
+and a per-process Delta C++ runtime helper. Keep one-epoch checks separate
+from full-budget experiments; retain the same settings when resuming a run.
+
+Delta validation on 2026-10-08 passed all 316 tests, matched A's holdout rows
+and B's split rows/source hashes against the original runs, and completed
+one entropy cycle in both GPU smoke suites (including B's bootstrap).
+Full-budget numerical reproduction remains unverified. See
+[migration validation](docs/migration.md#validation-status-on-delta).
 
 Notebooks are not copied yet. Adapt them using the module and symbol maps in
 `docs/`; old `applecider.adaptive` imports are deliberately not installed as

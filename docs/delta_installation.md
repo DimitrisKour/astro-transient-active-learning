@@ -5,6 +5,12 @@ The old checkout, upstream clones, datasets, and running experiments are preserv
 
 ## Environment and editable installs
 
+These are first-time setup commands. If the cloned `al-pipeline` environment
+and editable installs already exist, skip this section and use the runtime
+setup below. Conda cloning copies the environment's packages, not repository
+source, datasets, or model weights. The editable installs use the sibling
+upstream AppleCiDEr checkout and this extracted repository.
+
 Clone the working environment so the current experiments keep their dependencies:
 
 ```bash
@@ -20,12 +26,11 @@ python -m pip uninstall -y applecider
 python -m pip install --no-deps --no-build-isolation -e ../applecider
 python -m pip install --no-deps --no-build-isolation -e .
 
-python -c 'import al_pipeline; print(al_pipeline.__file__)'
-python -c 'import applecider; print(applecider.__file__)'
-python -m pytest -q
 ```
 
-If pytest is absent, install it in the cloned environment. The extraction itself
+After installation, use the runtime setup below for import checks, then run
+`al_python -m pytest -q`. If pytest is absent, install it in the cloned
+environment. The extraction itself
 does not require reinstalling or upgrading PyTorch, Hyrax, or FLARE. FLARE can
 be installed from `../flare` when the corresponding notebooks are migrated.
 
@@ -34,22 +39,68 @@ existing local registry into that path without changing its contents. Review
 that it still points to the current HDD/NVMe locations and historical artifacts.
 The new example config is documentation, not a replacement for the live registry.
 
-## Launchers
+## Runtime setup in each Delta shell
+
+Activate the extracted environment after entering a CPU or GPU allocation.
+The tested Delta session otherwise selected `/lib64/libstdc++.so.6` before
+Conda's runtime and failed while importing SQLite/ICU with
+`CXXABI_1.3.15 not found`. The helper below loads this environment's C++ runtime
+first for each Python process. It does not set a global `LD_PRELOAD`, modify
+shell startup files, or change either environment's packages.
+
+```bash
+conda activate al-pipeline
+cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
+
+al_python() {
+  env LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}" python "$@"
+}
+```
 
 First check imports and argument parsing:
 
 ```bash
-python scripts/run_astrominn_simulated_al.py --help
-python scripts/run_astrominn_historical_replay.py --help
-python scripts/report_astrominn_multiseed.py --help
+al_python -c 'import torch, sqlite3, al_pipeline; print(al_pipeline.__file__); print("SQLite", sqlite3.sqlite_version)'
+al_python scripts/run_astrominn_simulated_al.py --help
+al_python scripts/run_astrominn_historical_replay.py --help
+al_python scripts/report_astrominn_multiseed.py --help
 ```
 
-Reuse each experiment's current launch arguments with two explicit edits:
-`--registry configs/delta.toml` and a fresh `--suite-id` for extraction checks.
-The documented A/B launcher names and options are unchanged. Inspect the
-preflight before adding `--run` in a Slurm compute job. Do not reuse an existing
-run directory for a trial. B preflight writes its split under the new suite ID;
-it does not train until `--run` is passed.
+Define `al_python` again in each new shell, including the shell opened by
+`srun`. Use it in place of `python` for the launch examples in the
+[A guide](simulated_active_learning_runs.md) and
+[B guide](astrominn_historical_replay_experiment_b.md). For a batch job, put
+this activation, working directory, and helper definition in the job script.
+
+Omitting `--run` prepares and prints a plan without model inference or training.
+A can write its small holdout manifest; B writes and audits its small split
+manifests. Existing dataset packets and model weights remain at their current
+Delta paths. GPU training examples must run inside a GPU allocation.
+
+## Suite IDs and resuming
+
+The guides reserve `al_pipeline_experiment_a_v1` and
+`al_pipeline_experiment_b_v1` for full-budget runs, and
+`al_pipeline_check_a_v1` and `al_pipeline_check_b_v1` for one-epoch checks.
+Use an unused ID if any example ID already has run products. Keep the same ID
+and all input/training settings when resuming an interrupted run.
+
+Use a new suite ID when changing the epoch budget, patience, initialization,
+strategy set, seed, acquisition budget, or input data. In particular, do not
+promote a one-epoch smoke suite into a full-budget experiment by changing its
+arguments: it may reuse completed checkpoints. The existing original runs,
+`al_pipeline_migration_a_v1`, `al_pipeline_migration_b_v1`, and
+`al_pipeline_smoke_a_v1` / `al_pipeline_smoke_b_v1` remain separate.
+
+## Checks after a documentation patch
+
+```bash
+git diff --check
+al_python scripts/run_astrominn_simulated_al.py --help >/dev/null
+al_python scripts/run_astrominn_historical_replay.py --help >/dev/null
+al_python scripts/report_astrominn_multiseed.py --help >/dev/null
+git check-ignore configs/delta.toml
+```
 
 After verification, commit the extracted repository and choose its GitHub remote.
 No GitHub repository or remote is created by the extraction bundle.

@@ -4,6 +4,25 @@ Experiment B asks whether uncertainty acquisition improves a model trained
 from a deliberately small labelled subset of the original historical
 training split. It is independent of Experiment A's post-2025 BOOM/TNS pool.
 
+This guide uses the extracted `al_pipeline` package in the `al-pipeline`
+environment. Current Delta dataset, checkpoint, and legacy model-code paths
+are retained. Before any launcher command, run this setup in the current
+shell, including a new compute-node shell:
+
+```bash
+conda activate al-pipeline
+cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
+
+al_python() {
+  env LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}" python "$@"
+}
+```
+
+See [Delta installation](delta_installation.md) for the runtime workaround,
+first-time installation, and suite/resume rules. Use unused suite IDs for
+new trials. The full-budget and one-epoch examples deliberately use different
+IDs so an execution-check checkpoint cannot become a reproduction checkpoint.
+
 ## Fixed data design
 
 The original historical train manifest is partitioned at object level:
@@ -82,10 +101,12 @@ more rows, matching the original AstroMiNN training convention.
 
 The original historical validation and test manifests are reused without
 resampling or adding post-2025 objects. Validation loss controls the learning
-rate, early stopping, and best-epoch checkpoint selection. After the `L0`
-bootstrap and after every acquisition/retraining cycle, the selected
-checkpoint is evaluated on both original splits. Test metrics are recorded
-for the final frozen-policy learning curve but never affect acquisition,
+rate, early stopping, and best-epoch checkpoint selection. In a full AL run,
+the `L0` bootstrap and the checkpoint after every acquisition/retraining cycle are
+evaluated on both original splits. A bootstrap-only launch records training
+and validation-loss output; baseline/test evaluation is performed when the
+AL suite starts. Test metrics are recorded for the final frozen-policy
+learning curve but never affect acquisition,
 training, early stopping, or checkpoint selection. Policy choices must be
 frozen from the pilot and validation evidence before the final test curves
 are interpreted.
@@ -98,13 +119,14 @@ Experiment B.
 
 ## 1. CPU preflight
 
-Run from the repository root in the `applecider` environment. This creates
-and audits only small CSV/JSON manifests; it does not train or run inference.
+Run from the repository root in the `al-pipeline` environment with the runtime
+helper above. This creates and audits only small CSV/JSON manifests; it does
+not train or run inference.
 
 ```bash
-python scripts/run_astrominn_historical_replay.py \
+al_python scripts/run_astrominn_historical_replay.py \
   --registry configs/delta.toml \
-  --suite-id astrominn_historical_replay_v1 \
+  --suite-id al_pipeline_experiment_b_v1 \
   --strategies random margin entropy \
   --initial-fraction 0.10 \
   --minimum-initial-per-class 5 \
@@ -113,15 +135,18 @@ python scripts/run_astrominn_historical_replay.py \
   --max-cycles 8 \
   --max-epochs 50 \
   --patience 10 \
+  --batch-size 512 \
+  --validation-batch-size 2048 \
+  --learning-rate 0.0001 \
   --seed 135 \
-  --assert-excluded-manifest \
-  /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv
+  --device cpu \
+  --assert-excluded-manifest /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv
 ```
 
 Review the printed class counts, paths, budget, and policy. Also inspect:
 
 ```bash
-cat /projects/bcrv/dkourtesis/applecider_adaptive/runs/astrominn_historical_replay_v1/shared/historical_replay_split/split_summary.json
+cat /projects/bcrv/dkourtesis/applecider_adaptive/runs/al_pipeline_experiment_b_v1/shared/historical_replay_split/split_summary.json
 ```
 
 Require:
@@ -137,15 +162,25 @@ Require:
 - no missing candidate files;
 - non-empty hashes for the source and generated manifests.
 
-## 2. One bootstrap-only GPU probe
+For the unchanged current historical source, expect 4,729 training objects,
+476 initially labelled objects (2,890 rows), 4,253 candidate objects
+(26,271 rows), and 473 acquisitions per cycle. All five target classes must
+be represented in `L0`. Eight cycles plan 4,260 labelled objects, approximately
+90% of the historical training objects. The exclusion audit covers 463
+external objects with zero overlap. These numbers check the current source;
+they are not hardcoded requirements for a future dataset.
 
-The first GPU action trains only the seed-135 `L0` model and stops before
-acquisition:
+## 2. Full-budget bootstrap-only GPU stage
+
+After the preflight, this optional first stage trains only the seed-135 `L0`
+model and stops before acquisition. It uses the same full-budget policy and
+suite ID as the preflight. Run inside a GPU allocation after repeating the
+runtime setup:
 
 ```bash
-python scripts/run_astrominn_historical_replay.py \
+al_python -u scripts/run_astrominn_historical_replay.py \
   --registry configs/delta.toml \
-  --suite-id astrominn_historical_replay_v1 \
+  --suite-id al_pipeline_experiment_b_v1 \
   --strategies random margin entropy \
   --initial-fraction 0.10 \
   --minimum-initial-per-class 5 \
@@ -154,10 +189,12 @@ python scripts/run_astrominn_historical_replay.py \
   --max-cycles 8 \
   --max-epochs 50 \
   --patience 10 \
+  --batch-size 512 \
+  --validation-batch-size 2048 \
+  --learning-rate 0.0001 \
   --seed 135 \
   --device cuda \
-  --assert-excluded-manifest \
-  /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv \
+  --assert-excluded-manifest /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv \
   --run \
   --bootstrap-only
 ```
@@ -166,42 +203,55 @@ Inspect the bootstrap training summary before any AL cycle. Confirm finite
 losses, a sensible best epoch, `initialization = random_vit`, and
 `class_weighting.source = training_manifest`.
 
-## 3. Machinery-validation pilot
+To continue into the full eight-cycle random/margin/entropy comparison,
+remove only `--bootstrap-only` and keep `--run`, the suite ID, and every
+other argument unchanged. The completed bootstrap is reused by all three
+strategies. On interruption, rerun that same command to resume. Do not reuse
+the original `astrominn_historical_replay_v1` directory through this guide.
 
-Use a new pilot suite ID, one strategy, and one cycle. This is the smallest
+## 3. Separate one-epoch execution check
+
+Use a separate suite ID, entropy acquisition, and one cycle. This is a small
 end-to-end check of bootstrap, acquisition, label reveal, cumulative-manifest
-construction, retraining from random, and evaluation:
+construction, retraining from random, and evaluation. Run inside a GPU
+allocation after the runtime setup:
 
 ```bash
-python scripts/run_astrominn_historical_replay.py \
+al_python -u scripts/run_astrominn_historical_replay.py \
   --registry configs/delta.toml \
-  --suite-id astrominn_historical_replay_pilot_v1 \
-  --strategies random \
+  --suite-id al_pipeline_check_b_v1 \
+  --strategies entropy \
   --initial-fraction 0.10 \
   --minimum-initial-per-class 5 \
   --split-seed 135 \
   --acquisition-fraction 0.10 \
   --max-cycles 1 \
-  --max-epochs 15 \
-  --patience 5 \
+  --max-epochs 1 \
+  --patience 1 \
   --seed 135 \
   --device cuda \
-  --assert-excluded-manifest \
-  /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv \
+  --assert-excluded-manifest /projects/bcrv/dkourtesis/applecider_adaptive/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv \
   --run
 ```
 
-Before a final eight-cycle run, verify that the pilot:
+Successful completion prints `"entropy": [1]`. This trains one bootstrap
+epoch and one cycle-training epoch, acquiring 473 objects and reaching
+949 labelled objects. The one-epoch metrics check execution only. Keep this
+suite separate from full-budget runs; changing its epoch arguments could
+reuse its already-completed checkpoints.
+
+Verify that the execution check:
 
 - trains the bootstrap from random on exactly `L0`;
 - evaluates cycle zero on the unchanged validation/test sets;
-- selects exactly the printed acquisition budget of unique `U0` objects
-  without reading their labels first;
+- selects the printed budget of unique `U0` objects without first reading labels;
 - produces `L1 = L0 union A1` with every stage for each acquired object;
 - retrains the ViT from random on `L1`;
 - records manifest-derived class counts and weights;
 - leaves the three expert towers frozen;
 - writes complete resumable state and evaluation artifacts.
 
-Only after this pilot should the epoch/patience policy and final suite ID be
-frozen for the three-seed random/margin/entropy experiment.
+The full-budget example retains the existing 50-epoch maximum and patience-10
+policy. Any later policy study or additional model-seed comparison should
+use a separate suite and keep split seed 135 fixed. Freeze the scientific
+policy before interpreting final test curves.

@@ -57,14 +57,35 @@ An old facade import may need two new imports: generic oracle types come from
 `core.oracle`; catalogue rules come from `astronomy.labels.applecider_catalog`.
 This is intentional and keeps the dependency direction visible.
 
-## Validation order
+## Validation status on Delta
 
-1. Install in a cloned Delta environment; run the retained tests.
-2. Compare A/B preflight parameters, counts, and split hashes using fresh suite IDs.
-3. Compare preprocessing and logits on a fixed real sample set with the old code.
-4. Run one cycle on a compute node, then verify resume behavior in that new suite.
-5. Adapt notebooks one at a time using the import maps.
+Completed on 2026-10-08 in the cloned `al-pipeline` environment:
+
+- 316 tests passed in 29.38 seconds.
+- A's original and extracted holdout rows and row order matched.
+- B's initial labelled rows, hidden labels, and candidate rows/order matched.
+  Only its suite-specific candidate `pool_id` differed, as intended.
+- B's historical training, validation, and test source hashes matched.
+- GPU suite `al_pipeline_smoke_a_v1` completed one entropy cycle with 50
+  acquisitions, warm-start training, and one training epoch.
+- GPU suite `al_pipeline_smoke_b_v1` completed one bootstrap epoch and one
+  entropy cycle with 473 acquisitions and one cycle-training epoch.
+
+These checks establish data-split identity and end-to-end execution of the
+extracted A/B pipelines. They do not establish full-budget numerical parity,
+old/new fixed-sample logits equality, or recovery after a forced interruption.
+The successful Delta sessions used the C++ runtime helper documented in
+[Delta installation](delta_installation.md). No external dataset, checkpoint,
+or legacy model-code path was changed to achieve these checks.
+
+## Later validation and notebook work
+
+1. When numerical reproduction is needed, compare preprocessing and logits
+   on a fixed real sample set with the old code, then use full-budget suites.
+2. When recovery testing is needed, interrupt and resume a dedicated check
+   suite with unchanged inputs and training policy.
+3. Adapt notebooks one at a time using the import maps.
 
 Real-data logits and GPU pilots require Delta's external data and legacy model
-files. Passing local synthetic tests does not establish full numerical parity
-on those external artifacts.
+files. Passing local synthetic tests alone does not establish full numerical
+parity on those external artifacts.

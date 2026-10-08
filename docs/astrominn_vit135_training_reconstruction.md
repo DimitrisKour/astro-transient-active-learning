@@ -106,9 +106,20 @@ the generic active-learning coordinator.
 
 ## Verification
 
-Run
-`notebooks/boom/historical_2025/14_astrominn_vit135_training_reproduction_probe.ipynb`
-for a three-epoch compatibility probe. The historical first three epochs were:
+The original three-epoch compatibility probe remains in the original fork at
+`/u/dkourtesis/projects/applecider/notebooks/boom/historical_2025/14_astrominn_vit135_training_reproduction_probe.ipynb`.
+It is not included in this extracted repository. Keep its original environment
+when running that unchanged notebook; adapting notebook imports is later work.
+The extracted training adapter is
+`al_pipeline.astronomy.astrominn.training`, while current Delta model-code and
+artifact paths remain unchanged.
+
+The A/B migration checks use the `al-pipeline` environment and separate suite
+IDs; see [Delta installation](delta_installation.md),
+[Experiment A](simulated_active_learning_runs.md), and
+[Experiment B](astrominn_historical_replay_experiment_b.md). Those one-epoch
+checks establish pipeline execution, not a rerun of this historical
+compatibility probe. The historical first three epochs were:
 
 | Epoch | Training loss | Validation loss | Validation macro AUPRC |
 |---:|---:|---:|---:|
