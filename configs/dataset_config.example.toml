@@ -1,0 +1,141 @@
+# Dataset and storage registry for AppleCiDEr adaptive-learning experiments.
+#
+# Historical datasets are treated as immutable. New acquisitions and run
+# products are written only under the adaptive-learning storage roots below.
+#
+# TODO: Move agreed settings into AppleCiDEr's main configuration once the
+# experiment interface has stabilized.
+
+
+# ---------------------------------------------------------------------------
+# Adaptive-learning-owned storage
+# ---------------------------------------------------------------------------
+
+[storage]
+
+# Small persistent experiment state:
+# manifests, acquisition ledgers, run state, configs, evaluation histories.
+persistent_root = "/projects/bcrv/<username>/applecider_adaptive"
+
+# Larger products:
+# new/preprocessed samples, pools, and model checkpoints.
+data_root = "/work/nvme/bcrv/<username>/applecider_adaptive"
+
+
+# ---------------------------------------------------------------------------
+# Historical datasets
+# ---------------------------------------------------------------------------
+
+[datasets.cls_ztf]
+
+survey = "ZTF"
+modality = "photometry"
+selection_unit = "object"
+
+train_manifest = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/manifest_train.csv"
+validation_manifest = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/manifest_val.csv"
+test_manifest = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/manifest_test.csv"
+
+data_root = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events"
+feature_stats = "/work/hdd/bcrv/ffontinelenunes/data/AppleCider/photo_events/feature_stats_day100.npz"
+
+object_id_column = "obj_id"
+sample_file_column = "filepath"
+label_column = "label"
+
+
+[datasets.astrominn_ztf]
+
+survey = "ZTF"
+modality = "image_metadata"
+selection_unit = "object"
+
+train_manifest = "/projects/bcrv/<username>/applecider_adaptive/historical/astrominn_vit135_20260122/train_manifest.csv"
+validation_manifest = "/projects/bcrv/<username>/applecider_adaptive/historical/astrominn_vit135_20260122/validation_manifest.csv"
+test_manifest = "/projects/bcrv/<username>/applecider_adaptive/historical/astrominn_vit135_20260122/test_manifest.csv"
+
+data_root = "/work/nvme/bcrv/bborder/data/fixed_data"
+
+object_id_column = "obj_id"
+sample_file_column = "filepath"
+label_column = "target"
+
+loader_seed = 125
+max_alert = 10
+use_all_samples = true
+
+
+[datasets.applecider_ztf]
+
+survey = "ZTF"
+modality = "multimodal"
+selection_unit = "object"
+
+# The historical full AppleCiDEr experiment uses the same vetted common
+# multimodal split currently referenced by the archived AstroMiNN setup.
+train_manifest = "/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Train_vetted_7-6.csv"
+validation_manifest = "/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Val_vetted_7-6.csv"
+test_manifest = "/projects/bcrv/abrown3/AppleCiDEr_csv/AppleCider_Test_vetted_7-6.csv"
+
+data_root = "/work/nvme/bcrv/abrown3/preprocessed_data/data_multi/day10"
+
+object_id_column = "name"
+sample_file_column = "file"
+label_column = "type"
+
+
+[datasets.spectranet_ztf]
+
+survey = "ZTF"
+modality = "spectra"
+selection_unit = "object"
+
+# TODO: Locate the historical standalone SpectraNet
+# dataset_for_classification_corrected/processed/{train,val,test}.pt files
+# before enabling this dataset profile.
+
+
+# ---------------------------------------------------------------------------
+# Model/dataset profiles
+# ---------------------------------------------------------------------------
+
+[profiles.cls_ztf]
+
+model = "HyraxBaselineCLS"
+dataset = "cls_ztf"
+
+
+[profiles.astrominn_ztf]
+
+model = "AstroMiNN"
+dataset = "astrominn_ztf"
+
+checkpoint = "/projects/bcrv/<username>/applecider_adaptive/historical/astrominn_vit135_20260122/vit_tower_135.pth"
+model_config = "/projects/bcrv/<username>/applecider_adaptive/historical/astrominn_vit135_20260122/astroMiNN_config.json"
+
+
+[profiles.applecider_ztf]
+
+model = "AppleCiDEr"
+dataset = "applecider_ztf"
+
+
+# ---------------------------------------------------------------------------
+# Defaults for new adaptive-learning runs
+# ---------------------------------------------------------------------------
+
+[adaptive]
+
+# Retain survey provenance for every new pool/acquisition record.
+require_survey = true
+
+# Historical training manifests must never be modified in place.
+historical_data_read_only = true
+
+# Generate an exact cumulative training manifest after each completed cycle:
+#
+# cycle 0 -> L0
+# cycle 1 -> L0 + A1
+# cycle 2 -> L0 + A1 + A2
+# ...
+materialize_cycle_manifests = true

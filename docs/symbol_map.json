@@ -1,0 +1,6 @@
+{
+  "applecider.adaptive.types.ClassificationInferenceResult": "al_pipeline.astronomy.astrominn.types.ClassificationInferenceResult",
+  "applecider.adaptive.experiment.SimulatedALConfig": "al_pipeline.core.experiments.config.SimulatedALConfig",
+  "applecider.adaptive.experiment.StrategyName": "al_pipeline.core.experiments.config.StrategyName",
+  "applecider.adaptive.experiment.TrainingInitialization": "al_pipeline.core.experiments.config.TrainingInitialization"
+}

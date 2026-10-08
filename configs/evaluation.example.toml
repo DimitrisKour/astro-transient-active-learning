@@ -1,0 +1,86 @@
+# Suggested configuration for adaptive-learning evaluation.
+#
+# This file is currently a design proposal only.
+# Once the evaluation API is stable, the relevant options can be moved
+# into AppleCiDEr's main default_config.toml.
+
+[adaptive.evaluation]
+
+# Metrics calculated for each evaluation cycle.
+#
+# These are diagnostics that are made available to the experiment.
+# The choice of primary_metric does not prevent the remaining metrics
+# from being calculated and inspected.
+metrics = [
+    "accuracy",
+    "balanced_accuracy",
+
+    "precision_macro",
+    "precision_weighted",
+    "recall_macro",
+    "recall_weighted",
+    "f1_macro",
+    "f1_weighted",
+
+    "mcc",
+
+    "log_loss",
+    "roc_auc_macro",
+    "average_precision_macro",
+
+    "brier",
+    "ece",
+]
+
+# Placeholder choice only.
+# This can later be changed according to the scientific objective.
+primary_metric = "f1_macro"
+
+
+[adaptive.evaluation.per_class]
+
+# Store precision, recall, F1, and support separately for every class.
+enabled = true
+
+
+[adaptive.evaluation.calibration]
+
+# Placeholder bin count for Expected Calibration Error and
+# reliability diagrams.
+enabled = true
+n_bins = 15
+
+
+[adaptive.evaluation.history]
+
+# Keep evaluation results across active-learning cycles.
+enabled = true
+
+# AL performance is normally more informative as a function of
+# labeled-set size than simply cycle number.
+default_x_axis = "n_labeled"
+
+# Keep enough metadata to compare repeated experiments later.
+store_cycle = true
+store_n_labeled = true
+store_n_acquired = true
+store_split = true
+store_strategy = true
+store_seed = true
+store_run_id = true
+
+
+[adaptive.evaluation.plots]
+
+learning_curve = true
+
+confusion_matrix = true
+per_class_metrics = true
+
+roc_curve = false
+precision_recall_curve = false
+calibration_curve = false
+
+# TODO: Enable these once metrics.py provides structured curve data
+# through compute_roc_curves(), compute_precision_recall_curves(),
+# and compute_calibration_curve().

@@ -1,0 +1,10 @@
+{
+  "repository": "DimitrisKour/AppleCiDer-AL",
+  "branch": "active-learning",
+  "commit": "b0aa85c11644b50db05e4dc0e9d94e656017fb17",
+  "excluded": [
+    "notebooks",
+    "provider-specific source and tests"
+  ],
+  "runtime_paths": "Existing Delta dataset, legacy model, and checkpoint paths retained."
+}
