@@ -5,9 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, TypeAlias
 
+from al_pipeline.core.experiments.batch_policy import BatchAcquisitionConfig
+
 
 StrategyName: TypeAlias = Literal[
     "entropy",
+    "entropy_diversity",
+    "entropy_balanced_explore",
     "fisher",
     "margin",
     "random",
@@ -32,6 +36,7 @@ class SimulatedALConfig:
     seed: int = 135
     training_initialization: TrainingInitialization = "warm_start"
     allow_partial_final_cycle: bool = False
+    batch_policy: BatchAcquisitionConfig | None = None
 
     def __post_init__(self) -> None:
         if not self.run_id:
@@ -39,11 +44,19 @@ class SimulatedALConfig:
 
         if self.strategy not in {
             "entropy",
+            "entropy_diversity",
+            "entropy_balanced_explore",
             "fisher",
             "margin",
             "random",
         }:
-            raise ValueError("strategy must be 'entropy', 'fisher', 'margin', or 'random'.")
+            raise ValueError(f"Unsupported acquisition strategy: {self.strategy!r}.")
+
+        if self.strategy in {"entropy_diversity", "entropy_balanced_explore"}:
+            if self.batch_policy is None:
+                object.__setattr__(self, "batch_policy", BatchAcquisitionConfig())
+        elif self.batch_policy is not None:
+            raise ValueError("batch_policy is only used by the two new entropy policies.")
 
         if self.acquisition_size <= 0:
             raise ValueError("acquisition_size must be positive.")

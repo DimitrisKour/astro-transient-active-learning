@@ -24,6 +24,8 @@ from typing import Protocol
 import numpy as np
 
 from al_pipeline.core.scoring.entropy import EntropyScorer
+from al_pipeline.core.scoring.class_balanced import ClassBalancedInput
+from al_pipeline.core.batch_selection import DiversitySelector, ExplorationSelector
 from al_pipeline.core.scoring.fisher import FisherScorer, FisherScoringInput
 from al_pipeline.core.scoring.margin import MarginScorer
 from al_pipeline.core.scoring.random import RandomScorer
@@ -96,6 +98,8 @@ class SimulatedActiveLearningExperiment:
         trainer: TrainingBackend,
         evaluator: ModelEvaluator,
         holdout_ids: Sequence[str] = (),
+        class_names: Sequence[str] = (),
+        label_mapping: Mapping[str, str] | None = None,
     ) -> None:
         self.config = config
         self.dataset = dataset
@@ -108,6 +112,11 @@ class SimulatedActiveLearningExperiment:
         self.evaluator = evaluator
         self.hidden_labels = {str(object_id): label for object_id, label in hidden_labels.items()}
         self.holdout_ids = tuple(str(value) for value in holdout_ids)
+        self.class_names = tuple(class_names)
+        self.label_mapping = dict(label_mapping or {})
+        if config.strategy == "entropy_balanced_explore":
+            if len(self.class_names) < 2 or len(set(self.class_names)) != len(self.class_names):
+                raise ValueError("Class-balanced acquisition requires ordered unique class_names.")
         self.manifest_path = self.pool_path / "candidate_pool.csv"
         self.manifest = CandidatePoolManifest.from_csv(self.manifest_path)
         self.labeled_sets = LabeledSetManager(
@@ -451,7 +460,7 @@ class SimulatedActiveLearningExperiment:
             selection = _load_selection(path)
         else:
             scorer = self._scorer(cycle)
-            acquisition_data = self._scoring_input(inference)
+            acquisition_data = self._scoring_input(inference, cycle=cycle)
             score_path = path.with_name("candidate_scores.npz")
 
             if score_path.exists():
@@ -470,12 +479,39 @@ class SimulatedActiveLearningExperiment:
                 )
 
             pool = Pool.from_ids(inference.object_ids)
-            selection = TopKSelector().select(
+            if self.config.strategy == "entropy_diversity":
+                if inference.embeddings is None:
+                    raise ValueError("Entropy diversity requires object-aligned embeddings.")
+                selector = DiversitySelector(
+                    inference.embeddings,
+                    shortlist_multiplier=self.config.batch_policy.shortlist_multiplier,
+                )
+            elif self.config.strategy == "entropy_balanced_explore":
+                selector = ExplorationSelector(
+                    exploration_fraction=self.config.batch_policy.exploration_fraction,
+                    rng=np.random.default_rng(
+                        np.random.SeedSequence([self.config.seed, cycle, 173])
+                    ),
+                )
+            else:
+                selector = TopKSelector()
+            selection = selector.select(
                 ids=list(inference.object_ids),
                 scores=scores,
                 k=budget,
                 pool=pool,
             )
+            if self.config.strategy == "entropy_balanced_explore":
+                selection.metadata.update(
+                    {
+                        "class_names": list(self.class_names),
+                        "labeled_object_counts": acquisition_data.labeled_counts.tolist(),
+                        "class_bonus_weights": scorer.class_weights(
+                            acquisition_data.labeled_counts
+                        ).tolist(),
+                        "count_source": "confirmed_training_manifest_previous_cycle",
+                    }
+                )
             _save_selection(selection, path)
 
         if len(selection) != budget:
@@ -672,8 +708,11 @@ class SimulatedActiveLearningExperiment:
         return self._inference_checkpoint(cycle)
 
     def _scorer(self, cycle: int):
-        if self.config.strategy == "entropy":
+        if self.config.strategy in {"entropy", "entropy_diversity"}:
             return EntropyScorer()
+
+        if self.config.strategy == "entropy_balanced_explore":
+            return self.config.batch_policy.make_scorer()
 
         if self.config.strategy == "fisher":
             return FisherScorer(include_bias=True)
@@ -687,11 +726,19 @@ class SimulatedActiveLearningExperiment:
     def _scoring_input(
         self,
         inference: ClassificationInferenceResult,
+        *,
+        cycle: int = 1,
     ) -> object:
         """Build the explicit input required by the configured scorer."""
 
         if self.config.strategy == "random":
             return len(inference.object_ids)
+
+        if self.config.strategy == "entropy_balanced_explore":
+            return ClassBalancedInput(
+                predictions=inference.predictions,
+                labeled_counts=self._confirmed_object_counts(cycle - 1),
+            )
 
         if self.config.strategy == "fisher":
             if inference.embeddings is None:
@@ -705,6 +752,27 @@ class SimulatedActiveLearningExperiment:
             )
 
         return inference.predictions
+
+    def _confirmed_object_counts(self, through_cycle: int) -> np.ndarray:
+        """Read only confirmed L_t; never consult the hidden candidate labels."""
+        path = self.labeled_sets.training_manifest(through_cycle)
+        object_column = self.dataset.object_id_column
+        label_column = self.dataset.label_column
+        by_object: dict[str, str] = {}
+        with path.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                object_id = row[object_column]
+                raw_label = row[label_column]
+                label = self.label_mapping.get(raw_label, raw_label)
+                if label not in self.class_names:
+                    raise ValueError(f"Confirmed label {raw_label!r} has no probability column.")
+                previous = by_object.setdefault(object_id, label)
+                if previous != label:
+                    raise ValueError(f"Conflicting confirmed labels for {object_id!r}.")
+        return np.asarray(
+            [sum(label == name for label in by_object.values()) for name in self.class_names],
+            dtype=np.int64,
+        )
 
     def _validation_manifest(self) -> Path:
         if self.dataset.validation_manifest is None:
@@ -783,9 +851,13 @@ class SimulatedActiveLearningExperiment:
             raise ValueError(f"Candidate pool overlaps historical L0: {sorted(overlap)[:10]}.")
 
     def _identity_payload(self) -> dict[str, object]:
-        return {
+        config_payload = asdict(self.config)
+        # Preserve identities of pre-existing ordinary strategy runs.
+        if self.config.batch_policy is None:
+            config_payload.pop("batch_policy")
+        payload = {
             "schema_version": 1,
-            "config": asdict(self.config),
+            "config": config_payload,
             "pool_id": self.manifest.pool_id,
             "candidate_manifest": str(self.manifest_path),
             "candidate_manifest_sha256": _sha256_file(self.manifest_path),
@@ -801,6 +873,10 @@ class SimulatedActiveLearningExperiment:
             "baseline_checkpoint": str(self.baseline_checkpoint),
             "baseline_checkpoint_sha256": _sha256_file(self.baseline_checkpoint),
         }
+        if self.config.strategy == "entropy_balanced_explore":
+            payload["class_names"] = list(self.class_names)
+            payload["label_mapping"] = self.label_mapping
+        return payload
 
     @staticmethod
     def _required_dataset_column(
@@ -1096,6 +1172,7 @@ def _save_selection(selection: SelectionBatch, path: Path) -> None:
             "ids": list(selection.ids),
             "indices": selection.indices.tolist(),
             "scores": selection.scores.tolist(),
+            **({"metadata": selection.metadata} if selection.metadata else {}),
         },
         path,
     )
@@ -1107,6 +1184,7 @@ def _load_selection(path: Path) -> SelectionBatch:
         ids=[str(value) for value in payload["ids"]],
         indices=np.asarray(payload["indices"], dtype=np.int64),
         scores=np.asarray(payload["scores"], dtype=float),
+        metadata=payload.get("metadata", {}),
     )
 
 

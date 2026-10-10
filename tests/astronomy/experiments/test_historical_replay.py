@@ -290,3 +290,23 @@ def test_historical_replay_rejects_invalid_initial_fraction(
             initial_fraction=fraction,
             minimum_initial_per_class=1,
         )
+
+
+def test_concurrent_seed_jobs_can_materialize_same_immutable_split(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    dataset = _dataset(tmp_path)
+
+    def materialize(_):
+        return materialize_astrominn_historical_replay_split(
+            dataset=dataset,
+            destination=tmp_path / "shared",
+            initial_fraction=1 / 3,
+            minimum_initial_per_class=1,
+            split_seed=135,
+        )
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(materialize, range(8)))
+    assert all(result == results[0] for result in results)
+    assert not list((tmp_path / "shared").rglob("*.tmp"))

@@ -25,6 +25,8 @@ from al_pipeline.astronomy.astrominn.inference.astrominn_vit import (
     AstroMiNNViTPoolPredictor,
 )
 from al_pipeline.astronomy.astrominn.training import AstroMiNNViTTrainer, AstroMiNNViTTrainingConfig
+from al_pipeline.astronomy.astrominn.training import MODEL_CLASS_NAMES, LABEL_TO_INDEX
+from al_pipeline.core.experiments.batch_policy import BatchAcquisitionConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +46,35 @@ class AstroMiNNSimulatedSuite:
         """Run strategies sequentially so one GPU is never oversubscribed."""
 
         return {strategy: experiment.run() for strategy, experiment in self.experiments.items()}
+
+    def run_cycle(self, cycle: int) -> dict[str, tuple[CycleResult, ...]]:
+        """Run exactly one round across strategies; validate all states first.
+
+        A repeated round skips completed strategies, allowing recovery after
+        a later strategy failed. Training resumes only at completed stages.
+        """
+        if not isinstance(cycle, int) or cycle < 1:
+            raise ValueError("cycle must be a positive integer.")
+        states = {name: experiment.initialize() for name, experiment in self.experiments.items()}
+        for name, state in states.items():
+            experiment = self.experiments[name]
+            if cycle > experiment.config.max_cycles:
+                raise ValueError("Requested cycle exceeds the configured maximum.")
+            if state.last_completed_cycle not in {cycle - 1, cycle}:
+                raise ValueError(f"{name}: wrong previous cycle for requested round {cycle}.")
+            if state.active_cycle not in {None, cycle}:
+                raise ValueError(f"{name}: a different cycle is active.")
+        results = {}
+        for name, experiment in self.experiments.items():
+            if states[name].last_completed_cycle == cycle:
+                results[name] = ()
+                continue
+            experiment.evaluate_baseline()
+            result = experiment.run_next_cycle()
+            if result.cycle != cycle or experiment.initialize().last_completed_cycle != cycle:
+                raise RuntimeError(f"{name}: requested round did not complete.")
+            results[name] = (result,)
+        return results
 
 
 def build_astrominn_simulated_suite(
@@ -74,6 +105,7 @@ def build_astrominn_simulated_suite(
     training_manifest_override: str | Path | None = None,
     artifact_dir: str | Path | None = None,
     legacy_code_dir: str | Path = DEFAULT_LEGACY_CODE_DIR,
+    batch_policy: BatchAcquisitionConfig | None = None,
 ) -> AstroMiNNSimulatedSuite:
     """Build isolated AstroMiNN acquisition-strategy experiments.
 
@@ -94,7 +126,16 @@ def build_astrominn_simulated_suite(
     if len(strategy_names) != len(set(strategy_names)):
         raise ValueError("Acquisition strategies must not be duplicated.")
 
-    unknown_strategies = set(strategy_names).difference({"random", "margin", "entropy", "fisher"})
+    unknown_strategies = set(strategy_names).difference(
+        {
+            "random",
+            "margin",
+            "entropy",
+            "fisher",
+            "entropy_diversity",
+            "entropy_balanced_explore",
+        }
+    )
 
     if unknown_strategies:
         raise ValueError(f"Unsupported acquisition strategies: {sorted(unknown_strategies)}.")
@@ -203,6 +244,11 @@ def build_astrominn_simulated_suite(
                 seed=seed,
                 training_initialization=training_initialization,
                 allow_partial_final_cycle=allow_partial_final_cycle,
+                batch_policy=(
+                    batch_policy
+                    if strategy in {"entropy_diversity", "entropy_balanced_explore"}
+                    else None
+                ),
             ),
             dataset=dataset,
             pool_path=pool_path,
@@ -214,6 +260,10 @@ def build_astrominn_simulated_suite(
             trainer=trainer,
             evaluator=evaluator,
             holdout_ids=holdout_ids,
+            class_names=MODEL_CLASS_NAMES,
+            label_mapping={
+                label: MODEL_CLASS_NAMES[index] for label, index in LABEL_TO_INDEX.items()
+            },
         )
 
     return AstroMiNNSimulatedSuite(

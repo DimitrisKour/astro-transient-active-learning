@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, TypeAlias
 
 import numpy as np
@@ -134,6 +134,7 @@ class SelectionBatch:
     ids: list[str]
     indices: np.ndarray
     scores: np.ndarray
+    metadata: dict[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate and normalize the stored selection arrays."""

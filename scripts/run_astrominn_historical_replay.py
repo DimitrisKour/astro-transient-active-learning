@@ -20,6 +20,8 @@ from al_pipeline.astronomy.experiments.historical_replay import (
 from al_pipeline.astronomy.astrominn.inference.astrominn_vit import DEFAULT_LEGACY_CODE_DIR
 from al_pipeline.astronomy.astrominn.training import AstroMiNNViTTrainer, AstroMiNNViTTrainingConfig
 from al_pipeline.core.training.base import TrainingRequest
+from al_pipeline.core.experiments.batch_policy import BatchAcquisitionConfig
+from al_pipeline.core.experiments.budget import plan_cycle_budget
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,7 +38,14 @@ def parse_args() -> argparse.Namespace:
         "--strategies",
         nargs="+",
         default=("random", "margin", "entropy"),
-        choices=("random", "margin", "entropy", "fisher"),
+        choices=(
+            "random",
+            "margin",
+            "entropy",
+            "fisher",
+            "entropy_diversity",
+            "entropy_balanced_explore",
+        ),
     )
     parser.add_argument("--seed", type=int, default=135)
     parser.add_argument(
@@ -55,6 +64,19 @@ def parse_args() -> argparse.Namespace:
     acquisition_group.add_argument("--acquisition-size", type=int)
     acquisition_group.add_argument("--acquisition-fraction", type=float)
     parser.add_argument("--max-cycles", type=int, default=8)
+    parser.add_argument("--cycle", type=int, help="Run exactly this one round across strategies.")
+    parser.add_argument("--allow-partial-final-cycle", action="store_true")
+    parser.add_argument(
+        "--complete-pool",
+        action="store_true",
+        help="Compute enough rounds to acquire all U0, including the remainder.",
+    )
+    parser.add_argument("--shortlist-multiplier", type=float, default=3.0)
+    parser.add_argument("--balance-alpha", type=float, default=1.0)
+    parser.add_argument("--balance-beta", type=float, default=0.5)
+    parser.add_argument("--balance-strength", type=float, default=1.0)
+    parser.add_argument("--balance-cap", type=float, default=3.0)
+    parser.add_argument("--exploration-fraction", type=float, default=0.2)
     parser.add_argument("--max-epochs", type=int, default=50)
     parser.add_argument("--patience", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=512)
@@ -92,6 +114,16 @@ def main() -> None:
     args = parse_args()
     if args.bootstrap_only and not args.run:
         raise ValueError("--bootstrap-only requires --run.")
+    if args.cycle is not None and (not args.run or args.bootstrap_only or args.cycle < 1):
+        raise ValueError("--cycle requires --run, a positive cycle, and no --bootstrap-only.")
+    batch_policy = BatchAcquisitionConfig(
+        shortlist_multiplier=args.shortlist_multiplier,
+        balance_alpha=args.balance_alpha,
+        balance_beta=args.balance_beta,
+        balance_strength=args.balance_strength,
+        balance_cap=args.balance_cap,
+        exploration_fraction=args.exploration_fraction,
+    )
 
     registry = DatasetRegistry.from_toml(args.registry)
     resolved = registry.resolve_profile(args.profile)
@@ -190,12 +222,18 @@ def main() -> None:
 
     if args.max_cycles <= 0:
         raise ValueError("--max-cycles must be positive.")
-    maximum_requested_objects = acquisition_size * args.max_cycles
-    if maximum_requested_objects > candidate_objects:
-        raise ValueError(
-            "Requested acquisition budget exceeds U0: "
-            f"{maximum_requested_objects} > {candidate_objects}."
-        )
+    budget_plan = plan_cycle_budget(
+        candidate_objects=candidate_objects,
+        acquisition_size=acquisition_size,
+        max_cycles=args.max_cycles,
+        allow_partial_final_cycle=args.allow_partial_final_cycle,
+        complete_pool=args.complete_pool,
+    )
+    args.max_cycles = budget_plan.max_cycles
+    args.allow_partial_final_cycle = budget_plan.allow_partial_final_cycle
+    maximum_requested_objects = budget_plan.total_acquisitions
+    if args.cycle is not None and args.cycle > args.max_cycles:
+        raise ValueError("--cycle exceeds the planned number of rounds.")
 
     excluded_audits = split_summary["excluded_manifest_audits"]
     final_labeled_objects = int(split_summary["initial_objects"]) + maximum_requested_objects
@@ -219,6 +257,12 @@ def main() -> None:
         "acquisition_fraction_requested": acquisition_fraction,
         "acquisition_size": acquisition_size,
         "max_cycles": args.max_cycles,
+        "allow_partial_final_cycle": args.allow_partial_final_cycle,
+        "requested_single_cycle": args.cycle,
+        "final_cycle_size": budget_plan.final_cycle_size,
+        "batch_acquisition_policy": {
+            field: getattr(batch_policy, field) for field in batch_policy.__dataclass_fields__
+        },
         "maximum_requested_objects": maximum_requested_objects,
         "final_labeled_objects_planned": final_labeled_objects,
         "final_labeled_fraction_planned": (final_labeled_objects / historical_objects),
@@ -312,6 +356,8 @@ def main() -> None:
         strategies=args.strategies,
         acquisition_size=acquisition_size,
         max_cycles=args.max_cycles,
+        allow_partial_final_cycle=args.allow_partial_final_cycle,
+        batch_policy=batch_policy,
         seed=args.seed,
         training_initialization="restart_from_random",
         holdout_ids=(),
@@ -322,7 +368,7 @@ def main() -> None:
         training_manifest_override=replay.initial_manifest,
         artifact_dir=model_artifact_dir,
     )
-    results = suite.run()
+    results = suite.run() if args.cycle is None else suite.run_cycle(args.cycle)
     print(
         json.dumps(
             {strategy: [result.cycle for result in cycles] for strategy, cycles in results.items()},

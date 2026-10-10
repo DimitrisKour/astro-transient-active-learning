@@ -13,6 +13,8 @@ import csv
 import hashlib
 import json
 import math
+import tempfile
+from contextlib import contextmanager
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -441,12 +443,12 @@ def _write_csv_idempotent(
     rows: Sequence[Mapping[str, object]],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    with temporary.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-    _accept_identical_or_install(path, temporary)
+    with _temporary_artifact(path) as temporary:
+        with temporary.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        _accept_identical_or_install(path, temporary)
 
 
 def _write_candidate_manifest_idempotent(
@@ -454,9 +456,9 @@ def _write_candidate_manifest_idempotent(
     path: Path,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    manifest.to_csv(temporary)
-    _accept_identical_or_install(path, temporary)
+    with _temporary_artifact(path) as temporary:
+        manifest.to_csv(temporary)
+        _accept_identical_or_install(path, temporary)
 
 
 def _write_json_idempotent(
@@ -464,11 +466,24 @@ def _write_json_idempotent(
     payload: Mapping[str, object],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    with temporary.open("w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2, sort_keys=True)
-        handle.write("\n")
-    _accept_identical_or_install(path, temporary)
+    with _temporary_artifact(path) as temporary:
+        with temporary.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+        _accept_identical_or_install(path, temporary)
+
+
+@contextmanager
+def _temporary_artifact(path: Path):
+    """Seed jobs may concurrently validate the same immutable split."""
+    with tempfile.NamedTemporaryFile(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False
+    ) as handle:
+        temporary = Path(handle.name)
+    try:
+        yield temporary
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _accept_identical_or_install(path: Path, temporary: Path) -> None:

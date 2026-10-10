@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from al_pipeline.astronomy.data.candidate_pool import CandidatePoolManifest, CandidatePoolRecord
 from al_pipeline.astronomy.data.registry import DatasetSpec
@@ -20,6 +21,8 @@ from al_pipeline.astronomy.experiments.simulated import (
 from al_pipeline.core.training.base import TrainingRequest, TrainingResult
 from al_pipeline.astronomy.astrominn.types import ClassificationInferenceResult
 from al_pipeline.core.types import ClassificationPredictions
+from al_pipeline.core.experiments.batch_policy import BatchAcquisitionConfig
+from al_pipeline.astronomy.experiments.astrominn import AstroMiNNSimulatedSuite
 
 
 class _Predictor:
@@ -314,3 +317,156 @@ def test_materialize_labeled_holdout_manifest(tmp_path: Path) -> None:
 
     assert [row["object_id"] for row in rows] == ["new_0", "new_1"]
     assert {row["label"] for row in rows} == {"A"}
+
+
+@pytest.mark.parametrize("strategy", ["entropy_diversity", "entropy_balanced_explore"])
+def test_new_policies_complete_remainder_and_resume(tmp_path, strategy):
+    dataset, pool_dir, checkpoint, labels = _inputs(tmp_path)
+    experiment = SimulatedActiveLearningExperiment(
+        config=SimulatedALConfig(
+            run_id=strategy,
+            strategy=strategy,
+            acquisition_size=2,
+            max_cycles=3,
+            allow_partial_final_cycle=True,
+        ),
+        dataset=dataset,
+        pool_path=pool_dir,
+        hidden_labels=labels,
+        run_dir=tmp_path / "state",
+        artifact_dir=tmp_path / "heavy",
+        baseline_checkpoint=checkpoint,
+        predictor=_Predictor(),
+        trainer=_Trainer(),
+        evaluator=_Evaluator(),
+        class_names=("A", "B"),
+    )
+    suite = AstroMiNNSimulatedSuite("toy", {strategy: experiment})
+    for cycle in (1, 2, 3):
+        result = suite.run_cycle(cycle)[strategy][0]
+        assert len(result.selection) == (1 if cycle == 3 else 2)
+        persisted = json.loads(
+            (experiment.run_dir / f"cycle_{cycle:03d}" / "selection.json").read_text()
+        )
+        assert persisted["metadata"]
+        assert suite.run_cycle(cycle)[strategy] == ()
+    assert experiment.available_ids() == ()
+    assert len(experiment.labeled_sets.object_ids_through(3)) == 6
+    # Parameter changes must be rejected before an existing selection is reused.
+    experiment.config = SimulatedALConfig(
+        run_id=strategy,
+        strategy=strategy,
+        acquisition_size=2,
+        max_cycles=3,
+        allow_partial_final_cycle=True,
+        batch_policy=BatchAcquisitionConfig(exploration_fraction=0.4, shortlist_multiplier=4),
+    )
+    with pytest.raises(ValueError, match="identity"):
+        experiment.initialize()
+
+
+def test_class_counts_deduplicate_observations_and_ignore_hidden_labels(tmp_path):
+    dataset, pool_dir, checkpoint, labels = _inputs(tmp_path)
+    # Two historical observations are still one confirmed labeled object.
+    with dataset.train_manifest.open() as handle:
+        rows = list(csv.DictReader(handle))
+    _write_csv(dataset.train_manifest, rows + rows)
+    experiment = SimulatedActiveLearningExperiment(
+        config=SimulatedALConfig(
+            run_id="balanced", strategy="entropy_balanced_explore", acquisition_size=2, max_cycles=2
+        ),
+        dataset=dataset,
+        pool_path=pool_dir,
+        hidden_labels=labels,
+        run_dir=tmp_path / "state",
+        baseline_checkpoint=checkpoint,
+        predictor=_Predictor(),
+        trainer=_Trainer(),
+        evaluator=_Evaluator(),
+        class_names=("A", "B"),
+    )
+    experiment.initialize()
+    inference = experiment.predictor.predict(
+        object_ids=experiment.available_ids(), checkpoint_path=checkpoint
+    )
+
+    class ForbiddenLabels(dict):
+        def __getitem__(self, key):
+            raise AssertionError("Acquisition read a hidden true label")
+
+        def get(self, *args):
+            raise AssertionError("Acquisition read a hidden true label")
+
+        def items(self):
+            raise AssertionError("Acquisition read hidden true labels")
+
+    experiment.hidden_labels = ForbiddenLabels(labels)
+    selection = experiment._select_or_resume(
+        inference=inference, budget=2, cycle=1, path=experiment.run_dir / "selection.json"
+    )
+    assert selection.metadata["labeled_object_counts"] == [1, 0]
+    again = experiment._select_or_resume(
+        inference=inference, budget=2, cycle=1, path=experiment.run_dir / "selection.json"
+    )
+    assert again.ids == selection.ids
+    assert again.metadata == selection.metadata
+
+
+def test_ordinary_strategy_identity_retains_original_config_schema(tmp_path):
+    dataset, pool_dir, checkpoint, labels = _inputs(tmp_path)
+    experiment = SimulatedActiveLearningExperiment(
+        config=SimulatedALConfig(run_id="old-entropy", strategy="entropy"),
+        dataset=dataset,
+        pool_path=pool_dir,
+        hidden_labels=labels,
+        run_dir=tmp_path / "state",
+        baseline_checkpoint=checkpoint,
+        predictor=_Predictor(),
+        trainer=_Trainer(),
+        evaluator=_Evaluator(),
+    )
+    assert "batch_policy" not in experiment._identity_payload()["config"]
+
+
+def test_single_round_retry_skips_completed_strategy_after_later_failure(tmp_path):
+    dataset, pool_dir, checkpoint, labels = _inputs(tmp_path)
+    experiments = {}
+    for strategy in ("entropy", "entropy_diversity"):
+        experiments[strategy] = SimulatedActiveLearningExperiment(
+            config=SimulatedALConfig(
+                run_id=strategy, strategy=strategy, acquisition_size=2, max_cycles=2
+            ),
+            dataset=dataset,
+            pool_path=pool_dir,
+            hidden_labels=labels,
+            run_dir=tmp_path / strategy,
+            baseline_checkpoint=checkpoint,
+            predictor=_Predictor(),
+            trainer=_Trainer(),
+            evaluator=_Evaluator(),
+        )
+    suite = AstroMiNNSimulatedSuite("retry", experiments)
+    trainer = experiments["entropy_diversity"].trainer
+    original_train = trainer.train
+
+    def fail(request):
+        raise RuntimeError("Simulated GPU job failure")
+
+    trainer.train = fail
+    with pytest.raises(RuntimeError, match="Simulated GPU"):
+        suite.run_cycle(1)
+    assert experiments["entropy"].initialize().last_completed_cycle == 1
+    with pytest.raises(ValueError):
+        suite.run_cycle(2)
+    assert experiments["entropy"].initialize().last_completed_cycle == 1
+    trainer.train = original_train
+    resumed = suite.run_cycle(1)
+    assert resumed["entropy"] == ()
+    assert resumed["entropy_diversity"][0].cycle == 1
+    assert len(experiments["entropy"].trainer.requests) == 1
+    # Skipping ahead must fail before any strategy advances.
+    with pytest.raises(ValueError):
+        suite.run_cycle(3)
+    assert all(
+        experiment.initialize().last_completed_cycle == 1 for experiment in experiments.values()
+    )
