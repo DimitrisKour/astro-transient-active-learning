@@ -1,8 +1,10 @@
 # Historical acquisition-policy comparison
 
-This is a new, isolated Experiment B suite. It compares random, entropy,
-entropy_diversity, and entropy_balanced_explore. Existing historical replay
-jobs and their settings remain untouched. Defaults are experimental starting
+The launcher trains only entropy_diversity and entropy_balanced_explore.
+For the existing historical suite, reuse its random/entropy results and its
+validated seed-specific bootstrap to compare all four policies. Each new
+policy has its own run directory; earlier selections and models stay intact.
+Defaults are experimental starting
 settings, not parameters demonstrated optimal on this dataset.
 
 ## Shared experimental conditions
@@ -110,8 +112,15 @@ advantages entirely to acquisition.
 
 ## Delta operation
 
-Use an isolated code copy and a new suite. See the patch bundle README for
-copy/apply commands. No new dependencies are required in Delta's existing
+For baseline reuse, select the existing suite explicitly:
+
+```bash
+export POLICY_SUITE_ID=astrominn_historical_replay_v1
+```
+
+Use a fixed code checkout for queued jobs. See
+`docs/existing_replay_continuation.md` for the existing runs and final cycle.
+No new dependencies are required in Delta's existing
 al-pipeline environment. PYTHONPATH chooses the isolated source copy without
 reinstalling the editable package or modifying the original environment.
 
@@ -122,7 +131,8 @@ bash scripts/adaptive/submit_policy_compare.sh 135 --prepare-only
 ```
 
 This probes projects/HDD writes, creates a registry with only storage roots
-overridden, audits split disjointness/exclusions and file presence, and freezes
+overridden, validates the existing bootstrap, audits split
+disjointness/exclusions and file presence, and freezes
 source hashes. It does not reserve quota. The current pool's historical input
 files can stay on NVMe; all new heavy writes go to HDD.
 
@@ -135,13 +145,13 @@ bash scripts/adaptive/submit_policy_compare.sh 246 01:00:00
 bash scripts/adaptive/submit_policy_compare.sh 357 01:00:00
 ```
 
-Each seed gets nine sequential GPU jobs. Each job runs the four strategies
-sequentially on one GPU. Each chain is submitted held and released only after
+Each seed gets nine sequential GPU jobs. Each job runs the two new strategies
+sequentially on one GPU. Random and entropy are never included in this chain. Each chain is submitted held and released only after
 all submissions succeed. Failure before release cancels only its new jobs;
 the partial submission record remains for inspection. The script never cancels
 existing Experiment B jobs and refuses duplicate or progressed submissions.
 
-One hour is a starting request for this four-strategy comparison. Earlier
+One hour is a starting request for the two-policy comparison. Earlier
 16–17 minute jobs contained three strategies and no diversity selection;
 35 minutes has not been verified for these new jobs or their later cycles.
 The command's second argument overrides wall time explicitly.
@@ -157,7 +167,7 @@ After results are available:
 
 ```bash
 python scripts/report_policy_compare.py \
-  --suite-root /projects/bcrv/dkourtesis/applecider_adaptive/runs/astrominn_policy_compare_v1 \
+  --suite-root /projects/bcrv/dkourtesis/applecider_adaptive/runs/astrominn_historical_replay_v1 \
   --split validation --metric f1_macro \
   --output /projects/bcrv/dkourtesis/applecider_adaptive/reports/policy_compare_validation
 ```

@@ -66,6 +66,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-cycles", type=int, default=8)
     parser.add_argument("--cycle", type=int, help="Run exactly this one round across strategies.")
     parser.add_argument("--allow-partial-final-cycle", action="store_true")
+    parser.add_argument("--extend-budget", action="store_true",
+                        help="Explicitly extend only the budget of completed existing runs.")
+    parser.add_argument("--require-existing-bootstrap", action="store_true",
+                        help="Reuse a validated bootstrap; fail rather than train a missing one.")
     parser.add_argument(
         "--complete-pool",
         action="store_true",
@@ -114,6 +118,8 @@ def main() -> None:
     args = parse_args()
     if args.bootstrap_only and not args.run:
         raise ValueError("--bootstrap-only requires --run.")
+    if args.extend_budget and (not args.run or args.cycle is None):
+        raise ValueError("--extend-budget requires --run and an explicit --cycle.")
     if args.cycle is not None and (not args.run or args.bootstrap_only or args.cycle < 1):
         raise ValueError("--cycle requires --run, a positive cycle, and no --bootstrap-only.")
     batch_policy = BatchAcquisitionConfig(
@@ -183,6 +189,8 @@ def main() -> None:
         / "bootstrap_training"
     )
     bootstrap_checkpoint = bootstrap_dir / "best_vit_tower.pth"
+    if args.require_existing_bootstrap and not bootstrap_checkpoint.is_file():
+        raise FileNotFoundError(f"Required existing bootstrap is missing: {bootstrap_checkpoint}")
 
     policy = AstroMiNNViTTrainingConfig(
         batch_size=args.batch_size,
@@ -299,7 +307,7 @@ def main() -> None:
     }
     print(json.dumps(plan, indent=2, sort_keys=True))
 
-    if not args.run:
+    if not args.run and not args.require_existing_bootstrap:
         print(
             "\nPRE-FLIGHT ONLY: manifests were materialized and audited; "
             "add --run --bootstrap-only for the first small training check."
@@ -329,6 +337,8 @@ def main() -> None:
     )
     bootstrap = bootstrap_trainer.completed_result(bootstrap_request)
     if bootstrap is None:
+        if args.require_existing_bootstrap:
+            raise ValueError("A completed compatible bootstrap is required; no training started.")
         bootstrap = bootstrap_trainer.train(bootstrap_request)
 
     print(
@@ -343,6 +353,9 @@ def main() -> None:
             sort_keys=True,
         )
     )
+    if not args.run:
+        print("PRE-FLIGHT ONLY: compatible existing bootstrap validated; no training started.")
+        return
     if args.bootstrap_only:
         return
 
@@ -368,6 +381,12 @@ def main() -> None:
         training_manifest_override=replay.initial_manifest,
         artifact_dir=model_artifact_dir,
     )
+    if args.extend_budget:
+        # Validate every strategy before changing any identity or starting training.
+        for experiment in suite.experiments.values():
+            experiment.validate_budget_extension()
+        for experiment in suite.experiments.values():
+            experiment.extend_completed_budget()
     results = suite.run() if args.cycle is None else suite.run_cycle(args.cycle)
     print(
         json.dumps(

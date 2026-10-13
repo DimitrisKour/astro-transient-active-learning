@@ -180,6 +180,67 @@ class SimulatedActiveLearningExperiment:
 
         return RunState.create(self.state_path)
 
+    def validate_budget_extension(self) -> tuple[dict, dict] | None:
+        """Allow only an explicit extension of a completed, idle run's budget.
+
+        All scientific inputs and acquisition settings retain exact identity
+        checks. This does not change selections, training artifacts or history.
+        """
+        if not self.identity_path.is_file() or not self.state_path.is_file():
+            raise ValueError("Budget extension requires an existing completed run.")
+        observed = json.loads(self.identity_path.read_text(encoding="utf-8"))
+        requested = self._identity_payload()
+        if observed == requested:
+            return None  # An already extended run can resume its final cycle.
+        old_config = dict(observed["config"])
+        new_config = dict(requested["config"])
+        old_max = old_config.pop("max_cycles")
+        new_max = new_config.pop("max_cycles")
+        old_partial = old_config.pop("allow_partial_final_cycle")
+        new_partial = new_config.pop("allow_partial_final_cycle")
+        old_static = {**observed, "config": old_config}
+        new_static = {**requested, "config": new_config}
+        if old_static != new_static:
+            raise ValueError("Budget extension cannot change experiment inputs or policy.")
+        if new_max <= old_max or (old_partial and not new_partial):
+            raise ValueError("Budget extension must increase cycles without tightening the budget.")
+        state = RunState.load(self.state_path)
+        if state.active_cycle is not None or state.last_completed_cycle != old_max:
+            raise ValueError("Budget extension requires all old cycles complete and no active cycle.")
+        remaining = len(self.available_ids())
+        capacity = (new_max - old_max) * self.config.acquisition_size
+        if remaining == 0 or capacity > remaining and not new_partial:
+            raise ValueError("Extended budget exceeds the pool without a partial final cycle.")
+        request = TrainingRequest(
+            train_manifest=self.labeled_sets.training_manifest(old_max),
+            validation_manifest=self._validation_manifest(),
+            output_dir=self.artifact_dir / f"cycle_{old_max:03d}" / "training",
+            run_id=self.config.run_id,
+            cycle=old_max,
+            strategy=self.config.strategy,
+            seed=self.config.seed,
+            initial_checkpoint=self._training_checkpoint(old_max),
+        )
+        recover = getattr(self.trainer, "completed_result", None)
+        if recover is None or recover(request) is None:
+            raise ValueError("Budget extension requires validated prior training artifacts.")
+        return observed, requested
+
+    def extend_completed_budget(self) -> None:
+        """Archive the previous identity before atomically updating its budget."""
+        change = self.validate_budget_extension()
+        if change is None:
+            return
+        observed, requested = change
+        old_max = observed["config"]["max_cycles"]
+        archive = self.run_dir / f"experiment_before_budget_extension_{old_max:03d}.json"
+        if archive.exists():
+            if json.loads(archive.read_text(encoding="utf-8")) != observed:
+                raise ValueError("Existing budget-extension archive has a different identity.")
+        else:
+            _json_dump_atomic(observed, archive)
+        _json_dump_atomic(requested, self.identity_path)
+
     def evaluate_baseline(self) -> ModelEvaluationResult:
         """Evaluate cycle zero once using the immutable baseline checkpoint."""
 

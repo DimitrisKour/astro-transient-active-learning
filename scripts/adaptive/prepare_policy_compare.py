@@ -14,6 +14,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--job-dir", type=Path, required=True)
+    parser.add_argument("--source-registry", type=Path,
+                        help="Reuse the original replay registry instead of a local config.")
     parser.add_argument("--verify-source", action="store_true")
     args = parser.parse_args()
     repo, job_dir = args.repo.resolve(), args.job_dir.resolve()
@@ -21,7 +23,7 @@ def main():
     data = Path("/work/hdd/bcrv/dkourtesis/applecider_adaptive")
     if not job_dir.is_relative_to(persistent):
         raise ValueError("Job products must be under the persistent experiment root.")
-    source = repo / "configs/delta.toml"
+    source = args.source_registry or repo / "configs/delta.toml"
     content = source.read_text()
     original = tomllib.loads(content)
     match = re.search(r"(?ms)^\[storage\]\s*\n(.*?)(?=^\[|\Z)", content)
@@ -57,6 +59,7 @@ def main():
     files = [
         *sorted((repo / "src/al_pipeline").rglob("*.py")),
         *sorted((repo / "scripts/adaptive").glob("*policy*")),
+        repo / "scripts/adaptive/historical_final_cycle.sbatch",
         repo / "scripts/run_astrominn_historical_replay.py",
     ]
     hashes = {

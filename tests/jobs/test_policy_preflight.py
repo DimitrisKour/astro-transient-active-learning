@@ -4,12 +4,14 @@ from pathlib import Path
 import subprocess
 import sys
 import tomllib
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_preflight_preserves_dataset_paths_and_detects_source_changes(tmp_path):
+@pytest.mark.parametrize("reuse_registry", [False, True])
+def test_preflight_preserves_dataset_paths_and_detects_source_changes(tmp_path, reuse_registry):
     repo = tmp_path / "repo"
     (repo / "configs").mkdir(parents=True)
     (repo / "src/al_pipeline/core").mkdir(parents=True)
@@ -33,6 +35,10 @@ train_manifest = "/immutable/train.csv"
 """)
     job_dir = persistent / "jobs"
     args = [sys.executable, str(preflight), "--repo", str(repo), "--job-dir", str(job_dir)]
+    if reuse_registry:
+        source = tmp_path / "original_replay_registry.toml"
+        (repo / "configs/delta.toml").rename(source)
+        args += ["--source-registry", str(source)]
     first = subprocess.run(args, text=True, capture_output=True)
     assert first.returncode == 0, first.stderr
     routed = tomllib.loads((job_dir / "registry_hdd.toml").read_text())

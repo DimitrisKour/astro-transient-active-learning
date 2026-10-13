@@ -60,6 +60,8 @@ STRATEGY_COLORS = {
     "margin": "#4C78A8",
     "entropy": "#E69F00",
     "fisher": "#7A5195",
+    "entropy_diversity": "#7A5195",
+    "entropy_balanced_explore": "#6B6ECF",
 }
 
 SUITE_LINESTYLES = (

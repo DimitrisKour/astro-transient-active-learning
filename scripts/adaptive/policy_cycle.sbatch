@@ -22,7 +22,8 @@ export MPLCONFIGDIR="$runtime/matplotlib"
 export TORCH_HOME="$runtime/torch"
 export JUPYTER_RUNTIME_DIR="$runtime/jupyter"
 python scripts/adaptive/prepare_policy_compare.py \
-  --repo "$POLICY_REPO" --job-dir "$POLICY_JOB_DIR" --verify-source
+  --repo "$POLICY_REPO" --job-dir "$POLICY_JOB_DIR" \
+  --source-registry "$POLICY_SOURCE_REGISTRY" --verify-source
 policy_arguments "$seed"
 echo "Seed $seed, round $cycle, suite $POLICY_SUITE_ID"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader

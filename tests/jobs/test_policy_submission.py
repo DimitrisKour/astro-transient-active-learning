@@ -77,6 +77,7 @@ with open(os.environ['MOCK_LOG'],'a') as out:
     }
     env = dict(
         inherited,
+        POLICY_SUITE_ID="astrominn_policy_compare_v1",
         PATH=f"{commands}:{os.environ['PATH']}",
         CONDA_PREFIX=str(tmp_path / "conda"),
         MOCK_COUNTER=str(tmp_path / "counter"),
@@ -158,3 +159,33 @@ def test_submission_ignores_inherited_shell_initialization(tmp_path, monkeypatch
     )
     assert result.returncode == 0, result.stderr
     assert not Path(env["MOCK_LOG"]).exists()
+
+
+def test_new_policy_chain_does_not_reject_or_submit_completed_baselines(tmp_path):
+    scripts, env, original_job_dir = setup(tmp_path)
+    suite = "astrominn_historical_replay_v1"
+    env["POLICY_SUITE_ID"] = suite
+    persistent = original_job_dir.parents[1]
+    job_dir = original_job_dir.parent / suite
+    (job_dir / "logs").mkdir(parents=True)
+    (job_dir / "registry_hdd.toml").write_text(
+        f'[storage]\npersistent_root="{persistent}"\n'
+    )
+    for strategy in ("random", "entropy"):
+        p = persistent / "runs" / suite / strategy / "seed_135"
+        p.mkdir(parents=True)
+        (p / "run_state.json").write_text(
+            json.dumps(dict(last_completed_cycle=8, active_cycle=None, status="ready"))
+        )
+    result = subprocess.run(["bash", str(scripts / "submit_policy_compare.sh"), "135"],
+                            env=env, text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    arguments = subprocess.run(
+        ["bash", "-c", 'source "$1"; policy_arguments 135; printf "%s\\n" "${POLICY_ARGS[@]}"',
+         "bash", str(scripts / "policy_common.sh")],
+        env=env, text=True, capture_output=True, check=True,
+    ).stdout.splitlines()
+    start = arguments.index("--strategies") + 1
+    stop = next(i for i in range(start, len(arguments)) if arguments[i].startswith("--"))
+    assert arguments[start:stop] == ["entropy_diversity", "entropy_balanced_explore"]
+    assert "--require-existing-bootstrap" in arguments

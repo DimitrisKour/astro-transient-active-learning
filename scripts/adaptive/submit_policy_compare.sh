@@ -7,7 +7,8 @@ option="${2:-01:00:00}"
 case "$seed" in 135|246|357) ;; *) echo 'Use seed 135, 246 or 357.' >&2; exit 1;; esac
 policy_activate
 quota
-python scripts/adaptive/prepare_policy_compare.py --repo "$POLICY_REPO" --job-dir "$POLICY_JOB_DIR"
+python scripts/adaptive/prepare_policy_compare.py --repo "$POLICY_REPO" --job-dir "$POLICY_JOB_DIR" \
+  --source-registry "$POLICY_SOURCE_REGISTRY"
 policy_arguments "$seed"
 python scripts/run_astrominn_historical_replay.py "${POLICY_ARGS[@]}" --device cpu \
   | tee "$POLICY_JOB_DIR/plan_seed_$seed.txt"
@@ -35,7 +36,7 @@ python - "$POLICY_JOB_DIR/registry_hdd.toml" "$POLICY_SUITE_ID" "$seed" <<'PY'
 import json,sys,tomllib
 from pathlib import Path
 registry = tomllib.loads(Path(sys.argv[1]).read_text())
-for strategy in ('random','entropy','entropy_diversity','entropy_balanced_explore'):
+for strategy in ('entropy_diversity','entropy_balanced_explore'):
     path = Path(registry['storage']['persistent_root'])/'runs'/sys.argv[2]/strategy/f'seed_{sys.argv[3]}'/'run_state.json'
     if path.exists():
         state = json.loads(path.read_text())
