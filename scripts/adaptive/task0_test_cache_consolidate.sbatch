@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=5G
-#SBATCH --time=00:20:00
+#SBATCH --time=00:08:00
 set -euo pipefail
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 module load miniforge3-python
