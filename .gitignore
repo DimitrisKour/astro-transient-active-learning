@@ -17,3 +17,6 @@ runs/
 
 # Local patch backups
 /patch_backups/
+
+# Python core dumps from HPC nodes (never commit binary crash memory)
+/core.python.*
