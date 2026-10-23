@@ -1,7 +1,8 @@
 #!/bin/bash -l
 #SBATCH --job-name=t0_test_join
-#SBATCH --account=bcrv-delta-cpu
-#SBATCH --partition=cpu
+#SBATCH --account=bcrv-delta-gpu
+#SBATCH --partition=gpuA40x4
+#SBATCH --gpus-per-node=1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
