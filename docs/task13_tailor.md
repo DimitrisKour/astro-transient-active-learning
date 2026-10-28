@@ -48,6 +48,10 @@ git status --short
 module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+if [[ -f "$CONDA_PREFIX/lib/libstdc++.so.6" ]]; then
+  export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
+fi
 
 python scripts/adaptive/task13.py plan
 python scripts/adaptive/task13.py prepare --repo "$PWD"
