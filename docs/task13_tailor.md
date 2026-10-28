@@ -36,13 +36,16 @@ Task11 and Task12 are never modified by these scripts.
 - The `al-pipeline` conda environment and the historical ViT artifacts.
 - Free file space and quota for 24 small run-state trees plus checkpoints.
 
-On a **Delta login node**, after confirming `git status --short` is clean or
-that your existing changes will not be disturbed:
+On a **Delta login node**, use a separate Git worktree so the current
+`active-learning` checkout is not switched or modified. Check first that
+`../active-learning-task13` does not already contain another worktree:
 
 ```bash
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
-git fetch origin feat/task13-tailor
-git switch feat/task13-tailor
+git status --short
+git fetch origin
+git worktree add --detach ../active-learning-task13 origin/feat/task13-tailor
+cd ../active-learning-task13
 git status --short
 
 module load miniforge3-python
