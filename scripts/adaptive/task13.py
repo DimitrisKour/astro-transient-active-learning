@@ -272,6 +272,9 @@ def audit_replay_identity(*, job_dir: str | Path = JOB) -> dict:
 def preflight(seed: int = 135, *, job_dir: str | Path = JOB) -> None:
     for policy in POLICIES:
         run_runner(policy=policy, seed=seed, cycle=None, run=False, job_dir=job_dir)
+    frozen_python = str(Path(job_dir) / "source/src")
+    if frozen_python not in sys.path:
+        sys.path.insert(0, frozen_python)
     audit = audit_replay_identity(job_dir=job_dir)
     write_json(Path(job_dir) / "preflight" / f"seed_{seed}.json", audit)
     print(json.dumps(audit, indent=2))
@@ -508,7 +511,8 @@ def release(*, job_dir: str | Path = JOB) -> None:
     for entry in payload["jobs"]:
         job_id = entry["job_id"]
         details = subprocess.check_output(["scontrol", "show", "job", "-o", job_id], text=True)
-        if "Reason=JobHeldUser" in details:
+        held = "Reason=JobHeldUser" in details or re.search(r"\bPriority=0\b", details)
+        if "JobState=PENDING" in details and held:
             subprocess.run(["scontrol", "release", job_id], check=True)
     payload["status"] = "released"
     write_json(ledger, payload)
