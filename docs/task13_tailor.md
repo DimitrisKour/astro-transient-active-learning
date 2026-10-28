@@ -64,7 +64,10 @@ python scripts/adaptive/task13.py pilot-status
 `/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_task13_tailor_pilot_v1`.
 Source hashes are checked against Task11 and frozen after the Task13 overlay.
 Existing frozen suites remain untouched. `preflight` materializes and audits
-the split and verifies the existing L0 checkpoint; it does not train.
+the split and verifies the existing L0 checkpoint; it does not train. It also
+checks the `/work/hdd` checkpoint filesystem using a disposable 16 MiB
+write, `fsync`, rename and read-back probe; the probe is removed automatically.
+Every subsequent GPU worker repeats that safety probe before running.
 
 ### GPU acquisition pilots (no training)
 
