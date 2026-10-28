@@ -39,6 +39,7 @@ export TORCH_HOME="$RUNTIME/torch"
 export JUPYTER_RUNTIME_DIR="$RUNTIME/jupyter"
 
 python "$JOB/source/scripts/adaptive/task13.py" verify --job-dir "$JOB"
+python "$JOB/source/scripts/adaptive/task13.py" filesystem-probe --job-dir "$JOB"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 if [[ "$MODE" == "pilot" ]]; then
