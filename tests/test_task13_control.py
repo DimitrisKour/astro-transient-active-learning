@@ -14,6 +14,15 @@ import task13  # noqa: E402
 
 
 class TestTask13Control(unittest.TestCase):
+    def test_filesystem_probe_writes_fsyncs_and_removes_only_its_temp_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with patch.object(task13, "DATA", Path(folder)), patch.object(task13, "verify"):
+                result = task13.filesystem_probe(job_dir=folder, size_bytes=1024)
+            self.assertTrue(result["passed"])
+            self.assertEqual(result["bytes"], 1024)
+            probe_dir = Path(folder) / "runs" / task13.SUITE / "shared/preflight"
+            self.assertEqual(list(probe_dir.iterdir()), [])
+
     def test_24_fits_and_four_cycles_are_pinned(self):
         plan = task13.scientific_plan()
         self.assertEqual(plan["training_jobs"], 24)
