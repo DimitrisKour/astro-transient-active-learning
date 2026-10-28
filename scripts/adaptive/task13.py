@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import zipfile
 
@@ -276,8 +277,52 @@ def preflight(seed: int = 135, *, job_dir: str | Path = JOB) -> None:
     if frozen_python not in sys.path:
         sys.path.insert(0, frozen_python)
     audit = audit_replay_identity(job_dir=job_dir)
+    audit["filesystem_probe"] = filesystem_probe(job_dir=job_dir)
     write_json(Path(job_dir) / "preflight" / f"seed_{seed}.json", audit)
     print(json.dumps(audit, indent=2))
+
+
+def filesystem_probe(*, job_dir: str | Path = JOB, size_bytes: int = 16 << 20) -> dict:
+    """Test checkpoint-filesystem write/fsync/rename with a disposable 16 MiB file.
+
+    This is deliberately isolated in the new Task13 runtime directory, never
+    in a prior task's checkpoint directory or any directory containing data.
+    """
+    if size_bytes <= 0 or size_bytes > (64 << 20):
+        raise ValueError("Filesystem probe size must be in (0, 64 MiB]")
+    verify(job_dir)
+    root = DATA / "runs" / SUITE / "shared" / "preflight"
+    root.mkdir(parents=True, exist_ok=True)
+    descriptor, filename = tempfile.mkstemp(prefix="task13_probe_", suffix=".tmp", dir=root)
+    src = Path(filename)
+    renamed = src.with_suffix(".checked")
+    start = time.perf_counter()
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            block = bytes(1 << 20)
+            remaining = size_bytes
+            while remaining:
+                count = min(len(block), remaining)
+                handle.write(block[:count])
+                remaining -= count
+            handle.flush()
+            os.fsync(handle.fileno())
+        if src.stat().st_size != size_bytes:
+            raise OSError("Filesystem probe wrote an unexpected byte count")
+        src.rename(renamed)
+        with renamed.open("rb") as handle:
+            if handle.read(64) != bytes(64):
+                raise OSError("Filesystem probe could not read back its first bytes")
+        return {
+            "passed": True,
+            "bytes": size_bytes,
+            "write_fsync_rename_seconds": round(time.perf_counter() - start, 3),
+        }
+    finally:
+        # Exactly the two disposable files created by this particular probe.
+        for file in (src, renamed):
+            if file.is_file():
+                file.unlink()
 
 
 def pilot(policy: str, seed: int = 135, *, job_dir: str | Path = JOB) -> None:
@@ -604,7 +649,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=(
         "plan", "prepare", "verify", "preflight", "pilot", "pilot-status",
-        "submit", "release", "status", "collect", "job",
+        "submit", "release", "status", "collect", "filesystem-probe", "job",
     ))
     parser.add_argument("policy", nargs="?", choices=POLICIES)
     parser.add_argument("seed", nargs="?", type=int)
@@ -624,6 +669,8 @@ def main() -> None:
         verify(args.job_dir)
     elif args.command == "preflight":
         preflight(seed=args.pilot_seed, job_dir=args.job_dir)
+    elif args.command == "filesystem-probe":
+        print(json.dumps(filesystem_probe(job_dir=args.job_dir), indent=2))
     elif args.command == "pilot":
         pilot(args.pilot_policy or args.policy, args.pilot_seed, job_dir=args.job_dir)
     elif args.command == "pilot-status":
