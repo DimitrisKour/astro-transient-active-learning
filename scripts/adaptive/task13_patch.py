@@ -91,7 +91,8 @@ def patch_source(root: str | Path) -> list[str]:
         'from al_pipeline.core.batch_selection import DiversitySelector, ExplorationSelector\n',
         'from al_pipeline.core.batch_selection import DiversitySelector, ExplorationSelector\n'
         'from al_pipeline.core.meta_acquisition.tailor import TailorBandit, TailorSettings\n'
-        'from al_pipeline.core.meta_acquisition.mixed_selection import select_mixed_batch\n',
+        'from al_pipeline.core.meta_acquisition.mixed_selection import select_mixed_batch\n'
+        'from al_pipeline.core.experiments.batch_policy import BatchAcquisitionConfig\n',
         "meta-imports",
     )
     source = replace_once(
