@@ -173,3 +173,28 @@ def test_rare_variant_is_fl2mi_not_fl1mi():
     total = float(q_by_u[:, chosen].max(axis=1).sum(dtype=np.float64)
                   + q_by_u[:, chosen].max(axis=0).sum(dtype=np.float64))
     assert np.isclose(result.scores.sum(), total, rtol=1e-6, atol=1e-6)
+
+
+def test_task14_release_all_cli_has_no_implicit_seed(monkeypatch):
+    """Regression: --all must not conflict with the parser's default --seed."""
+    import task14
+    observed = []
+    monkeypatch.setattr(task14, 'release', lambda *args: observed.append(args))
+    monkeypatch.setattr(sys, 'argv', ['task14.py', 'release', '--all'])
+    task14.main()
+    assert observed == [(None, None, None, True)]
+
+
+def test_task14_preflight_and_pilot_retain_seed_135_defaults(monkeypatch):
+    """Changing the release CLI default must not alter scientific pilot seeds."""
+    import task14
+    calls = []
+    monkeypatch.setattr(task14, 'preflight', lambda seed: calls.append(('preflight', seed)))
+    monkeypatch.setattr(task14, 'pilot', lambda policy, seed: calls.append(('pilot', policy, seed)))
+    monkeypatch.setattr(sys, 'argv', ['task14.py', 'preflight'])
+    task14.main()
+    monkeypatch.setattr(sys, 'argv', ['task14.py', 'pilot', 'similar_fl'])
+    task14.main()
+    monkeypatch.setattr(sys, 'argv', ['task14.py', 'pilot', 'similar_fl', '--seed', '246'])
+    task14.main()
+    assert calls == [('preflight', 135), ('pilot', 'similar_fl', 135), ('pilot', 'similar_fl', 246)]
