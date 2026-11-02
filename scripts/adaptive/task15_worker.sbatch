@@ -22,7 +22,7 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
 export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 DATA=/work/hdd/bcrv/dkourtesis/applecider_adaptive
-RUNTIME="$DATA/runs/astrominn_task15_similar_facility_v1/shared/runtime/${SLURM_JOB_ID:-manual}"
+RUNTIME="$DATA/runs/astrominn_task15_direct_vreduce_v1/shared/runtime/${SLURM_JOB_ID:-manual}"
 mkdir -p "$RUNTIME"/{tmp,matplotlib,torch,jupyter}
 export TMPDIR="$RUNTIME/tmp"
 export MPLCONFIGDIR="$RUNTIME/matplotlib"
