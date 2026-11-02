@@ -490,31 +490,58 @@ def status():
 
 
 def collect(destination):
-    destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
+    """Export compact acquisition/validation results, never unrevealed labels."""
+    destination = Path(destination)
+    if destination.exists():
+        raise FileExistsError(f'Task17 export already exists: {destination}')
+    destination.parent.mkdir(parents=True, exist_ok=True)
     from zipfile import ZipFile, ZIP_DEFLATED
-    files=[]
-    paths=[JOB/'scientific_plan.json',JOB/'preflight_audit.json',
-           JOB/'submitted.json',JOB/'bootstrap_jobs.json',JOB/'source_parent.json']
-    split=PERSISTENT/'runs'/SUITE/'shared/historical_replay_split'
-    paths.extend([split/'split_summary.json',split/'initial_labeled_manifest.csv',
-                  split/'hidden_labels.csv'])
+
+    paths = [
+        JOB/'scientific_plan.json', JOB/'preflight_audit.json',
+        JOB/'submitted.json', JOB/'bootstrap_jobs.json',
+        JOB/'source_parent.json', JOB/'frozen_manifest.json',
+        JOB/'pilot/seed_135/result.json',
+    ]
+    split = PERSISTENT/'runs'/SUITE/'shared/historical_replay_split'
+    paths += [split/'split_summary.json', split/'initial_labeled_manifest.csv']
     for policy in POLICIES:
         for seed in SEEDS:
-            path=PERSISTENT/'runs'/SUITE/policy/f'seed_{seed}'
-            for name in ('run_state.json','evaluation_history.json','experiment.json'):
-                paths.append(path/name)
-            paths.extend(path.glob('cycle_*/selection.json'))
-            paths.extend(path.glob('cycle_*/revealed_labels.json'))
-            paths.extend(path.glob('cycle_*/cycle_summary.json'))
-    for seed in SEEDS:
-        p=JOB/'pilot'/f'seed_{seed}/result.json'
-        paths.append(p)
-    with ZipFile(destination,'w',ZIP_DEFLATED) as out:
-        for p in sorted(set(paths)):
-            if p.is_file():
-                out.write(p,arcname=str(p).removeprefix(str(PERSISTENT)+'/').removeprefix(str(JOB)+'/'))
-                files.append(str(p))
-    print(json.dumps({'output':str(destination),'files':len(files),'sha256':sha(destination)},indent=2))
+            rel = Path(SUITE)/policy/f'seed_{seed}'
+            run = PERSISTENT/'runs'/rel
+            art = DATA/'runs'/rel
+            paths += [run/name for name in ('run_state.json', 'evaluation_history.json',
+                                            'experiment.json')]
+            for cycle in range(CYCLES + 1):
+                c = f'cycle_{cycle:03d}'
+                if cycle:
+                    paths += [run/c/name for name in ('selection.json',
+                                                       'revealed_labels.json',
+                                                       'cycle_summary.json')]
+                paths += [art/c/'evaluation'/name for name in (
+                    'evaluation_summary.json', 'validation_per_class_metrics.json',
+                    'validation_object_confusion.csv', 'validation_sample_confusion.csv',
+                )]
+
+    archive = {}
+    for path in dict.fromkeys(paths):
+        if not path.is_file():
+            continue
+        if path.is_relative_to(JOB):
+            name = 'control/' + str(path.relative_to(JOB))
+        elif path.is_relative_to(PERSISTENT):
+            name = 'persistent/' + str(path.relative_to(PERSISTENT))
+        elif path.is_relative_to(DATA):
+            name = 'artifacts/' + str(path.relative_to(DATA))
+        else:
+            raise ValueError(f'Unexpected Task17 export file: {path}')
+        archive[name] = path
+
+    with ZipFile(destination, 'x', ZIP_DEFLATED) as out:
+        for name, path in sorted(archive.items()):
+            out.write(path, arcname=name)
+    print(json.dumps({'output': str(destination), 'files': len(archive),
+                      'sha256': sha(destination)}, indent=2))
 
 
 def main():
