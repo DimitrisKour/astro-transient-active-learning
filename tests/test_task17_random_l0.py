@@ -216,3 +216,37 @@ def test_submit_guards(tmp_path,monkeypatch):
     task17.dump(tmp_path/'submitted.json', {'jobs':[]})
     with pytest.raises(ValueError):
         task17.release_cycles(policy='entropy',seed=135)
+
+
+def test_cli_release_all_no_implicit_seed(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(task17,'release_cycles',lambda *args:calls.append(args))
+    monkeypatch.setattr(sys,'argv',['task17.py','release-cycles','--all'])
+    task17.main()
+    assert calls==[(None,None,None,True)]
+
+
+def test_results_export_includes_validation_but_not_hidden_labels(tmp_path,monkeypatch):
+    from zipfile import ZipFile
+    p=tmp_path/'persistent'
+    d=tmp_path/'data'
+    job=p/'closed_loop'/task17.SUITE
+    monkeypatch.setattr(task17,'PERSISTENT',p)
+    monkeypatch.setattr(task17,'DATA',d)
+    monkeypatch.setattr(task17,'JOB',job)
+    split=p/'runs'/task17.SUITE/'shared/historical_replay_split'
+    split.mkdir(parents=True)
+    (split/'hidden_labels.csv').write_text('secret')
+    (split/'split_summary.json').write_text('{}')
+    (split/'initial_labeled_manifest.csv').write_text('object_id,label\nx,A\n')
+    rel=Path(task17.SUITE)/'entropy'/'seed_135'
+    ev=d/'runs'/rel/'cycle_001/evaluation'
+    ev.mkdir(parents=True)
+    (ev/'evaluation_summary.json').write_text('{"ok":true}')
+    out=tmp_path/'report.zip'
+    task17.collect(out)
+    with ZipFile(out) as archive:
+        names=archive.namelist()
+    assert any(x.endswith('cycle_001/evaluation/evaluation_summary.json') for x in names)
+    assert any(x.endswith('initial_labeled_manifest.csv') for x in names)
+    assert not any('hidden_labels' in x for x in names)
