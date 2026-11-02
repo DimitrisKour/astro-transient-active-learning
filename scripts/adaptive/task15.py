@@ -305,7 +305,7 @@ def submit(walltime):
         for policy,seed,cycle in jobs():
             before=prev.get((policy,seed))
             opts=['sbatch','--parsable','--hold','--time',walltime,
-                  '--job-name',f'T14_{policy}_{seed}_{cycle}',
+                  '--job-name',f'T15_{policy}_{seed}_{cycle}',
                   '--output',str(JOB/'logs/%x_%j.out'),
                   '--error',str(JOB/'logs/%x_%j.err')]
             if before:opts.extend(['--dependency',f'afterok:{before}'])
@@ -406,7 +406,7 @@ def main():
     ap.add_argument('cycle_pos',nargs='?',type=int)
     ap.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
     ap.add_argument('--job-dir',type=Path,default=JOB)
-    ap.add_argument('--seed',type=int,default=135)
+    ap.add_argument('--seed',type=int,default=None)
     ap.add_argument('--policy',choices=POLICIES)
     ap.add_argument('--cycle',type=int)
     ap.add_argument('--walltime',default='00:35:00')
@@ -417,8 +417,8 @@ def main():
     if command=='plan':print(json.dumps(plan(),indent=2));return
     if command=='prepare':prepare(arg.overlay);return
     if command=='verify':verify(arg.job_dir);return
-    if command=='preflight':preflight(arg.seed);return
-    if command=='pilot':pilot(arg.policy or arg.policy_pos,arg.seed);return
+    if command=='preflight':preflight(arg.seed if arg.seed is not None else 135);return
+    if command=='pilot':pilot(arg.policy or arg.policy_pos,arg.seed if arg.seed is not None else 135);return
     if command=='pilot-status':pilot_status();return
     if command=='filesystem-probe':filesystem_probe();return
     if command=='submit':submit(arg.walltime);return
