@@ -63,6 +63,8 @@ def patch_source(root,overlay):
         if self.config.strategy == "badge":
             if inference.embeddings is None:
 ''','scoring-input')
+    s=once(s,'                scores = scorer.score(acquisition_data)\n',
+           '                scores = scorer.score(inference.predictions if self.config.strategy == "anchoral" else acquisition_data)\n','entropy-input-fix')
     sim.write_text(s);changed.append(str(sim.relative_to(root)))
     runner=root/'scripts/run_astrominn_closed_loop.py'
     s=runner.read_text()
