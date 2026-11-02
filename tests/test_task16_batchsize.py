@@ -193,3 +193,22 @@ def test_staged_20pct_submission_then_independent_05pct(tmp_path,monkeypatch):
     assert len(requests) == 48
     task16.submit('00:20:00',fraction_filter='20')
     assert len(requests) == 48
+
+
+def test_task16_release_all_cli_without_implicit_seed(monkeypatch):
+    """Regression for the same --all CLI bug previously found in Tasks 14/15."""
+    seen=[]
+    monkeypatch.setattr(task16,'release',lambda *args: seen.append(args))
+    monkeypatch.setattr(sys,'argv',['task16.py','release','--all'])
+    task16.main()
+    assert seen == [(None,None,None,None,True)]
+
+
+def test_task16_pilot_default_seed_135(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(task16,'pilot',lambda seed:calls.append(seed))
+    monkeypatch.setattr(sys,'argv',['task16.py','pilot'])
+    task16.main()
+    monkeypatch.setattr(sys,'argv',['task16.py','pilot','--seed','246'])
+    task16.main()
+    assert calls == [135,246]
