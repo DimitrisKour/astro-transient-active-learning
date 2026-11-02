@@ -547,7 +547,7 @@ def main():
     ap.add_argument('--submit-policy', choices=POLICIES)
     ap.add_argument('--submit-seed', type=int, choices=SEEDS)
     ap.add_argument('--policy', choices=POLICIES)
-    ap.add_argument('--seed', type=int, default=135)
+    ap.add_argument('--seed', type=int, default=None)
     ap.add_argument('--cycle', type=int)
     ap.add_argument('--overlay', type=Path, default=Path(__file__).resolve().parents[2])
     ap.add_argument('--job-dir', type=Path, default=JOB)
@@ -559,7 +559,7 @@ def main():
     if opts.command == 'prepare': prepare(opts.overlay); return
     if opts.command == 'verify': verify(opts.job_dir); return
     if opts.command == 'preflight': preflight(); return
-    if opts.command == 'pilot': pilot(opts.seed); return
+    if opts.command == 'pilot': pilot(opts.seed if opts.seed is not None else 135); return
     if opts.command == 'pilot-status': pilot_status(); return
     if opts.command == 'filesystem-probe': filesystem_probe(); return
     if opts.command == 'submit': submit(opts.walltime, opts.submit_fraction, opts.submit_policy, opts.submit_seed); return
