@@ -227,13 +227,15 @@ class Balanced357RetryExperiment(RetentionExperiment):
                   'retry_mode':self.retry_mode,
                   'accepted':bool(accepted),'accepted_retry_number':retry_number if accepted else None,
                   'accepted_retry_seed':(RETRY_SEEDS[retry_number-1] if self.retry_mode == 'seed' and accepted and retry_number else None),
-                  'attempts_consumed':(0 if retry_number is None and selected['kind'] == 'base'
-                       else retry_number if accepted else len(RETRY_SEEDS)),
+                  'attempts_consumed':(
+                      retry_number if accepted and retry_number is not None
+                      else 0 if selected.get('kind') == 'base'
+                      else len(RETRY_SEEDS)),
                   'retention_reason':(
                       'accepted_base' if accepted and retry_number is None
                       else 'accepted_retry' if accepted
                       else 'base_nonnegative_f1_but_ba_not_improved'
-                      if retry_number is None and selected['kind'] == 'base'
+                           if retry_number is None and selected.get('kind') == 'base'
                       else 'all_four_retries_failed'),
                   'reference_reused':base['reference_reused'],
                   'base_candidate_checkpoint':base['checkpoint'],
