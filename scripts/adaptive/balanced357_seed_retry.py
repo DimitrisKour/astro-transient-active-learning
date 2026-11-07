@@ -24,7 +24,7 @@ REFERENCE = P/'closed_loop'/'astrominn_closed_loop_warm_v1'
 POLICY='entropy_balanced_explore'
 SEED=357
 MODE='seed'
-SUITE=f'astrominn_balanced357_strict_{MODE}_retention_retry_v1'
+SUITE=f'astrominn_balanced357_strict_{MODE}_retention_retry_v2'
 JOB=D/'closed_loop'/SUITE
 OVERLAYS=(
  'src/al_pipeline/core/analysis/__init__.py',
@@ -63,8 +63,7 @@ def cases_from_reference(source_run:Path):
     first=None
     for c in range(1,10):
         old,new=data[c-1],data[c]
-        if not (float(new['f1_macro'])>float(old['f1_macro']) and
-                float(new['balanced_accuracy'])>float(old['balanced_accuracy'])):
+        if float(new['f1_macro']) < float(old['f1_macro']):
             first=c;break
     if first is None:raise RuntimeError('Historical balanced357 trajectory has no strict rejection')
     return [{'policy':POLICY,'seed':SEED,'first_rejection':first,
@@ -138,7 +137,7 @@ def build_plan(reference:Path,data:Path):
         if not boot.is_file():raise FileNotFoundError(boot)
         row['bootstrap_checkpoint']=str(boot)
         row['bootstrap_sha256']=sha(boot)
-    return {'schema':'balanced357_strict_retry_v1','retry_mode':MODE,'suite':SUITE,'cases':cases,
+    return {'schema':'balanced357_strict_retry_v2','retry_mode':MODE,'suite':SUITE,'cases':cases,
         'source_suite':'astrominn_closed_loop_warm_v1',
         'reference':str(reference),'reference_snapshot_sha256':reference_digest,
         'reference_registry_sha256':sha(reference/'registry.toml'),
@@ -146,7 +145,9 @@ def build_plan(reference:Path,data:Path):
         'source_l0':str(l0),'l0_sha256':sha(l0),
         'source_pool':str(pool),'pool_sha256':sha(pool),
         'source_hidden_labels':str(labels),'hidden_labels_sha256':sha(labels),
-        'active_gate':{'strict_macro_f1':True,'strict_balanced_accuracy':True},
+        'active_gate':{'retry_trigger':'negative_macro_f1_delta',
+                       'retry_acceptance':'strict_both_macro_f1_and_balanced_accuracy',
+                       'base_when_f1_nonnegative_ba_worse':'retain_without_retry'},
         'shadow_gate':{'balanced_accuracy_loss_tolerance':0.03,
                        'net_correct_losses':{'AGN':35,'TDE':3,'SN I':100,'SN II':30,'CV':10}},
         'training':{'max_epochs':50,'patience':10,'class_weight_exponent':0.85,
@@ -155,6 +156,7 @@ def build_plan(reference:Path,data:Path):
                     'retry_initialization':'same_incumbent_checkpoint',
                     'test_used_for_selection':False},
         'first_rejection_replay':True,'full_cycles':9,
+        'prefix_checkpoint_rule':'nonnegative_macro_f1_delta',
         'planned_new_gpu_cycles':sum(9-c['first_rejection'] for c in cases),
         'retry_seeds':([1001,1002,1003,1004] if MODE=='seed' else []),
          'row_permutations':([41004,42004,43004,44004] if MODE=='row_order' else []),
@@ -199,7 +201,7 @@ def prepare(repo:Path,job:Path,reference:Path,data:Path):
 
 def verify(job:Path,deep=False):
     plan=json_load(job/'plan.json')
-    if (plan.get('schema')!='balanced357_strict_retry_v1' or plan.get('suite')!=SUITE or
+    if (plan.get('schema')!='balanced357_strict_retry_v2' or plan.get('suite')!=SUITE or
         len(plan.get('cases',()))!=1 or plan.get('retry_mode')!=MODE):
         raise ValueError('Invalid balanced357 planned identity')
     hashes=json_load(job/'source_snapshot.json')
@@ -266,7 +268,8 @@ def experiment_for(job:Path,case_idx:int):
         device=orig.trainer.device,batch_size=2048,num_workers=0,
         artifact_dir=artifact)
     return Balanced357RetryExperiment.from_experiment(orig,
-        reference_persistent=P,reference_data=D,retry_mode=MODE)
+        reference_persistent=P,reference_data=D,retry_mode=MODE,
+        first_rejection=case['first_rejection'])
 
 
 def prefill(job:Path,index:int):
@@ -319,7 +322,7 @@ def run_gpu(job:Path,index:int,cycle:int,stage:str,retry_number:int|None):
             # A finalized decision guarantees no further training is required.
             # Verify its identity and checkpoint content without loading PyTorch.
             row=json_load(final)
-            if row['schema']!='balanced357_strict_retry_v1' or row['policy']!=case['policy'] or row['seed']!=case['seed'] or row['cycle']!=cycle:
+            if row['schema']!='balanced357_strict_retry_v2' or row['policy']!=case['policy'] or row['seed']!=case['seed'] or row['cycle']!=cycle:
                 raise ValueError('Existing final decision has the wrong identity')
             if sha(Path(row['incumbent_checkpoint'])) != row['incumbent_sha256']:
                 raise ValueError('Final incumbent checkpoint hash changed')
