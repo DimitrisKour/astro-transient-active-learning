@@ -2,8 +2,10 @@
 
 An ordinary base cycle is committed by the source AL coordinator, but the next
 acquisition is blocked until a durable *final* retention decision is recorded.
-Each alternate-seed fit is a separate stage. No best-of-k selection: the FIRST
-candidate satisfying the original 1 pp macro-F1 rule becomes the incumbent.
+Each alternative fit is a separate stage. The historical prefix is replayed
+until the FIRST negative macro-F1 change. Thereafter, a base candidate triggers
+retries on negative macro-F1 only; a retry is accepted only when both macro-F1
+and balanced accuracy strictly increase. No best-of-k selection.
 """
 from __future__ import annotations
 
@@ -25,14 +27,30 @@ from al_pipeline.core.training.base import TrainingRequest
 from al_pipeline.astronomy.astrominn.training import AstroMiNNViTTrainer
 
 RETRY_SEEDS = (1001, 1002, 1003, 1004)
-SCHEMA = 'balanced357_strict_retry_v1'
+SCHEMA = 'balanced357_strict_retry_v2'
 ROW_SEEDS = (41004, 42004, 43004, 44004)
 
 
 def strict_accept(incumbent: dict, candidate: dict) -> bool:
-    """Strictly greater macro-F1 AND balanced accuracy; ties reject."""
+    """Both validation metrics must strictly improve for checkpoint promotion."""
     return (candidate['macro_f1'] > incumbent['macro_f1']
             and candidate['balanced_accuracy'] > incumbent['balanced_accuracy'])
+
+
+def base_action(incumbent: dict, candidate: dict, *, historical_prefix: bool) -> str:
+    """Explicit three-way operational decision with disjoint retry/accept rules.
+
+    Reference prefix: use the historical checkpoint while macro-F1 does not fall.
+    Post-divergence: accept only both-better; retry only if macro-F1 falls.
+    Nonnegative F1 with stagnant/worse BA is retained without retry.
+    """
+    if historical_prefix:
+        return 'accept' if candidate['macro_f1'] >= incumbent['macro_f1'] else 'retry'
+    if strict_accept(incumbent, candidate):
+        return 'accept'
+    if candidate['macro_f1'] < incumbent['macro_f1']:
+        return 'retry'
+    return 'retain'
 
 
 def shuffled_manifest(src: Path, dst: Path, seed: int) -> str:
@@ -78,14 +96,16 @@ class Balanced357RetryExperiment(RetentionExperiment):
     that incumbent through RetentionExperiment._incumbent.
     """
 
-    def __init__(self, *, retry_mode='row_order', **kwargs):
+    def __init__(self, *, retry_mode='row_order', first_rejection=None, **kwargs):
         super().__init__(**kwargs)
         if retry_mode not in ('row_order', 'seed'):
             raise ValueError('Unknown retry mode')
         self.retry_mode = retry_mode
+        self.first_rejection = first_rejection
 
     @classmethod
-    def from_experiment(cls, experiment, *, reference_persistent, reference_data, retry_mode):
+    def from_experiment(cls, experiment, *, reference_persistent, reference_data,
+                        retry_mode, first_rejection):
         from al_pipeline.core.analysis.retention_gate import RetentionRule
         obj = super().from_experiment(
             experiment, reference_persistent=reference_persistent,
@@ -93,6 +113,9 @@ class Balanced357RetryExperiment(RetentionExperiment):
         if retry_mode not in ('row_order', 'seed'):
             raise ValueError('Unknown retry mode')
         obj.retry_mode = retry_mode
+        if not isinstance(first_rejection, int) or not 1 <= first_rejection <= 9:
+            raise ValueError('Invalid source first macro-F1 regression cycle')
+        obj.first_rejection = first_rejection
         if obj.config.strategy != 'entropy_balanced_explore' or obj.config.seed != 357:
             raise ValueError('This experiment is restricted to balanced exploration seed 357')
         return obj
@@ -103,7 +126,8 @@ class Balanced357RetryExperiment(RetentionExperiment):
         value['retention']['retry_mode'] = self.retry_mode
         value['retention']['alternative_seeds'] = list(RETRY_SEEDS) if self.retry_mode == 'seed' else []
         value['retention']['row_order_seeds'] = list(ROW_SEEDS) if self.retry_mode == 'row_order' else []
-        value['retention']['active_rule'] = 'strict_both_macro_f1_and_balanced_accuracy'
+        value['retention']['first_macro_f1_regression'] = self.first_rejection
+        value['retention']['active_rule'] = 'macro_f1_negative_triggers_retry;both_metrics_strict_for_acceptance'
         value['retention']['acceptance'] = 'first_strictly_passing_retry_else_retain'
         return value
 
@@ -117,9 +141,14 @@ class Balanced357RetryExperiment(RetentionExperiment):
             prediction_file(parent_dir / 'validation_predictions.npz'),
             prediction_file(eval_dir / 'validation_predictions.npz'),
             self.rule, CLASSES)
-        result['accepted'] = strict_accept(
-            result['incumbent_metrics'], result['candidate_metrics'])
-        result['decision_rule'] = 'strict_both_macro_f1_and_balanced_accuracy'
+        prefix = cycle < self.first_rejection
+        result['accepted'] = (base_action(
+            result['incumbent_metrics'], result['candidate_metrics'],
+            historical_prefix=True) == 'accept') if prefix else strict_accept(
+                result['incumbent_metrics'], result['candidate_metrics'])
+        result['decision_rule'] = (
+            'historical_prefix_nonnegative_macro_f1'
+            if prefix else 'strict_both_macro_f1_and_balanced_accuracy')
         return result
 
     def _base_path(self, cycle: int) -> Path:
@@ -188,17 +217,24 @@ class Balanced357RetryExperiment(RetentionExperiment):
         if selected_comparison != selected['comparison']:
             raise ValueError('Selected comparison differs from persisted attempt')
         if accepted != selected_comparison['accepted']:
-            raise ValueError('Final acceptance contradicts strict gate')
+            raise ValueError('Final acceptance contradicts phase-aware gate')
         chosen=check if accepted else parent
         chosen_eval=evdir if accepted else parent_eval
         summary=read_json(self.run_dir/f'cycle_{cycle:03d}'/'cycle_summary.json')
         decision={'schema':SCHEMA,'cycle':cycle,'seed':self.config.seed,
-                  'policy':self.config.strategy,'active_rule':'strict_both_macro_f1_and_balanced_accuracy',
+                  'policy':self.config.strategy,'active_rule':selected_comparison['decision_rule'],
+                  'first_rejection':self.first_rejection,
                   'retry_mode':self.retry_mode,
                   'accepted':bool(accepted),'accepted_retry_number':retry_number if accepted else None,
                   'accepted_retry_seed':(RETRY_SEEDS[retry_number-1] if self.retry_mode == 'seed' and accepted and retry_number else None),
-                  'attempts_consumed':0 if accepted and retry_number is None else (
-                       retry_number if accepted else len(RETRY_SEEDS)),
+                  'attempts_consumed':(0 if retry_number is None and selected['kind'] == 'base'
+                       else retry_number if accepted else len(RETRY_SEEDS)),
+                  'retention_reason':(
+                      'accepted_base' if accepted and retry_number is None
+                      else 'accepted_retry' if accepted
+                      else 'base_nonnegative_f1_but_ba_not_improved'
+                      if retry_number is None and selected['kind'] == 'base'
+                      else 'all_four_retries_failed'),
                   'reference_reused':base['reference_reused'],
                   'base_candidate_checkpoint':base['checkpoint'],
                   'base_comparison':base['comparison'],
@@ -229,8 +265,21 @@ class Balanced357RetryExperiment(RetentionExperiment):
             finally:
                 self._reference_cycle=None
         record=self._base_record(cycle)
-        if record['comparison']['accepted']:
+        m = record['comparison']
+        action = base_action(m['incumbent_metrics'], m['candidate_metrics'],
+                             historical_prefix=(cycle < self.first_rejection))
+        if action == 'accept':
+            if not m['accepted']:
+                raise ValueError('Base acceptance disagrees with comparison')
             self._finalize(cycle,record,True,None)
+        elif cycle < self.first_rejection:
+            raise ValueError('Historical prefix contains an unexpected negative macro-F1')
+        elif cycle == self.first_rejection and action != 'retry':
+            raise ValueError('First historical rejected checkpoint must have negative macro-F1')
+        elif action == 'retain':
+            if m['accepted']:
+                raise ValueError('Cannot retain a base candidate accepted by the gate')
+            self._finalize(cycle,record,False,None)
         elif self._decision_path(cycle).is_file():
             # Previously finalized by retry worker. Never reassess differently.
             self.check_final(cycle)
@@ -238,7 +287,10 @@ class Balanced357RetryExperiment(RetentionExperiment):
 
     def check_final(self,cycle:int)->dict:
         row=read_json(self._decision_path(cycle))
-        if row['schema']!=SCHEMA or row['cycle']!=cycle or row['seed']!=self.config.seed or row['policy']!=self.config.strategy:
+        if (row['schema']!=SCHEMA or row['cycle']!=cycle
+                or row['seed']!=self.config.seed or row['policy']!=self.config.strategy
+                or row['first_rejection']!=self.first_rejection
+                or row['retry_mode']!=self.retry_mode):
             raise ValueError('Final decision identity mismatch')
         chosen=Path(row['incumbent_checkpoint'])
         if digest(chosen)!=row['incumbent_sha256']:
