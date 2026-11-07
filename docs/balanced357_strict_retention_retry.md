@@ -1,20 +1,20 @@
 # Balanced exploration seed 357 — strict checkpoint retention + four retries
 
-Two **independent** single-trajectory experiments branch from the first **strict** failure in the original Task 4 balanced-exploration seed-357 history.
+Two **independent** single-trajectory experiments branch from the first **negative macro-F1 change** in the original Task 4 balanced-exploration seed-357 history. V2 supersedes the prepared V1 suites without modifying their snapshots.
 
-- **Row order:** `astrominn_balanced357_strict_row_order_retention_retry_v1`
-- **Training seeds:** `astrominn_balanced357_strict_seed_retention_retry_v1`
+- **Row order:** `astrominn_balanced357_strict_row_order_retention_retry_v2`
+- **Training seeds:** `astrominn_balanced357_strict_seed_retention_retry_v2`
 
 Both use policy `entropy_balanced_explore`, acquisition seed **357**, acquisition size **473** per cycle, complete through cycle **9**, warm-start from the active incumbent, class-weight exponent **0.85**, frozen expert towers, 50 epochs and patience 10. These controls come from Task 8C.2 and are verified against Task 4. The original Task 4 artifacts are immutable. No test-set evaluation is used for checkpoint decisions.
 
 ## Scientific state machine
 
-1. Read the **saved Task 4 object-level validation history** and discover the first cycle where either macro-F1 or balanced accuracy fails to **strictly improve** versus the previous accepted checkpoint. This is **not** hardcoded to cycle 4 or 6.
+1. Read the **saved Task 4 object-level validation history** and discover the first cycle with **Δ macro-F1 < 0** relative to the previous historical checkpoint, regardless of balanced-accuracy change. Do not hardcode cycle 4 or 6.
 2. CPU-replay Task 4 cycles 1 through the first rejected cycle, with source checkpoint and manifest provenance checks. Reuse the first rejected standard candidate as **attempt 0** without retraining.
-3. For each rejected base candidate, run **up to four independent retries**, sequentially, all on the *same* cumulative manifest and the *same* incumbent checkpoint. Stop at the **first passing retry**; do not pick the maximum of all four.
-4. A candidate is accepted **only if** validation object-level macro-F1 **and** validation balanced accuracy both strictly exceed the incumbent values. Ties fail. Training's original weighted-loss-best epoch selection is unchanged.
+3. In the diverged closed loop, a base candidate triggers retries **only if its macro-F1 decreases** relative to the incumbent. Run **up to four independent retries**, sequentially, all on the *same* cumulative manifest and the *same* incumbent checkpoint. Stop at the **first passing retry**; do not pick the maximum of all four.
+4. A **retry** is accepted **only if** validation object-level macro-F1 **and** validation balanced accuracy both strictly exceed the incumbent values; ties fail. A standard base candidate is promoted under the same strict two-metric rule **after divergence**. If macro-F1 is unchanged or increases but BA fails to strictly improve, **retain the incumbent without trying alternatives**. Historical reference checkpoints preceding the first macro-F1 regression are replayed intact, even if BA previously declined. Training's original weighted-loss-best epoch selection is unchanged.
 5. If all four retries fail, keep the incumbent checkpoint (for next inference **and** next warm start). Do **not** stop, roll back labels, or repeat acquisition. All acquired objects remain in cumulative `L_t`. Resume with the next acquisition cycle.
-6. For every later cycle after divergence, first train one standard-order, seed-357 candidate. If rejected, retry as above. Once a decision is finalized, subsequent acquisition uses the **retained or accepted** checkpoint.
+6. For every later cycle after divergence, first train one standard-order, seed-357 candidate. If it exhibits negative macro-F1 change, retry as above. If macro-F1 is nonnegative but BA does not strictly improve, retain without retries. Once a decision is finalized, subsequent acquisition uses the **retained or accepted** checkpoint.
 
 The sole intervention difference:
 - **row_order** changes only the order of training rows using independent deterministic permutation seeds `41004, 42004, 43004, 44004` plus `100*cycle`. Both process and loader seed stay **357**. The CSV row multiset (including duplicate samples) is verified unchanged.
@@ -96,3 +96,7 @@ If the first historical strict failure is at cycle `f`, the maximum *conditional
 Report **base candidate**, **retry candidate** and **deployed incumbent** macro-F1/BA by cycle, accepted attempt number, class-level recall/correct counts, acquired-label overlap with Task 4, retry fits used and training duration. Compare the two variants at identical cumulative label budget and first divergence. Validation controls retention and is also used for within-cycle epoch selection; final generalization claims require independent evaluation.
 
 **Important:** The row-order-only treatment changes the presentation order in the trainer's CSV, rather than reseeding the trainer. The seed-only treatment changes trainer/loader seeds while preserving the CSV order. Because successful retries cause later acquisition to diverge, later training manifests may differ *between the two full-loop trajectories*, as intended.
+
+## V2 correction (November 2026)
+
+The previous V1 implementation wrongly used strict improvement in **both** metrics as the trigger for the first rejected checkpoint, selecting balanced357 cycle 4. In the observed Task4 history, cycle 4 macro-F1 increased from 0.645389 to 0.653365 while balanced accuracy declined from 0.740967 to 0.711512. Under the corrected trigger, this is **not** the first macro-F1 regression. The V2 controllers discover the correct starting cycle from source history and use fresh suite names. **Do not schedule or reuse V1 prefills or V1 GPU jobs in V2.**
