@@ -44,7 +44,7 @@ def test_isolated_single_case_and_frozen_controls(mode):
     assert m.MODE == mode
     assert m.SEED == 357
     assert m.POLICY == 'entropy_balanced_explore'
-    assert m.JOB.name.endswith(f'{mode}_retention_retry_v1')
+    assert m.JOB.name.endswith(f'{mode}_retention_retry_v2')
     assert len(m.OVERLAYS) == 7
     assert any('balanced357_strict_retry.py' in v for v in m.OVERLAYS)
     assert all('task8c2_worker' not in v for v in m.OVERLAYS)
@@ -96,9 +96,9 @@ def test_historical_first_failure_is_derived_not_hardcoded(tmp_path):
     source.mkdir()
     rows = []
     for cycle in range(10):
-        # First strict failure at c4: F1 improves but BA ties.
-        metrics = {'f1_macro': 0.2 + cycle/100,
-                   'balanced_accuracy': 0.3 + (cycle if cycle < 4 else cycle-1)/100}
+        # Cycle 4 is the first negative F1 change, irrespective of BA.
+        metrics = {'f1_macro': 0.2 + (cycle if cycle < 4 else cycle-2)/100,
+                   'balanced_accuracy': 0.3 + cycle/100}
         rows.append({'cycle': cycle, 'split':'validation', 'metrics': metrics})
     (source/'evaluation_history.json').write_text(json.dumps(rows))
     result = m.cases_from_reference(source)
@@ -149,3 +149,40 @@ def test_cli_plan_forwards_reference_and_data(mode, monkeypatch, tmp_path, capsy
         '--reference',str(tmp_path/'reference'),'--data',str(tmp_path/'data')])
     m.main()
     assert 'total_slurm_job_slots' in capsys.readouterr().out
+
+def test_separate_retry_trigger_and_checkpoint_acceptance():
+    code = ENGINE.read_text(encoding='utf-8')
+    tree = ast.parse(code)
+    wanted = {'base_action','strict_accept'}
+    funcs = [node for node in tree.body
+             if isinstance(node, ast.FunctionDef) and node.name in wanted]
+    scope = {}
+    exec(compile(ast.Module(body=funcs, type_ignores=[]),
+                 str(ENGINE), 'exec'), scope)
+    action = scope['base_action']
+    base = {'macro_f1': .60,'balanced_accuracy': .70}
+    # Historical replay keeps F1-improving source model even when BA drops.
+    assert action(base,{'macro_f1':.61,'balanced_accuracy':.69},
+                  historical_prefix=True) == 'accept'
+    assert action(base,{'macro_f1':.59,'balanced_accuracy':.71},
+                  historical_prefix=True) == 'retry'
+    # Closed loop: promotion requires both improvements.
+    assert action(base,{'macro_f1':.61,'balanced_accuracy':.71},
+                  historical_prefix=False) == 'accept'
+    # Negative F1 is the sole trigger for attempting alternate fits.
+    assert action(base,{'macro_f1':.59,'balanced_accuracy':.73},
+                  historical_prefix=False) == 'retry'
+    # F1 improves but BA worsens: neither accept nor retry; retain.
+    assert action(base,{'macro_f1':.61,'balanced_accuracy':.69},
+                  historical_prefix=False) == 'retain'
+    assert action(base,{'macro_f1':.60,'balanced_accuracy':.72},
+                  historical_prefix=False) == 'retain'
+
+
+@pytest.mark.parametrize('mode', ['row_order','seed'])
+def test_new_suite_identity_and_phase_settings(mode):
+    m = load_controller(mode)
+    assert m.SUITE.endswith('_v2')
+    assert m.POLICY == 'entropy_balanced_explore'
+    assert m.SEED == 357
+    assert 'macro' in m.cases_from_reference.__doc__ if m.cases_from_reference.__doc__ else True
