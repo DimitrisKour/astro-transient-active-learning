@@ -346,9 +346,10 @@ class Balanced357RetryExperiment(RetentionExperiment):
         if state.last_completed_cycle!=cycle or state.active_cycle is not None:
             raise RuntimeError('Base cycle not completed')
         base=read_json(self._base_path(cycle))
-        if base['comparison']['accepted']:
-            self.check_final(cycle)
-            return {'skipped':'base_accepted','cycle':cycle,'retry_number':number}
+        if self._decision_path(cycle).is_file():
+            final = self.check_final(cycle)
+            return {'skipped':'cycle_already_finalized','cycle':cycle,
+                    'retry_number':number,'accepted':final['accepted']}
         # Validate order even when an earlier retry succeeded.
         for prior in range(1,number):
             if not self._retry_path(cycle,prior).is_file():
