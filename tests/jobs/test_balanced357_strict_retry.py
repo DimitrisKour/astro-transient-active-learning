@@ -117,3 +117,35 @@ def test_retention_and_retry_code_contains_continuation_contract():
     assert "replace(self.trainer.policy,loader_seed=seed)" in code
     assert 'training_manifest_sha256' in code
     assert 'validation_predictions.npz' in code
+
+
+@pytest.mark.parametrize('mode', ['row_order', 'seed'])
+def test_cli_prepare_forwards_all_four_paths_without_submitting(mode, monkeypatch, tmp_path):
+    m = load_controller(mode)
+    seen = {}
+    def fake_prepare(repo, job, reference, data):
+        seen['args'] = (repo, job, reference, data)
+    monkeypatch.setattr(m, 'prepare', fake_prepare)
+    monkeypatch.setattr('sys.argv', ['controller.py', 'prepare',
+        '--repo', str(tmp_path/'repo'),
+        '--job-dir', str(tmp_path/'job'),
+        '--reference', str(tmp_path/'source'),
+        '--data', str(tmp_path/'data')])
+    m.main()
+    assert seen['args'] == (tmp_path/'repo',tmp_path/'job',
+                            tmp_path/'source',tmp_path/'data')
+
+
+@pytest.mark.parametrize('mode', ['row_order', 'seed'])
+def test_cli_plan_forwards_reference_and_data(mode, monkeypatch, tmp_path, capsys):
+    m = load_controller(mode)
+    def fake_plan(reference, data):
+        assert reference == tmp_path/'reference'
+        assert data == tmp_path/'data'
+        return {'cases':[{'first_rejection':4}],
+                'planned_new_gpu_cycles':5, 'planned_gpu_job_slots':29}
+    monkeypatch.setattr(m,'build_plan',fake_plan)
+    monkeypatch.setattr('sys.argv',['controller.py','plan',
+        '--reference',str(tmp_path/'reference'),'--data',str(tmp_path/'data')])
+    m.main()
+    assert 'total_slurm_job_slots' in capsys.readouterr().out
