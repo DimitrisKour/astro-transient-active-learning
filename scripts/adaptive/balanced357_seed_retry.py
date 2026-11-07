@@ -449,7 +449,7 @@ def main():
     p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
     p.add_argument('--job-dir',type=Path,default=JOB)
     p.add_argument('--reference',type=Path,default=REFERENCE)
-        p.add_argument('--data',type=Path,default=D)
+    p.add_argument('--data',type=Path,default=D)
     p.add_argument('--index',type=int)
     p.add_argument('--cycle',type=int)
     p.add_argument('--stage',choices=('base','retry'))
@@ -464,7 +464,7 @@ def main():
           'conditional_retry_stage_slots':plan['planned_gpu_job_slots']-plan['planned_new_gpu_cycles'],
           'total_slurm_job_slots':plan['planned_gpu_job_slots']},indent=2))
     elif args.command=='prepare':
-        prepare(args.repo,args.job_dir,args.data)
+        prepare(args.repo,args.job_dir,args.reference,args.data)
         print('Frozen balanced357 prepared; NO Slurm jobs submitted')
     elif args.command=='verify':
         verify(args.job_dir,deep=True)
