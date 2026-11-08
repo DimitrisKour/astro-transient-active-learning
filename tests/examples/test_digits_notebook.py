@@ -57,3 +57,17 @@ def test_notebook_executes_without_gpu_network_or_private_data():
     assert not failures, failures
     assert all(cell.get("execution_count") is not None
                for cell in finished.cells if cell.cell_type == "code")
+
+    # Matplotlib may silently suppress figures under MPLBACKEND=Agg.
+    # Require the teaching visuals to be embedded in the executed notebook.
+    png_outputs = [
+        output["data"]["image/png"]
+        for cell in finished.cells if cell.cell_type == "code"
+        for output in cell.get("outputs", [])
+        if output.get("output_type") in ("display_data", "execute_result")
+        and "image/png" in output.get("data", {})
+    ]
+    assert len(png_outputs) >= 5, (
+        f"Expected five or more embedded figures; got {len(png_outputs)}"
+    )
+    assert all(len(png) > 1000 for png in png_outputs)
