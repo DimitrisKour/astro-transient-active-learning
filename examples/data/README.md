@@ -7,7 +7,7 @@ Notebook [02](../02_applecider_astronomy_active_learning.ipynb) is a **read-only
 - `astro_recent_validation.csv` — **1,020 observed validation metric rows**, representing 51 policy/seed trajectories across eight experiment suites. Every trajectory has cycles 0–9, and every cycle has macro-F1 and balanced accuracy. No unmeasured cycles are fabricated.
 - `astro_recent_provenance.json` — schema, original suite identifiers, SHA-256 of the CSV, experimental scope and interpretation limitations.
 
-The bundled export was generated from **completed archived `evaluation_history.json` files**. It contains **only** aggregate validation metrics, policy, seed, cycle, labeled count and cumulative acquisition count. It contains no raw astronomical images, candidate/object identifiers, label oracle responses, checkpoints, test metrics, or credentials. No external download or local HPC configuration is required.
+The aggregate-metric export was generated from **completed archived `evaluation_history.json` files**. It contains **only** aggregate validation metrics, policy, seed, cycle, labeled count and cumulative acquisition count. It contains no raw astronomical images, candidate/object identifiers, label oracle responses, checkpoints, test metrics, or credentials. No external download or local HPC configuration is required.
 
 ## Setup and run
 
@@ -41,6 +41,14 @@ python scripts/examples/export_recent_astro_per_class.py \
 ```
 
 The exporter checks that all 51 trajectories have class metrics for cycles 0–9, and that per-class F1 averages reproduce the bundled validation macro-F1. It writes only aggregated class-level precision, recall, F1 and support, with a provenance JSON. The output is for review first; inclusion in the student notebook requires a redistribution check and a separate notebook update. It does not include acquired-object labels or identities.
+
+## Included class-level and acquisition-overlap tables
+
+- `astro_recent_per_class.csv` (2,550 rows): precomputed validation precision, recall, F1 and support, with suite, policy, seed and cycle. Metrics were calculated in the original experiments, not by rerunning models in the notebook.
+- `astro_cycle2_overlap_by_seed.csv` (45 rows) and `astro_cycle2_overlap_mean.csv` (15 rows): intersection, union and Jaccard overlap for five policies at acquisition cycle 2. The notebook uses the **cumulative union of selected objects from cycles 1 and 2** (946 selected per policy), excluding the initial labeled set; the mean is taken over three corresponding seeds.
+- `astro_recent_per_class_provenance.json` and `astro_cycle2_overlap_provenance.json` document the export scope and exclusions.
+
+The blue symmetric Jaccard matrix in notebook 02 is a small, read-only summary, with the diagonal omitted and each off-diagonal cell labeled as a percentage. These tables are suitable for CPU-only student analysis. Cross-suite protocol equivalence is **not established** by matching cycle-zero scores or label budgets alone.
 
 ## Source and publication review
 
