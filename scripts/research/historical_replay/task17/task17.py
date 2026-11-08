@@ -145,7 +145,7 @@ def prepare(overlay):
             old.unlink()
         (temp/'scripts/research/historical_replay/task17').mkdir(parents=True, exist_ok=True)
         for src in (overlay/'scripts/research/historical_replay/task17').glob('task17*'):
-            shutil.copy2(src, temp/'scripts/adaptive'/src.name)
+            shutil.copy2(src, temp/'scripts/research/historical_replay/task17'/src.name)
         patched = patch_source(temp, overlay)
         import ast
         for f in source_files(temp):
