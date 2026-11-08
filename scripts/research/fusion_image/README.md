@@ -15,10 +15,10 @@ public library quickstart.
    independently tested alternatives and calibration/extension fits. This is
    the later reference training path; earlier sharded-cache v1 and fastcache v2
    launchers are archived in `scripts/archive/fusion_image/`.
-3. **Task 0** (still at `scripts/adaptive/task0_*` until its own migration) —
+3. **Task 0** (`task0/`) —
    compare GalaxyZoo-pretrained and randomized ConvNeXt initialization with
    the same architecture, identical full TRAIN/VALIDATION splits.
-4. **Task 1** (still at `scripts/adaptive/task1_*`) — historical active
+4. **Task 1** (`task1/`) — historical active
    learning, distinct L0/restart/warm-start configurations and object-level
    pool acquisition; hold TEST separate from training and policy selection.
 
@@ -55,3 +55,11 @@ does not constitute a successful end-to-end Delta experiment.
 Historic launchers remain in Git history, and earlier experiments and
 failed cache constructions are described in
 `scripts/archive/fusion_image/README.md`. Do not run Slurm as a cleanup test.
+
+## Live-checkout compatibility
+
+Task 0 and Task 1 have canonical copies under `task0/` and `task1/`,
+with separate new suite IDs. The 14 original `scripts/adaptive/` paths are
+unchanged for previously queued jobs and frozen source identities. See
+[Task 0/Task 1 compatibility](task0_task1_README.md) before using either
+version. Do not mix original frozen experiments with new grouped scripts.
