@@ -29,10 +29,10 @@ cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 conda activate al-pipeline
 unzip -n /projects/bcrv/dkourtesis/task11_advanced_acquisition_v1.zip -d .
 python -m pytest tests/jobs/test_task11_fisher.py tests/jobs/test_task11_protocol.py -q
-python scripts/adaptive/task11.py plan
-python scripts/adaptive/task11.py prepare
-python scripts/adaptive/task11.py verify
-python scripts/adaptive/task11.py preflight
+python scripts/research/historical_replay/task11/task11.py plan
+python scripts/research/historical_replay/task11/task11.py prepare
+python scripts/research/historical_replay/task11/task11.py verify
+python scripts/research/historical_replay/task11/task11.py preflight
 ```
 
 `preflight` executes Task4-compatible no-training manifest/bootstrap checks. **Inspect this output before submitting any GPU work.**
@@ -46,14 +46,14 @@ for method in badge core_set fisher_batch; do
     --output="$JOB/logs/pilot_${method}_%j.out" \
     --error="$JOB/logs/pilot_${method}_%j.err" \
     --time=00:20:00 \
-    "$JOB/source/scripts/adaptive/task11_worker.sbatch" "$JOB" pilot "$method" 135
+    "$JOB/source/scripts/research/historical_replay/task11/task11_worker.sbatch" "$JOB" pilot "$method" 135
 done
 ```
 
 Check `sacct`, the logs, and:
 
 ```bash
-python scripts/adaptive/task11.py pilot-status
+python scripts/research/historical_replay/task11/task11.py pilot-status
 ```
 
 A pilot computes no model-training epochs. It may score the entire U0 pool and confirmed L0; therefore it must execute on a GPU node. Compare selection times and overlap: it should run comfortably within the allotted time. It is not appropriate to launch all 81 fits if any pilot fails or is unacceptably slow.
@@ -61,8 +61,8 @@ A pilot computes no model-training epochs. It may score the entire U0 pool and c
 ### Submit (after all pilots pass)
 
 ```bash
-python scripts/adaptive/task11.py submit --walltime 00:20:00
-python scripts/adaptive/task11.py status
+python scripts/research/historical_replay/task11/task11.py submit --walltime 00:20:00
+python scripts/research/historical_replay/task11/task11.py status
 ```
 
 This queues **81 GPU jobs** as **9 independent seed/policy chains**, with one job per cycle and a 20-minute walltime. GPU training duration is estimated from Task 4 at 4–6 device-hours total, **plus additional acquisition inference**. Core-set and Fisher extra runtime must be determined from the pilots; increase `--walltime` if necessary. Pinned scientific code is not modified by a walltime increase.
@@ -70,8 +70,8 @@ This queues **81 GPU jobs** as **9 independent seed/policy chains**, with one jo
 When the nine trajectories finish:
 
 ```bash
-python scripts/adaptive/task11.py status
-python scripts/adaptive/task11_report.py
+python scripts/research/historical_replay/task11/task11.py status
+python scripts/research/historical_replay/task11/task11_report.py
 ```
 
 Reports are saved under `/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_task11_advanced_acquisition_v1/report/` as `trajectories.csv`, `paired_task4.csv`, `classwise_validation.csv`, `acquisition_overlap.csv`, and `summary.json`. They contain validation-only macro-F1, BA, accuracy, AUCPR, NLL, Brier and ECE; for every class and cycle, **TP/FP/FN**, precision, recall, F1; and same-cycle acquisition overlap with Task4 entropy. Full image-level predictions stay in the experiment's private heavy storage and do not need to be copied for aggregate analysis.
