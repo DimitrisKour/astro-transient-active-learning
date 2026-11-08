@@ -27,7 +27,8 @@ def make_repo(tmp_path: Path) -> Path:
         "cycle_training_initialization": args.training_initialization,
     }
 ''')
-    (repo/'scripts'/'research'/'historical_replay'/'task6a'/'task4_build_runner.py').write_text('''
+    (repo/'scripts'/'research'/'historical_replay'/'task4').mkdir(parents=True)
+    (repo/'scripts'/'research'/'historical_replay'/'task4'/'task4_build_runner.py').write_text('''
 def build_runner(source):
     return source
 ''')
