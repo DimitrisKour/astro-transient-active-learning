@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'scripts/adaptive'))
+sys.path.insert(0, str(ROOT / 'scripts/research/historical_replay/task16'))
 import task16
 from task16_patch import patch_source
 
