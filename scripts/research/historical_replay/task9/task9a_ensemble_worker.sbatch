@@ -18,5 +18,5 @@ if [[ -f "$CONDA_PREFIX/lib/libstdc++.so.6" ]]; then
   export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
 export PYTHONPATH="$REPO/src" PYTHONUNBUFFERED=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
-python "$REPO/scripts/adaptive/task9a_ensemble.py" verify
-python "$REPO/scripts/adaptive/task9a_ensemble.py" run
+python "$REPO/scripts/research/historical_replay/task9/task9a_ensemble.py" verify
+python "$REPO/scripts/research/historical_replay/task9/task9a_ensemble.py" run
