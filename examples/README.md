@@ -114,9 +114,31 @@ scorer. Policies are chosen using validation macro-F1; the test split is used
 for one final evaluation. TODO 4 varies the balanced initial set *across*
 replicates but holds it fixed *between* policies within a replicate.
 
-### Next example: astronomy
 
-The introductory example is intentionally independent of astronomical data.
-A separate astronomy notebook will illustrate which general interfaces remain
-the same when moving from a simple digits classifier to scientific imaging,
-survey data, and real-world label-oracle considerations.
+## 02 — Active learning for astronomical transients
+
+**[Open the astronomy notebook](02_applecider_astronomy_active_learning.ipynb)**
+
+A second, CPU-only laboratory connecting the same pool/acquisition/oracle interfaces to AppleCiDEr-style five-class astronomical classification. It combines:
+
+- **Part A: an interactive active-learning loop** for a small lightweight classifier on image-derived features and metadata, with random, entropy, margin and entropy-diversity policies, learning curves, a cutout gallery and rare-class recovery diagnostics.
+- **Part B: historical AstroMiNN analysis** based on a small, clearly attributed excerpt of actual research results and, when supplied, complete small CSV exports from the previous multi-seed experiments.
+
+A new clone runs fully offline using an **explicitly labeled synthetic fallback** for Part A (no astronomical performance claims). The real-data export has **not yet been published**: the instructor must produce, review and add `examples/data/astro_real_v1.npz` before the interactive portion can use real ZTF-derived observations. The archive's full per-cycle metrics also require a reviewed export. See [the data/export guide](data/README.md).
+
+**Run on CPU (no checkpoint or telescope archive required):**
+
+```bash
+python -m pip install -e ".[teaching]"
+python scripts/examples/execute_astro_notebook.py --output astro_astronomy_executed.ipynb
+```
+
+Or open it in Jupyter/VS Code and run the cells manually. The notebook uses the same presentation-inspired plotting theme as notebook 01; users can disable it with `USE_PRESENTATION_STYLE=False`.
+
+This is a **surrogate classifier** experiment. The historical AstroMiNN CSVs are read-only outcomes of independent GPU training runs, **not** a way to re-train AstroMiNN under arbitrary new acquisitions. The two models' scores are not directly comparable.
+
+For portable checks:
+
+```bash
+python -m pytest -q tests/examples/test_astro_teaching_data.py tests/examples/test_astro_notebook.py
+```
