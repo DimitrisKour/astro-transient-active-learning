@@ -1,0 +1,41 @@
+name: Fusion full-history cache and recipe grouping
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/research/fusion_image/cache/**"
+      - "scripts/research/fusion_image/recipe/**"
+      - "tests/jobs/test_fusion_full_history_layout.py"
+      - "tests/astronomy/fusion_image/test_full_historical_cache_v1.py"
+      - "tests/astronomy/fusion_image/test_resident_cache_v3.py"
+      - ".github/workflows/fusion-full-history-grouping.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cache-and-recipe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install synthetic scientific dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Validate full-history cache and resident training contracts
+        run: |
+          python -m pytest -q \
+            tests/jobs/test_fusion_full_history_layout.py \
+            tests/astronomy/fusion_image/test_full_historical_cache_v1.py \
+            tests/astronomy/fusion_image/test_resident_cache_v3.py \
+            tests/astronomy/fusion_image/test_pre_task0_extensions_v1.py
+      - name: Validate shell and source syntax without executing Slurm
+        run: |
+          python -m compileall -q scripts/research/fusion_image/cache scripts/research/fusion_image/recipe
+          find scripts/research/fusion_image/cache scripts/research/fusion_image/recipe -type f \( -name '*.sh' -o -name '*.sbatch' \) -exec bash -n {} \;
