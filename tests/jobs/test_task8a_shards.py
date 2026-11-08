@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts' / 'adaptive'
+SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts' / 'research' / 'historical_replay' / 'task8a'
 
 
 def load(path, name):
