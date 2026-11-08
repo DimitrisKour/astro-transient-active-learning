@@ -8,7 +8,7 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-SCRIPT=scripts/adaptive/fusion_pre_task0_fast.py
+SCRIPT=scripts/archive/fusion_image/fastcache_v2/fusion_pre_task0_fast.py
 case "$MODE" in
   --check) python "$SCRIPT" check ;;
   --prepare) python "$SCRIPT" prepare; echo 'Prepared, no GPU jobs submitted.' ;;
@@ -40,7 +40,7 @@ case "$MODE" in
     mkdir -p "$ROOT/logs"
     JID=$(sbatch --parsable --export="ALL,PRETASK_CASE=$FIT" \
       --output="$ROOT/logs/${FIT}_%j.out" --error="$ROOT/logs/${FIT}_%j.err" \
-      scripts/adaptive/fusion_pre_task0_fast.sbatch)
+      scripts/archive/fusion_image/fastcache_v2/fusion_pre_task0_fast.sbatch)
     printf '%s\t%s\n' "$FIT" "$JID" >> "$ROOT/submitted_jobs.tsv"
     echo "Submitted $FIT job=$JID"
     ;;
