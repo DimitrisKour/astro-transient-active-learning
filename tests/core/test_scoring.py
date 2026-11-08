@@ -2,8 +2,6 @@
 
 import numpy as np
 import pytest
-import torch
-from torch import nn
 
 from al_pipeline.core.scoring.entropy import EntropyScorer
 from al_pipeline.core.scoring.fisher import FisherScorer, FisherScoringInput
@@ -105,6 +103,9 @@ def test_fisher_scorer_matches_closed_form_values():
 
 
 def test_fisher_closed_form_matches_explicit_autograd_trace():
+    torch = pytest.importorskip('torch', reason='Optional PyTorch autograd verification')
+    from torch import nn
+
     torch.manual_seed(7)
     classifier = nn.Linear(3, 4, bias=True).double()
     embedding = torch.tensor(
