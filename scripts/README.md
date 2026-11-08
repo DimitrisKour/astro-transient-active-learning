@@ -26,11 +26,11 @@ will be added separately and documented as their own supported workflow.
 - [Later ConvNeXt image+metadata historical model](research/fusion_image/README.md):
   cache and resident-memory training-recipe workflows with validation-only
   recipe extensions.
-- `adaptive/task0_*` and `adaptive/task1_*`: later image+metadata Task 0
-  pretrained-vs-randomized initialization and Task 1 historical active
-  learning. These scripts **currently remain in their original location**;
-  their workers load code from the live checkout. See the
-  [fusion migration gate](../docs/maintenance/fusion_script_audit.md).
+- [Task 0 / Task 1 grouped entry points](research/fusion_image/task0_task1_README.md):
+  later image+metadata initialization comparison and historical active learning.
+  Their original `adaptive/` scripts remain byte-for-byte intact so previously
+  queued Slurm jobs and frozen source hashes are not broken. New grouped
+  launchers use separate output identities, not the original suite IDs.
 - `adaptive/rep5bc*`: separate representation diagnostics of the earlier
   model; not a replacement or alternate implementation of fusion Task 1.
 
