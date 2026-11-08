@@ -69,7 +69,7 @@ def test_recipe_rejects_invalid_schedule():
 
 
 def test_full_history_gate_and_cases_static():
-    script=Path(__file__).resolve().parents[3]/'scripts/adaptive/fusion_pre_task0.py'
+    script=Path(__file__).resolve().parents[3]/'scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.py'
     s=script.read_text()
     assert "identity['training_objects'] != 4729" in s
     assert "finalized.get('source') != SOURCE_LABEL" in s

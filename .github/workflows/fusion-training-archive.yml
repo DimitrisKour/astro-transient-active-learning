@@ -1,0 +1,50 @@
+name: Fusion training-archive validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/archive/fusion_image/**"
+      - "tests/jobs/test_fusion_early_training_archive.py"
+      - "tests/astronomy/fusion_image/test_pre_task0_recipe.py"
+      - "tests/astronomy/fusion_image/test_pre_task0_fastcache_v2.py"
+      - ".github/workflows/fusion-training-archive.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Archive and fast-cache source tests
+        run: |
+          python -m pytest -q \
+            tests/jobs/test_fusion_early_training_archive.py \
+            tests/astronomy/fusion_image/test_pre_task0_fastcache_v2.py
+      - name: Check archive syntax without running jobs
+        run: |
+          python -m compileall -q scripts/archive/fusion_image/recipe_v1 scripts/archive/fusion_image/fastcache_v2 scripts/archive/fusion_image/early_diagnostics
+          find scripts/archive/fusion_image/recipe_v1 scripts/archive/fusion_image/fastcache_v2 scripts/archive/fusion_image/early_diagnostics -type f \( -name '*.sh' -o -name '*.sbatch' \) -exec bash -n {} \;
+
+  numerical-recipe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Validate original weighted recipe comparison
+        run: python -m pytest tests/astronomy/fusion_image/test_pre_task0_recipe.py -q

@@ -13,17 +13,17 @@ eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 if [[ "$MODE" == --report ]]; then
-  python scripts/adaptive/fusion_pre_task0.py report
+  python scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.py report
   exit 0
 fi
 if [[ "$MODE" == --status ]]; then
   [[ -f "$ROOT/plan.json" ]] || { echo 'Not prepared yet'; exit 0; }
   [[ -f "$ROOT/submitted_jobs.tsv" ]] && cat "$ROOT/submitted_jobs.tsv"
   squeue -u "$USER" || true
-  python scripts/adaptive/fusion_pre_task0.py report
+  python scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.py report
   exit 0
 fi
-python scripts/adaptive/fusion_pre_task0.py prepare
+python scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.py prepare
 if [[ "$MODE" == --prepare ]]; then
   echo 'Prepared, no GPU jobs submitted.'; exit 0
 fi
@@ -55,7 +55,7 @@ for case in "${CASES[@]}"; do
     --export="ALL,PRETASK_CASE=$case" \
     --output="$ROOT/logs/${case}_%j.out" \
     --error="$ROOT/logs/${case}_%j.err" \
-    scripts/adaptive/fusion_pre_task0.sbatch)
+    scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.sbatch)
   printf '%s\t%s\n' "$case" "$JID" >> "$ROOT/submitted_jobs.tsv"
   PREV="$JID"
   echo "submitted case=$case job=$JID"

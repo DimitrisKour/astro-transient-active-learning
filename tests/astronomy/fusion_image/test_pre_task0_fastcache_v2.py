@@ -4,9 +4,9 @@ import ast
 from pathlib import Path
 
 BASE=Path(__file__).resolve().parents[3]
-RUNNER=BASE/'scripts/adaptive/fusion_pre_task0_fast.py'
+RUNNER=BASE/'scripts/archive/fusion_image/fastcache_v2/fusion_pre_task0_fast.py'
 TRAINER=BASE/'src/al_pipeline/astronomy/fusion_image/recipe_training_fast.py'
-LAUNCHER=BASE/'scripts/adaptive/submit_fusion_pre_task0_fast.sh'
+LAUNCHER=BASE/'scripts/archive/fusion_image/fastcache_v2/submit_fusion_pre_task0_fast.sh'
 
 def test_isolated_fastcache_paths_and_full_history():
     s=RUNNER.read_text()

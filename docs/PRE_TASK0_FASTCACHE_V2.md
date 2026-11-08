@@ -1,3 +1,5 @@
+> **Archive notice:** This document reproduces an earlier fusion-image prototype or diagnostic. The scripts below are now under `scripts/archive/fusion_image/`, rather than the supported full-history resident-cache/Task 0/Task 1 workflow. Consult the archive README before any historical submission. Existing frozen snapshots must not be overwritten.
+
 # Fast consolidated-cache pre-Task 0 training (v2)
 
 Does not modify the previously prepared `new_image_pre_task0_recipe_v1` plan or failed jobs.
@@ -20,9 +22,9 @@ Uses immutable `/work/hdd/bcrv/dkourtesis/applecider_adaptive/new_image_full_his
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -o /projects/bcrv/dkourtesis/fusion_pre_task0_fastcache_v2.zip -d .
 python -m pytest tests/astronomy/fusion_image/test_pre_task0_fastcache_v2.py -q
-bash scripts/adaptive/submit_fusion_pre_task0_fast.sh --check
-bash scripts/adaptive/submit_fusion_pre_task0_fast.sh --prepare
-bash scripts/adaptive/submit_fusion_pre_task0_fast.sh --submit-case constant
+bash scripts/archive/fusion_image/fastcache_v2/submit_fusion_pre_task0_fast.sh --check
+bash scripts/archive/fusion_image/fastcache_v2/submit_fusion_pre_task0_fast.sh --prepare
+bash scripts/archive/fusion_image/fastcache_v2/submit_fusion_pre_task0_fast.sh --submit-case constant
 ```
 
 After the first fit: `cat /projects/bcrv/dkourtesis/applecider_adaptive/new_image_pre_task0_recipe_fastcache_v2/constant/setup_timing.json`; check training summary & logs. Then submit `cosine`, `cosine_aug` with `--submit-case` separately.

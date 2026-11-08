@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=pre_task0_fast
+#SBATCH --job-name=pre_task0_recipe
 #SBATCH --account=bcrv-delta-gpu
 #SBATCH --partition=gpuA40x4
 #SBATCH --nodes=1
@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --time=01:00:00
+#SBATCH --time=01:30:00
 set -euo pipefail
 : "${PRETASK_CASE:?PRETASK_CASE is required}"
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
@@ -18,4 +18,4 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
-python -u scripts/adaptive/fusion_pre_task0_fast.py run --case "$PRETASK_CASE"
+python -u scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.py run --case "$PRETASK_CASE"

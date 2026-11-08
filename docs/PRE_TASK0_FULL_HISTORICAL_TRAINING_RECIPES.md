@@ -1,3 +1,5 @@
+> **Archive notice:** This document reproduces an earlier fusion-image prototype or diagnostic. The scripts below are now under `scripts/archive/fusion_image/`, rather than the supported full-history resident-cache/Task 0/Task 1 workflow. Consult the archive README before any historical submission. Existing frozen snapshots must not be overwritten.
+
 # Pre–Task 0: Controlled full-historical training-recipe comparison
 
 **Scope:** Standalone new image+metadata AstroMiNN, old five classes
@@ -78,7 +80,7 @@ First verify its `--status` output says `finalized: true` and that all shards
 succeeded. Then:
 
 ```bash
-bash scripts/adaptive/submit_fusion_pre_task0.sh --prepare
+bash scripts/archive/fusion_image/recipe_v1/submit_fusion_pre_task0.sh --prepare
 ```
 
 This checks all identities: cache `source=historical_full_train_plus_fixed_validation`,
@@ -95,7 +97,7 @@ If successful, queue the **three primary A40 fits**, serialized through
 `afterok` (so a failed fit doesn't automatically spend more GPU time):
 
 ```bash
-bash scripts/adaptive/submit_fusion_pre_task0.sh --submit
+bash scripts/archive/fusion_image/recipe_v1/submit_fusion_pre_task0.sh --submit
 ```
 
 There are only three GPU jobs; **at most one of these three runs at once**.
@@ -104,12 +106,12 @@ walltime cap**; GPU allocation ends when a job completes, not at the time cap.
 Full 29,161-sample training may run considerably longer than the 2,890-row
 initial-AL-set benchmark, particularly with 80 epochs and 15 patience.
 To request a different cap, edit `#SBATCH --time=01:30:00` in
-`scripts/adaptive/fusion_pre_task0.sbatch` before submission.
+`scripts/archive/fusion_image/recipe_v1/fusion_pre_task0.sbatch` before submission.
 
 Status and logs:
 
 ```bash
-bash scripts/adaptive/submit_fusion_pre_task0.sh --status
+bash scripts/archive/fusion_image/recipe_v1/submit_fusion_pre_task0.sh --status
 ROOT=/projects/bcrv/dkourtesis/applecider_adaptive/new_image_pre_task0_recipe_v1
 cat "$ROOT/submitted_jobs.tsv"
 tail -40 "$ROOT"/logs/cosine_aug_*.out
@@ -118,7 +120,7 @@ tail -40 "$ROOT"/logs/cosine_aug_*.out
 After they finish:
 
 ```bash
-bash scripts/adaptive/submit_fusion_pre_task0.sh --report
+bash scripts/archive/fusion_image/recipe_v1/submit_fusion_pre_task0.sh --report
 cat "$ROOT/comparison.csv"
 cat "$ROOT/cosine_aug/training_summary.json"
 cat "$ROOT/cosine_aug/validation_per_class_metrics.json"
@@ -129,7 +131,7 @@ three, and only when they are complete, submit optional EMA and effective-number
 fits via:
 
 ```bash
-bash scripts/adaptive/submit_fusion_pre_task0.sh --submit-optional
+bash scripts/archive/fusion_image/recipe_v1/submit_fusion_pre_task0.sh --submit-optional
 ```
 
 These two optional fits are also serialized with respect to one another.
