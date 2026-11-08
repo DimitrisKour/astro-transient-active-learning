@@ -46,12 +46,12 @@ fi
 ## 3. Prepare, verify, CPU tests, preflight (no training)
 
 ```bash
-python scripts/adaptive/task17.py plan
-python scripts/adaptive/task17.py prepare
-python scripts/adaptive/task17.py verify
+python scripts/research/historical_replay/task17/task17.py plan
+python scripts/research/historical_replay/task17/task17.py prepare
+python scripts/research/historical_replay/task17/task17.py verify
 T17=/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_task17_random_l0_v1
 PYTHONPATH="$T17/source/src" python -m pytest -q tests/test_task17_random_l0.py
-python scripts/adaptive/task17.py preflight
+python scripts/research/historical_replay/task17/task17.py preflight
 cat "$T17/preflight_audit.json"
 ```
 
@@ -62,7 +62,7 @@ On Delta, the test cases that require `/mnt/data/direct_parent` (a local develop
 ## 4. Create new L0 bootstraps (held initially)
 
 ```bash
-python scripts/adaptive/task17.py submit-bootstrap --walltime 01:00:00
+python scripts/research/historical_replay/task17/task17.py submit-bootstrap --walltime 01:00:00
 ```
 
 This registers **three independent HELD Slurm jobs** and does not run them. Inspect:
@@ -75,14 +75,14 @@ squeue -u "$USER" -o '%.18i %.30j %.2t %.10l %R'
 Release **only seed 135** first:
 
 ```bash
-python scripts/adaptive/task17.py release-bootstrap --seed 135
+python scripts/research/historical_replay/task17/task17.py release-bootstrap --seed 135
 ```
 
 Once that job completes successfully, inspect its Slurm log and checkpoint. Additional bootstraps can be released independently:
 
 ```bash
-python scripts/adaptive/task17.py release-bootstrap --seed 246
-python scripts/adaptive/task17.py release-bootstrap --seed 357
+python scripts/research/historical_replay/task17/task17.py release-bootstrap --seed 246
+python scripts/research/historical_replay/task17/task17.py release-bootstrap --seed 357
 ```
 
 Do not manually rerun existing completed bootstrap jobs; the runner's checkpoint validation checks for compatible training artifacts.
@@ -97,14 +97,14 @@ sbatch --parsable \
   --job-name=T17_pilot_135 \
   --output="$T17/logs/%x_%j.out" \
   --error="$T17/logs/%x_%j.err" \
-  "$T17/source/scripts/adaptive/task17_worker.sbatch" \
+  "$T17/source/scripts/research/historical_replay/task17/task17_worker.sbatch" \
   "$T17" pilot 135
 ```
 
 Check:
 
 ```bash
-python scripts/adaptive/task17.py pilot-status
+python scripts/research/historical_replay/task17/task17.py pilot-status
 sacct -u "$USER" --starttime 2026-10-30 -X \
   --format=JobID,JobName%32,State,ExitCode,Elapsed | grep 'T17_'
 ```
@@ -116,13 +116,13 @@ The pilot validates real inference for the random-L0 checkpoint on the new U0 an
 Each policy/seed trajectory requires its **own seed's completed bootstrap**. The submission command checks that. To submit one chain held:
 
 ```bash
-python scripts/adaptive/task17.py submit-cycles --walltime 00:35:00 --policy entropy --seed 135
+python scripts/research/historical_replay/task17/task17.py submit-cycles --walltime 00:35:00 --policy entropy --seed 135
 ```
 
 To submit the remaining chains (after other bootstraps finish):
 
 ```bash
-python scripts/adaptive/task17.py submit-cycles --walltime 00:35:00
+python scripts/research/historical_replay/task17/task17.py submit-cycles --walltime 00:35:00
 ```
 
 The second call skips already submitted chains. **No AL job is automatically released.** Inspect the ledger:
@@ -134,13 +134,13 @@ cat "$T17/submitted.json"
 Release a single first-cycle integration test:
 
 ```bash
-python scripts/adaptive/task17.py release-cycles --policy entropy --seed 135 --cycle 1
+python scripts/research/historical_replay/task17/task17.py release-cycles --policy entropy --seed 135 --cycle 1
 ```
 
 Once that cycle has a validated checkpoint and `run_state.json`/`cycle_summary.json`, optionally release all remaining held jobs (they remain ordered by `afterok`):
 
 ```bash
-python scripts/adaptive/task17.py release-cycles --all
+python scripts/research/historical_replay/task17/task17.py release-cycles --all
 ```
 
 The manager doesn't create dependencies on Tasks 11–16. Reduce walltime only after measuring actual Task17 timings; Delta has recently had sporadic filesystem slowdowns.
@@ -148,8 +148,8 @@ The manager doesn't create dependencies on Tasks 11–16. Reduce walltime only a
 ## 7. Results and recovery
 
 ```bash
-python scripts/adaptive/task17.py status
-python scripts/adaptive/task17.py collect --destination /u/dkourtesis/task17_random_l0_results.zip
+python scripts/research/historical_replay/task17/task17.py status
+python scripts/research/historical_replay/task17/task17.py collect --destination /u/dkourtesis/task17_random_l0_results.zip
 ```
 
 PowerShell:
