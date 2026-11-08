@@ -35,7 +35,7 @@ def build_snapshot(repo:Path,mode:str)->tuple[str,str]:
     cfg=MODES[mode]
     original_training=(repo/'src/al_pipeline/astronomy/astrominn/training.py').read_text()
     if mode=='loss':
-        builder=_load(repo/'scripts/adaptive/task4_build_runner.py','task6c_task4_builder')
+        builder=_load(repo/'scripts/research/historical_replay/task4/task4_build_runner.py','task6c_task4_builder')
         runner=builder.build_runner((repo/'scripts/run_astrominn_historical_replay.py').read_text())
         training=original_training
         runner=once(runner,
@@ -49,7 +49,7 @@ def build_snapshot(repo:Path,mode:str)->tuple[str,str]:
             '    if not args.require_existing_bootstrap:\n'
             '        raise ValueError("Task6C must reuse a verified matching baseline")')
     else:
-        b=_load(repo/'scripts/adaptive/task6b_build.py','task6c_task6b_builder')
+        b=_load(repo/'scripts/research/historical_replay/task6b/task6b_build.py','task6c_task6b_builder')
         runner=b.build_runner(repo)
         training=b.patch_training(original_training)
         runner=once(runner,

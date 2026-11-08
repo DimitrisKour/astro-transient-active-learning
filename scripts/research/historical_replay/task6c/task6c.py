@@ -37,7 +37,7 @@ def validate_walltime(t:str)->None:
     if not 0<h*3600+m*60+s<25*60:raise ValueError('Walltime must be positive and under 25 minutes')
 
 def _arguments(source:Path,mode:str,seed:int,policy:str)->list[str]:
-    script=source/'scripts/adaptive/task6c_common.sh'
+    script=source/'scripts/research/historical_replay/task6c/task6c_common.sh'
     code='source "$1"; task6c_arguments "$2" "$3" "$4"; printf "%s\\n" "${TASK6C_ARGS[@]}"'
     r=subprocess.run(['bash','-c',code,'_',str(script),mode,str(seed),policy],
                      capture_output=True,text=True,check=True)
@@ -77,7 +77,7 @@ def sbatch_command(row:dict,mode:str,source:Path,dest:Path,parent_job:str|None,w
     cmd=['sbatch','--parsable','--hold',f'--time={walltime}',f'--job-name={name}',
          f'--output={dest}/logs/%x_%j.out',f'--error={dest}/logs/%x_%j.err']
     if parent_job is not None:cmd.append('--dependency=afterok:'+parent_job)
-    return cmd+[str(source/'scripts/adaptive/task6c_worker.sbatch'),
+    return cmd+[str(source/'scripts/research/historical_replay/task6c/task6c_worker.sbatch'),
                 str(source),mode,str(seed),str(cycle),policy]
 
 def submit(mode:str,walltime:str='00:20:00',really:bool=False)->None:
@@ -118,7 +118,7 @@ def main()->None:
     for cmd in ('prepare','verify','plan','submit','preflight'):
         x=sub.add_parser(cmd)
         x.add_argument('--selection',choices=list(MODES),required=True)
-        if cmd=='prepare':x.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
+        if cmd=='prepare':x.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[4])
         if cmd in ('plan','submit'):x.add_argument('--walltime',default='00:20:00')
         if cmd=='submit':x.add_argument('--submit',action='store_true')
     a=p.parse_args();mode=a.selection
