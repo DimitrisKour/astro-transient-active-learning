@@ -47,7 +47,7 @@ scientifically distinct training variants remain intact.
 
 The following are preserved in place for operational safety:
 
-**Task 0 (9 files)**
+**Task 0 (10 files)**
 - `task0_full_history.py`, `task0_full_history.sbatch`,
   `submit_task0_full_history.sh`
 - `task0_test_cache_v1.py`, `task0_test_cache_shard.sbatch`,
@@ -59,8 +59,8 @@ The following are preserved in place for operational safety:
 - `task1_closed_loop.py`, `task1_schedule.py`,
   `task1_cycle.sbatch`, `submit_task1_closed_loop.sh`
 
-The counts above are **10 Task 0 files plus 4 Task 1 files** (14 total),
-not 9+4. The additional six fusion-specific diagnostics remaining at
+The counts above are **10 Task 0 files plus 4 Task 1 files** (14 total).
+The additional six fusion-specific diagnostics remaining at
 `scripts/adaptive/` are:
 `audit_fusion_image.py`, `check_fusion_image_model.py`,
 `fusion_gpu_compute_probe.sbatch`, `fusion_stage_audit_full.sbatch`,
