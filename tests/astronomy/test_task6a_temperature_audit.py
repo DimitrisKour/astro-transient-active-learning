@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import pytest
 
-SCRIPT=Path(__file__).resolve().parents[2]/"scripts/adaptive/task6a_temperature_audit.py"
+SCRIPT=Path(__file__).resolve().parents[2]/"scripts/research/historical_replay/task6a/task6a_temperature_audit.py"
 spec=importlib.util.spec_from_file_location("task6a_temperature_audit",SCRIPT)
 module=importlib.util.module_from_spec(spec)
 sys.modules[spec.name]=module
