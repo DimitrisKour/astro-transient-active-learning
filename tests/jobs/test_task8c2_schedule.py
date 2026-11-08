@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 import pytest
 
-SCRIPT=Path(__file__).resolve().parents[2]/'scripts/adaptive/task8c2.py'
+SCRIPT=Path(__file__).resolve().parents[2]/'scripts/research/historical_replay/task8c2/task8c2.py'
 spec=importlib.util.spec_from_file_location('task8c2_script',SCRIPT)
 task=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(task)
