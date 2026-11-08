@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
-SCRIPTS = REPO / "scripts/adaptive"
+SCRIPTS = REPO / "scripts/research/historical_replay/task4"
 
 
 def load(path: Path, name: str):
@@ -23,12 +23,12 @@ def load(path: Path, name: str):
     return module
 
 
-installer = load(SCRIPTS / "install_task5_restart.py", "install_task5_restart")
+installer = load(REPO / "scripts/research/historical_replay/install_task5_restart.py", "install_task5_restart")
 
 
 def checkout_fixture(tmp_path):
     repo = tmp_path / "repo"
-    script_dir = repo / "scripts/adaptive"
+    script_dir = repo / "scripts/research/historical_replay/task4"
     script_dir.mkdir(parents=True)
     for name in installer.SCRIPT_NAMES:
         src = SCRIPTS / f"task4_{name}"
@@ -45,23 +45,23 @@ def checkout_fixture(tmp_path):
 
 def test_install_is_isolated_and_idempotent(tmp_path):
     repo = checkout_fixture(tmp_path)
-    original = (repo / "scripts/adaptive/task4_common.sh").read_bytes()
+    original = (repo / "scripts/research/historical_replay/task4/task4_common.sh").read_bytes()
     first = installer.install(repo)
     assert len(first) == len(installer.SCRIPT_NAMES)
     assert installer.install(repo) == first
-    assert (repo / "scripts/adaptive/task4_common.sh").read_bytes() == original
-    common = (repo / "scripts/adaptive/task5_common.sh").read_text()
+    assert (repo / "scripts/research/historical_replay/task4/task4_common.sh").read_bytes() == original
+    common = (repo / "scripts/research/historical_replay/task5/task5_common.sh").read_text()
     assert '--training-initialization restart_from_baseline' in common
     assert 'astrominn_closed_loop_baseline_restart_v1' in common
     assert 'astrominn_closed_loop_warm_v1' not in common
     assert '--training-initialization warm_start' not in common
-    builder = (repo / "scripts/adaptive/task5_build_runner.py").read_text()
+    builder = (repo / "scripts/research/historical_replay/task5/task5_build_runner.py").read_text()
     assert 'args.training_initialization != "restart_from_baseline"' in builder
     assert 'L0_fixed_baseline_each_cycle' in builder
     assert 'run_astrominn_closed_loop_restart.py' in builder
     assert 'Task 5 must use restart_from_baseline' in builder
-    assert 'task5_' in (repo / "scripts/adaptive/task5_prepare.py").read_text()
-    assert 'T5_s' in (repo / "scripts/adaptive/task5_enqueue.sh").read_text()
+    assert 'task5_' in (repo / "scripts/research/historical_replay/task5/task5_prepare.py").read_text()
+    assert 'T5_s' in (repo / "scripts/research/historical_replay/task5/task5_enqueue.sh").read_text()
     # No source other than dedicated Task 5 files should change.
     assert not (repo / "scripts/run_astrominn_closed_loop_restart.py").exists()
 
@@ -69,9 +69,9 @@ def test_install_is_isolated_and_idempotent(tmp_path):
 def test_installer_rejects_modified_generated_script_without_partial_overwrite(tmp_path):
     repo = checkout_fixture(tmp_path)
     installer.install(repo)
-    target = repo / "scripts/adaptive/task5_common.sh"
+    target = repo / "scripts/research/historical_replay/task5/task5_common.sh"
     target.write_text("hand-edited\n")
-    other = repo / "scripts/adaptive/task5_schedule.py"
+    other = repo / "scripts/research/historical_replay/task5/task5_schedule.py"
     was = other.read_bytes()
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
         installer.install(repo)
@@ -82,7 +82,7 @@ def test_installer_rejects_modified_generated_script_without_partial_overwrite(t
 def test_dedicated_runner_uses_existing_l0_not_task4_warmstart(tmp_path):
     repo = checkout_fixture(tmp_path)
     installer.install(repo)
-    builder = load(repo / "scripts/adaptive/task5_build_runner.py", "task5_builder_fixture")
+    builder = load(repo / "scripts/research/historical_replay/task5/task5_build_runner.py", "task5_builder_fixture")
     source = (repo / "scripts/run_astrominn_historical_replay.py").read_text()
     generated = builder.build_runner(source)
     assert 'if args.training_initialization != "restart_from_baseline"' in generated
@@ -93,7 +93,7 @@ def test_dedicated_runner_uses_existing_l0_not_task4_warmstart(tmp_path):
     assert '/ args.bootstrap_source_suite_id' in generated
     assert 'if not args.require_existing_bootstrap:' in generated
     assert 'Task 5:' in generated
-    subprocess.run([sys.executable, str(repo / "scripts/adaptive/task5_build_runner.py"),
+    subprocess.run([sys.executable, str(repo / "scripts/research/historical_replay/task5/task5_build_runner.py"),
                     '--repo', str(repo)], check=True)
     dest = repo / "scripts/run_astrominn_closed_loop_restart.py"
     assert dest.read_text() == generated
@@ -107,7 +107,7 @@ def test_freeze_and_routed_registry_do_not_include_task4_jobs(tmp_path):
     config = repo / "configs/delta.toml"
     config.parent.mkdir()
     config.write_text('[storage]\npersistent_root = "/old"\ndata_root = "/old-data"\n[case]\nvalue = 1\n')
-    prepare = load(repo / "scripts/adaptive/task5_prepare.py", "task5_prepare_fixture")
+    prepare = load(repo / "scripts/research/historical_replay/task5/task5_prepare.py", "task5_prepare_fixture")
     persistent = tmp_path / "persistent"
     job = persistent / "closed_loop" / "task5"
     data = tmp_path / "hdd"
@@ -116,15 +116,15 @@ def test_freeze_and_routed_registry_do_not_include_task4_jobs(tmp_path):
     first = prepare.prepare(**kwargs)
     assert prepare.prepare(**kwargs) == first
     assert 'scripts/run_astrominn_closed_loop_restart.py' in first
-    assert 'scripts/adaptive/task5_common.sh' in first
-    assert 'scripts/adaptive/task4_common.sh' not in first
+    assert 'scripts/research/historical_replay/task5/task5_common.sh' in first
+    assert 'scripts/research/historical_replay/task4/task4_common.sh' not in first
     assert 'persistent_root = "' + str(persistent) + '"' in (job / 'registry.toml').read_text()
     assert 'data_root = "' + str(data) + '"' in (job / 'registry.toml').read_text()
     assert (job / 'source/scripts/run_astrominn_closed_loop_restart.py').exists()
     (repo / 'src/al_pipeline/__init__.py').write_text('# changed\n')
     with pytest.raises(ValueError, match='Source changed'):
         prepare.prepare(**kwargs)
-    (job / 'source/scripts/adaptive/task5_common.sh').write_text('tampered')
+    (job / 'source/scripts/research/historical_replay/task5/task5_common.sh').write_text('tampered')
     with pytest.raises(ValueError, match='mismatch'):
         prepare.verify_source(job)
 
@@ -142,7 +142,7 @@ def test_scientific_engine_separates_scoring_and_initialization():
 def test_report_finds_wrong_checkpoint_at_cycle_two(tmp_path):
     repo = checkout_fixture(tmp_path)
     installer.install(repo)
-    report = load(repo / 'scripts/adaptive/task5_report.py', 'task5_report_fixture')
+    report = load(repo / 'scripts/research/historical_replay/task5/task5_report.py', 'task5_report_fixture')
     persistent = tmp_path / 'persist'
     data = tmp_path / 'data'
     suite = 'astrominn_closed_loop_baseline_restart_v1'
@@ -187,7 +187,7 @@ def test_report_finds_wrong_checkpoint_at_cycle_two(tmp_path):
 def test_scheduler_and_shell_scripts(tmp_path):
     repo = checkout_fixture(tmp_path)
     installer.install(repo)
-    scheduler = load(repo / 'scripts/adaptive/task5_schedule.py', 'task5_schedule_fixture')
+    scheduler = load(repo / 'scripts/research/historical_replay/task5/task5_schedule.py', 'task5_schedule_fixture')
     plan = scheduler.schedule()
     assert len(plan) == 108
     assert len({(j.seed, j.cycle, j.policy) for j in plan}) == 108
@@ -195,5 +195,5 @@ def test_scheduler_and_shell_scripts(tmp_path):
     assert {j.walltime for j in plan if j.cycle >= 3} == {'00:20:00'}
     for name in installer.SCRIPT_NAMES:
         if name.endswith(('.sh', '.sbatch')):
-            subprocess.run(['bash','-n',str(repo / 'scripts/adaptive' / f'task5_{name}')], check=True)
-    assert 'task5_cycle.sbatch' in (repo / 'scripts/adaptive/task5_enqueue.sh').read_text()
+            subprocess.run(['bash','-n',str(repo / 'scripts/research/historical_replay/task5' / f'task5_{name}')], check=True)
+    assert 'task5_cycle.sbatch' in (repo / 'scripts/research/historical_replay/task5/task5_enqueue.sh').read_text()

@@ -5,7 +5,7 @@
 set -euo pipefail
 [[ $# -eq 4 ]] || { echo 'Usage: task4_enqueue.sh PLAN SOURCE JOB_DIR CYCLES' >&2; exit 2; }
 plan="$1"; source_root="$2"; job_dir="$3"; cycles="$4"
-[[ -f "$plan" && -f "$source_root/scripts/adaptive/task4_cycle.sbatch" ]] || {
+[[ -f "$plan" && -f "$source_root/scripts/research/historical_replay/task4/task4_cycle.sbatch" ]] || {
   echo 'Missing job plan or frozen cycle script' >&2; exit 1;
 }
 [[ "$cycles" =~ ^[1-9]$ ]] || { echo 'Cycles must be 1..9' >&2; exit 2; }
@@ -47,7 +47,7 @@ while IFS=$'\t' read -r seed cycle policy walltime; do
     --job-name="T4_s${seed}_c${cycle}_${policy}" \
     --output="$job_dir/logs/%x_%j.out" --error="$job_dir/logs/%x_%j.err")
   if [[ -n "$previous" ]]; then opts+=(--dependency="afterok:$previous"); fi
-  response="$(sbatch "${opts[@]}" "$source_root/scripts/adaptive/task4_cycle.sbatch" \
+  response="$(sbatch "${opts[@]}" "$source_root/scripts/research/historical_replay/task4/task4_cycle.sbatch" \
              "$source_root" "$seed" "$cycle" "$policy")"
   jobid="${response%%;*}"
   [[ "$jobid" =~ ^[0-9]+$ ]] || { echo "Bad sbatch response $response" >&2; exit 1; }

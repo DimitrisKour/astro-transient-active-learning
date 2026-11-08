@@ -1,22 +1,22 @@
 #!/bin/bash
-# Task 5 is intentionally isolated from the original policy suite.
+# Task 4 is intentionally isolated from the original policy suite.
 set -euo pipefail
-TASK5_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-TASK5_SUITE_ID="astrominn_closed_loop_baseline_restart_v1"
-TASK5_BASE_SUITE_ID="astrominn_historical_replay_v1"
-TASK5_PERSISTENT="/projects/bcrv/dkourtesis/applecider_adaptive"
-TASK5_DATA="/work/hdd/bcrv/dkourtesis/applecider_adaptive"
-TASK5_JOB_DIR="$TASK5_PERSISTENT/closed_loop/$TASK5_SUITE_ID"
-TASK5_SOURCE="$TASK5_JOB_DIR/source"
-TASK5_REGISTRY="$TASK5_JOB_DIR/registry.toml"
-TASK5_SOURCE_REGISTRY="${TASK5_SOURCE_REGISTRY:-$TASK5_REPO/configs/delta.toml}"
-if [[ ! -f "$TASK5_SOURCE_REGISTRY" ]]; then
-  TASK5_SOURCE_REGISTRY="$TASK5_PERSISTENT/cycle_jobs_v1/registry_hdd.toml"
+TASK4_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+TASK4_SUITE_ID="astrominn_closed_loop_warm_v1"
+TASK4_BASE_SUITE_ID="astrominn_historical_replay_v1"
+TASK4_PERSISTENT="/projects/bcrv/dkourtesis/applecider_adaptive"
+TASK4_DATA="/work/hdd/bcrv/dkourtesis/applecider_adaptive"
+TASK4_JOB_DIR="$TASK4_PERSISTENT/closed_loop/$TASK4_SUITE_ID"
+TASK4_SOURCE="$TASK4_JOB_DIR/source"
+TASK4_REGISTRY="$TASK4_JOB_DIR/registry.toml"
+TASK4_SOURCE_REGISTRY="${TASK4_SOURCE_REGISTRY:-$TASK4_REPO/configs/delta.toml}"
+if [[ ! -f "$TASK4_SOURCE_REGISTRY" ]]; then
+  TASK4_SOURCE_REGISTRY="$TASK4_PERSISTENT/cycle_jobs_v1/registry_hdd.toml"
 fi
-TASK5_EARLY_WALLTIME="${TASK5_EARLY_WALLTIME:-00:15:00}"
-TASK5_LATE_WALLTIME="${TASK5_LATE_WALLTIME:-00:20:00}"
+TASK4_EARLY_WALLTIME="${TASK4_EARLY_WALLTIME:-00:15:00}"
+TASK4_LATE_WALLTIME="${TASK4_LATE_WALLTIME:-00:20:00}"
 
-task5_activate() {
+task4_activate() {
     module load miniforge3-python
     eval "$(conda shell.bash hook)"
     conda activate al-pipeline
@@ -27,19 +27,19 @@ task5_activate() {
     export PYTHONUNBUFFERED=1
 }
 
-task5_arguments() {
+task4_arguments() {
     local seed="$1" policy="${2:-}"
     local strategies=(random entropy entropy_diversity entropy_balanced_explore)
     if [[ -n "$policy" ]]; then
       case "$policy" in
         random|entropy|entropy_diversity|entropy_balanced_explore) strategies=("$policy");;
-        *) echo "Unsupported Task5 policy: $policy" >&2; return 2;;
+        *) echo "Unsupported Task4 policy: $policy" >&2; return 2;;
       esac
     fi
-    TASK5_ARGS=(
-      --registry "$TASK5_REGISTRY" --suite-id "$TASK5_SUITE_ID"
-      --bootstrap-source-suite-id "$TASK5_BASE_SUITE_ID"
-      --require-existing-bootstrap --training-initialization restart_from_baseline
+    TASK4_ARGS=(
+      --registry "$TASK4_REGISTRY" --suite-id "$TASK4_SUITE_ID"
+      --bootstrap-source-suite-id "$TASK4_BASE_SUITE_ID"
+      --require-existing-bootstrap --training-initialization warm_start
       --strategies "${strategies[@]}"
       --seed "$seed" --split-seed 135
       --initial-fraction 0.10 --minimum-initial-per-class 5
@@ -51,6 +51,6 @@ task5_arguments() {
       --shortlist-multiplier 3 --balance-alpha 1 --balance-beta 0.5
       --balance-strength 1 --balance-cap 3 --exploration-fraction 0.2
       --assert-excluded-manifest
-      "$TASK5_PERSISTENT/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv"
+      "$TASK4_PERSISTENT/runs/boom_tns_new_labelled_inference_v1/hidden_labels.csv"
     )
 }

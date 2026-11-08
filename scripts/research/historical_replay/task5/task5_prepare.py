@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a frozen, reproducible Task-4 source and routed registry.
+"""Create a frozen, reproducible Task-5 source and routed registry.
 
 Never mutates either Experiment B or Task 1/2/3 outputs. Repeated preparation
 checks that nothing already frozen has changed.
@@ -19,10 +19,10 @@ from pathlib import Path
 def files_to_freeze(repo: Path) -> list[Path]:
     return [
         *sorted((repo / "src" / "al_pipeline").rglob("*.py")),
-        repo / "scripts" / "run_astrominn_closed_loop.py",
-        *sorted((repo / "scripts" / "adaptive").glob("task4_*.py")),
-        *sorted((repo / "scripts" / "adaptive").glob("task4_*.sh")),
-        *sorted((repo / "scripts" / "adaptive").glob("task4_*.sbatch")),
+        repo / "scripts" / "run_astrominn_closed_loop_restart.py",
+        *sorted((repo / "scripts" / "research" / "historical_replay" / "task5").glob("task5_*.py")),
+        *sorted((repo / "scripts" / "research" / "historical_replay" / "task5").glob("task5_*.sh")),
+        *sorted((repo / "scripts" / "research" / "historical_replay" / "task5").glob("task5_*.sbatch")),
     ]
 
 
@@ -52,12 +52,12 @@ def prepare(*, repo: Path, job_dir: Path, source_registry: Path,
             persistent: Path, data: Path) -> dict[str, str]:
     repo, job_dir = repo.resolve(), job_dir.resolve()
     if not job_dir.is_relative_to(persistent.resolve()):
-        raise ValueError("Task4 job directory must be inside persistent storage")
-    from_file = repo / "scripts" / "adaptive" / "task4_build_runner.py"
+        raise ValueError("Task5 job directory must be inside persistent storage")
+    from_file = repo / "scripts" / "research" / "historical_replay" / "task5" / "task5_build_runner.py"
     subprocess.run(["python", str(from_file), "--repo", str(repo)], check=True)
     files = files_to_freeze(repo)
     if not files or not all(p.is_file() for p in files):
-        raise FileNotFoundError("Task 4 source files missing")
+        raise FileNotFoundError("Task 5 source files missing")
     names = [str(p.relative_to(repo)) for p in files]
     if len(names) != len(set(names)):
         raise ValueError("Duplicate source paths")
@@ -71,9 +71,9 @@ def prepare(*, repo: Path, job_dir: Path, source_registry: Path,
         path.mkdir(parents=True, exist_ok=True)
     if snapshot.exists():
         if json.loads(snapshot.read_text()) != manifest:
-            raise ValueError("Source changed after freezing Task 4; use new suite ID")
+            raise ValueError("Source changed after freezing Task 5; use new suite ID")
         if not registry.exists() or registry.read_text() != routed:
-            raise ValueError("Registry changed after freezing Task 4")
+            raise ValueError("Registry changed after freezing Task 5")
         verify_source(job_dir)
         return manifest
     if source.exists() or registry.exists():
@@ -98,7 +98,7 @@ def verify_source(job_dir: Path) -> None:
     for name, expected in manifest.items():
         p = source / name
         if not p.is_file() or digest(p) != expected:
-            raise ValueError(f"Frozen Task 4 source mismatch: {p}")
+            raise ValueError(f"Frozen Task 5 source mismatch: {p}")
 
 
 def main() -> None:
@@ -114,12 +114,12 @@ def main() -> None:
         verify_source(args.job_dir)
         if not (args.job_dir / "registry.toml").is_file():
             raise FileNotFoundError("Missing frozen registry")
-        print("Frozen Task 4 source verified")
+        print("Frozen Task 5 source verified")
     else:
         result = prepare(repo=args.repo, job_dir=args.job_dir,
                          source_registry=args.source_registry,
                          persistent=args.persistent, data=args.data)
-        print(f"Frozen Task 4 source: {len(result)} files -> {args.job_dir/'source'}")
+        print(f"Frozen Task 5 source: {len(result)} files -> {args.job_dir/'source'}")
 
 
 if __name__ == "__main__":

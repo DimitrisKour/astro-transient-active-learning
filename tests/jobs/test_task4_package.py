@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS = ROOT / "scripts/adaptive"
+SCRIPTS = ROOT / "scripts/research/historical_replay/task4"
 
 
 def load(name):
@@ -70,12 +70,12 @@ def test_build_dedicated_warm_runner_without_touching_original():
 
 def test_source_freeze_is_reusable_and_detects_changes(tmp_path):
     repo = tmp_path / "repo"
-    (repo / "scripts/adaptive").mkdir(parents=True)
+    (repo / "scripts/research/historical_replay/task4").mkdir(parents=True)
     (repo / "src/al_pipeline").mkdir(parents=True)
     (repo / "scripts/run_astrominn_historical_replay.py").write_text(original_stub())
     (repo / "src/al_pipeline/__init__.py").write_text("# ready\n")
     for p in SCRIPTS.glob("task4_*.*"):
-        (repo / "scripts/adaptive" / p.name).write_bytes(p.read_bytes())
+        (repo / "scripts/research/historical_replay/task4" / p.name).write_bytes(p.read_bytes())
     (repo / "configs").mkdir()
     registry = repo / "configs/delta.toml"
     registry.write_text('[storage]\npersistent_root = "/old"\ndata_root = "/old2"\n[settings]\na = 1\n')
@@ -182,7 +182,7 @@ def test_task4_short_job_schedule_is_108_individual_fits():
 def test_enqueue_slurm_dependencies_and_reverse_release(tmp_path):
     schedule = load('task4_schedule')
     source = tmp_path / 'source'
-    script = source / 'scripts/adaptive/task4_cycle.sbatch'
+    script = source / 'scripts/research/historical_replay/task4/task4_cycle.sbatch'
     script.parent.mkdir(parents=True)
     script.write_text('#!/bin/bash\n')
     job_dir = tmp_path / 'job'
@@ -241,7 +241,7 @@ fi
 def test_enqueue_failure_cancels_new_jobs_and_never_releases(tmp_path):
     schedule = load('task4_schedule')
     source = tmp_path/'source'
-    script = source/'scripts/adaptive/task4_cycle.sbatch'
+    script = source/'scripts/research/historical_replay/task4/task4_cycle.sbatch'
     script.parent.mkdir(parents=True)
     script.touch()
     job_dir = tmp_path/'job'

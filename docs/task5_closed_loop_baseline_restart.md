@@ -18,18 +18,18 @@ In the **Delta terminal** (after `source ~/al_delta_setup.sh` if needed):
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 # Important: Task 4 v2 must exist in this checkout.
 unzip -o /projects/bcrv/dkourtesis/task5_baseline_restart_overlay_v1.zip -d .
-python scripts/adaptive/install_task5_restart.py
+python scripts/research/historical_replay/install_task5_restart.py
 python -m pytest tests/jobs/test_task5_restart.py -q
 # Optional: python -m pytest tests/jobs/test_task4_package.py -q
-bash scripts/adaptive/task5_submit.sh --prepare-only
+bash scripts/research/historical_replay/task5/task5_submit.sh --prepare-only
 ```
 
-`install_task5_restart.py` makes the dedicated `task5_*` scripts by copying the existing tested Task 4 v2 launch infrastructure with guarded transformations. It will **refuse** to overwrite differing Task 5 files. The derived runner is `scripts/run_astrominn_closed_loop_restart.py`; the existing Experiment B and Task 4 runners are untouched. `--prepare-only` freezes the exact source and registry into `/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_baseline_restart_v1` and audits the historical split and baseline checkpoint availability for all seeds. No GPU jobs are submitted.
+`scripts/research/historical_replay/install_task5_restart.py` makes the dedicated `task5_*` scripts by copying the existing tested Task 4 v2 launch infrastructure with guarded transformations. It will **refuse** to overwrite differing Task 5 files. The derived runner is `scripts/run_astrominn_closed_loop_restart.py`; the existing Experiment B and Task 4 runners are untouched. `--prepare-only` freezes the exact source and registry into `/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_baseline_restart_v1` and audits the historical split and baseline checkpoint availability for all seeds. No GPU jobs are submitted.
 
 Only after every test and preflight succeeds:
 
 ```bash
-bash scripts/adaptive/task5_submit.sh --submit --cycles 9
+bash scripts/research/historical_replay/task5/task5_submit.sh --submit --cycles 9
 squeue -u "$USER"
 cat /projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_baseline_restart_v1/submitted.tsv
 ```
@@ -39,7 +39,7 @@ Task 5 uses Task 4's A40 single-GPU, dependency-chained, held-then-reversed-rele
 ## Read-only reporting and scientific audits
 
 ```bash
-python scripts/adaptive/task5_report.py
+python scripts/research/historical_replay/task5/task5_report.py
 ```
 
 The audit checks that for every completed cycle `c`:
