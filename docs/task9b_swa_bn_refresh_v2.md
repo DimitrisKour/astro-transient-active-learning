@@ -26,10 +26,10 @@ python -m pytest tests/jobs/test_task9b_swa_bn_v2.py -q
 ## Frozen preparation (no GPU submission)
 
 ```
-python scripts/adaptive/task9b_swa_bn_v2.py plan
-python scripts/adaptive/task9b_swa_bn_v2.py prepare
-python scripts/adaptive/task9b_swa_bn_v2.py verify
-python scripts/adaptive/task9b_swa_bn_v2.py status
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py plan
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py prepare
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py verify
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py status
 ```
 
 The new root is `/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9b_swa_continuations_bn_v2`. Never point v2 to the failed v1 root.
@@ -37,17 +37,17 @@ The new root is `/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9b_s
 ## Launch one case first
 
 ```
-python scripts/adaptive/task9b_swa_bn_v2.py submit --indices 0 --walltime 00:20:00
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py submit --indices 0 --walltime 00:20:00
 squeue -u "$USER"
-python scripts/adaptive/task9b_swa_bn_v2.py status
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py status
 ```
 
 Check `sacct`, logs and `fits/entropy_balanced_explore_s135/training/bn_refresh.json` before submitting the five remaining cases. Case 0 is balanced-exploration seed 135, case 3 is entropy seed 135.
 
 ```
-python scripts/adaptive/task9b_swa_bn_v2.py submit --indices 1,2,3,4,5 --walltime 00:20:00
-python scripts/adaptive/task9b_swa_bn_v2.py status
-python scripts/adaptive/task9b_swa_report_bn_v2.py
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py submit --indices 1,2,3,4,5 --walltime 00:20:00
+python scripts/research/historical_replay/task9/task9b_swa_bn_v2.py status
+python scripts/research/historical_replay/task9/task9b_swa_report_bn_v2.py
 ```
 
 If case 0 fails, do not submit the others; inspect error logs first. Submission markers forbid duplicates. Explicit recovery must use the frozen worker and the correct case index, retaining existing per-epoch restart state.
