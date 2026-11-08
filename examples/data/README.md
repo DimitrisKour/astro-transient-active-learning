@@ -1,96 +1,37 @@
-# Astronomical teaching data — small, reviewed exports only
+# Teaching data — historical AstroMiNN validation histories
 
-Notebook [02](../02_applecider_astronomy_active_learning.ipynb) has two modes:
+Notebook [02](../02_applecider_astronomy_active_learning.ipynb) is a **read-only, CPU-only investigation** of completed active-learning experiments. It does not train AstroMiNN or run a new acquisition loop. The interactive mechanics of pool-based active learning are taught in notebook 01 (handwritten digits).
 
-- **No data files:** a conspicuously marked, deterministic **synthetic** demonstration of a CPU-only active-learning loop, plus a few actual *presentation-level* AstroMiNN statistics. This is fully runnable offline but **is not an astronomical experiment**.
-- **Real export installed:** the same notebook uses the compact object-level astronomical feature file `astro_real_v1.npz` for its interactive loop. If vetted historical CSVs are present, it also displays recorded AstroMiNN learning curves and class acquisition summaries.
+## Data included
 
-We do **not** bundle raw historical `.npy` samples, trained AstroMiNN/PyTorch model checkpoints, external training-source files, or private broker credentials. The supported notebook therefore needs only `pip install -e ".[teaching]"` and CPU time.
+- `astro_recent_validation.csv` — **1,020 observed validation metric rows**, representing 51 policy/seed trajectories across eight experiment suites. Every trajectory has cycles 0–9, and every cycle has macro-F1 and balanced accuracy. No unmeasured cycles are fabricated.
+- `astro_recent_provenance.json` — schema, original suite identifiers, SHA-256 of the CSV, experimental scope and interpretation limitations.
 
-## Instructor preparation from an existing dataset registry
+The bundled export was generated from **completed archived `evaluation_history.json` files**. It contains **only** aggregate validation metrics, policy, seed, cycle, labeled count and cumulative acquisition count. It contains no raw astronomical images, candidate/object identifiers, label oracle responses, checkpoints, test metrics, or credentials. No external download or local HPC configuration is required.
 
-If the historical dataset is already described in a local TOML registry,
-**reuse that configuration rather than copying raw samples**. The following
-CPU command prepares a small provisional feature file and *lists possible*
-historical report directories. It does not select a report automatically.
+## Setup and run
 
-```bash
-python scripts/examples/prepare_astro_school_exports.py \
-  --registry /path/to/research/configs/delta.toml \
-  --report-root /path/to/research/reports \
-  --output-directory examples/data
-```
-
-Inspect the listed report candidates and choose an appropriate **validated**
-report with compatible suites and seeds. You can then export Part B without
-rebuilding Part A:
+From the repository root:
 
 ```bash
-python scripts/examples/prepare_astro_school_exports.py \
-  --registry /path/to/research/configs/delta.toml \
-  --skip-features \
-  --report-directory /path/to/reviewed/report \
-  --output-directory examples/data
+python -m pip install -e ".[teaching]"
+python scripts/examples/execute_astro_notebook.py --output astro_school_local.ipynb
 ```
 
-The registry path is supplied **only to the instructor's export tool**;
-participants do not need a machine-specific configuration. The generated
-provenance file can contain local file paths, and outputs are **not**
-automatically publishable. Review all exported information before committing.
+Or open the notebook interactively in a Jupyter environment. It uses NumPy, pandas, Matplotlib and the optional plotting theme from the repository. The notebook can be restarted and executed completely offline on a CPU.
 
-## A · One-time real features export
+## How to interpret the comparisons
 
-Run **on a machine where the historic manifest CSVs and original sample `.npy` files are available**. Work from the `al-pipeline` checkout; replace the placeholders with the actual manifest paths and columns from the dataset registry. This is a *preparation* step for the instructor, not something participants need to do.
+- A simple reference comparison (random, entropy, entropy + diversity) comes from **one experiment suite**.
+- The BALD, TAILOR and uniform-mixture figure is a **descriptive cross-suite comparison**: same recorded cycle-zero metrics *by seed* and same label budgets, but the bundle does **not** certify identical initialization, training objective, or checkpoint selection across the source runs.
+- An alternate-$L_0$ sensitivity example (Task 17) is deliberately plotted separately because the initial labeled objects differ.
+- Mean curves have no error bands to reduce clutter; individual-seed variability is visualized in its own figure. Three seeds are not sufficient for a formal significance claim.
+- No per-class or acquisition-class conclusions can be drawn from this limited export. We will need a separate, audited and authorized export of those records for any future rare-class teaching extension.
 
-```bash
-python scripts/examples/export_astro_school_features.py \
-  --train-manifest /PATH/TO/train.csv \
-  --validation-manifest /PATH/TO/validation.csv \
-  --test-manifest /PATH/TO/test.csv \
-  --data-root /PATH/TO/HISTORICAL/SAMPLES \
-  --object-id-column object_id \
-  --file-column filepath \
-  --label-column label \
-  --train-objects 700 --validation-objects 200 --test-objects 200 \
-  --output examples/data/astro_real_v1.npz
-```
+## Source and publication review
 
-The actual column names may be different. Check the locally available dataset registry or the relevant `DatasetSpec` fields for `object_id_column`, `sample_file_column`, `label_column` and the three source manifests. The script also requires an integer `alert` column and trusted samples containing `obj_id`, `metadata` (34 values), and `image` (3×63×63).
+The user-provided ZIP `astro_recent_school_pilot.zip` supplied the validation-only CSV and an internal analysis audit. The resulting data file is reproduced in the repository for consistent, offline teaching, while the public-facing provenance JSON omits machine-specific and candidate-level information.
 
-Features are *deterministic CPU image summaries*: 8×8 averages from median-subtracted, standard-deviation-scaled science/reference/difference cutouts plus 34 clipped metadata features. They are **not** AstroMiNN ViT embeddings. The latest available alert per object is retained, and the number of available alert rows is stored separately. The exported benchmark is capped, preferentially keeps up to 12 objects/class in training and 4 objects/class in each evaluation split, and deliberately ensures rare classes have support; **its class proportions are not population estimates**.
+**Current status:** teaching review, not a full cross-suite protocol comparability or publication-rights certification. Before distributing these archived research measurements outside an authorized teaching audience, check rights, attribution and scientific interpretation with the project collaborators. Do not publish the raw historical samples, checkpoints or private manifests by copying these teaching files.
 
-A companion `astro_real_v1.provenance.json` lists the original manifest SHA-256 hashes, class counts and extraction method. Do not edit this to claim a model checkpoint was used.
-
-## B · One-time historical-report export
-
-Use an existing, complete multi-seed report created by `al_pipeline.astronomy.evaluation.reporting.write_report_tables` (the source report must be independently validated first):
-
-```bash
-python scripts/examples/export_astro_school_replay.py \
-  --report-directory /PATH/TO/VERIFIED/REPORT/CSVS \
-  --output-directory examples/data
-```
-
-This copies a **small, validated column subset**, rather than the source images or checkpoint files. It never invents missing cycles, seeds, or uncertainty scores.
-
-- `astro_historical_evaluation.csv`: per-seed validation macro-F1 and balanced accuracy; enables complete historical learning curves.
-- `astro_historical_acquisition.csv` (optional): revealed acquisition class counts by cycle.
-- `astro_historical_overlap.csv` (optional): object-selection Jaccard statistics.
-- `astro_historical_per_class.csv` (optional): object-level validation recall and F1.
-- `astro_historical_provenance.json`: original report hashes and row counts.
-
-The notebook reads these files only when they exist. It must not imply that changing a saved policy in a CSV can retrain AstroMiNN.
-
-## Publication / teaching-school acceptance checklist
-
-Before committing generated results, confirm all of the following:
-
-1. **Rights and attribution:** the archived sample/label sources and derived numerical values are authorized for redistribution in the school repository; if uncertain, distribute the notebook privately instead.
-2. **Data integrity:** cross-split object IDs are disjoint; `schema_version=1`; every target class is represented; sample, manifest and oracle labels agree; no unexpected NPY pickle sources are loaded.
-3. **No leakage:** the feature construction never uses validation/test labels or any full-history supervised checkpoint. For a future AstroMiNN embedding export, only a checkpoint trained on the allowed `L0` (or independently permitted external pretraining) can be used for the hidden training candidates and validation/test.
-4. **Small package:** inspect `.npz` and CSV byte counts and avoid unnecessary full-history arrays; consider Git LFS or external distribution if too large (ordinary GitHub files must remain below its file-size ceiling).
-5. **Scientific quality:** run notebook 02 with the real export on a CPU and check early learning, per-class support, robustness across seeds and sensible class distributions. Poor performance is legitimate but must be explained rather than silently substituted.
-6. **Provenance:** record which archived report suite, policies, model initialization, data split, seed set, metric level and validation-only selection protocol were exported.
-7. **Presentation:** execute and commit the final **student** notebook with all its figures, but do not package instructor solutions or private storage paths in outputs.
-
-The two notebook sections are deliberately separate: a **student-trained CPU surrogate** is not a reproduction of the saved AstroMiNN research trajectories.
+Legacy preparation scripts for the earlier optional image-feature demonstration remain in `scripts/examples/` for research reuse but are **not needed to run notebook 02**.
