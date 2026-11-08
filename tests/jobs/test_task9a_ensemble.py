@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'scripts/adaptive'))
+sys.path.insert(0,str(ROOT/'scripts/research/historical_replay/task9'))
 sys.path.insert(0,str(ROOT/'src'))
 from task9a_ensemble import VARIANTS,assemble,model_stats,paired_boot,count_changes,ece
 
