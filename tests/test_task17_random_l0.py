@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT/'scripts/adaptive'))
+sys.path.insert(0, str(ROOT/'scripts/research/historical_replay/task17'))
 import task17
 from task17_patch import patch_source
 
