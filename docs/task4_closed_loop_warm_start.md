@@ -54,7 +54,7 @@ unzip -o /path/to/task4_closed_loop_overlay_v2.zip
 python -m pytest tests/jobs/test_task4_package.py -q
 # Then run full tests if desired
 python -m pytest tests/astronomy/ tests/jobs/ -q
-bash scripts/adaptive/task4_submit.sh --prepare-only
+bash scripts/research/historical_replay/task4/task4_submit.sh --prepare-only
 ```
 
 The prepare-only step generates a **separate** `scripts/run_astrominn_closed_loop.py`
@@ -84,7 +84,7 @@ Outputs go to persistent `/projects/...` and heavyweight `/work/hdd/...` storage
 ## Submission (only after prepare-only passes)
 
 ```bash
-bash scripts/adaptive/task4_submit.sh --submit --cycles 9
+bash scripts/research/historical_replay/task4/task4_submit.sh --submit --cycles 9
 squeue -u "$USER"
 cat /projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_warm_v1/submitted.tsv
 ```
@@ -111,7 +111,7 @@ independent, differently named suites—not in this warm-start experiment.
 ## Read-only run report / integrity check
 
 ```bash
-python scripts/adaptive/task4_report.py
+python scripts/research/historical_replay/task4/task4_report.py
 ```
 
 The report writes `report/evaluation_history.csv` (unsmoothed validation and
