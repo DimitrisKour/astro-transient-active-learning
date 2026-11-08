@@ -1,5 +1,5 @@
 #!/bin/bash -l
-# Usage: bash scripts/adaptive/task4_submit.sh --prepare-only|--submit [--cycles 9]
+# Usage: bash scripts/research/historical_replay/task4/task4_submit.sh --prepare-only|--submit [--cycles 9]
 #          [--early-walltime 00:15:00] [--late-walltime 00:20:00]
 # One fit per GPU job, with 12 independent seed/policy dependency chains.
 set -euo pipefail
@@ -25,14 +25,14 @@ done
 task4_activate
 export PYTHONPATH="$TASK4_REPO/src${PYTHONPATH:+:$PYTHONPATH}"
 cd "$TASK4_REPO"
-python scripts/adaptive/task4_prepare.py --repo "$TASK4_REPO" \
+python scripts/research/historical_replay/task4/task4_prepare.py --repo "$TASK4_REPO" \
   --job-dir "$TASK4_JOB_DIR" --source-registry "$TASK4_SOURCE_REGISTRY" \
   --persistent "$TASK4_PERSISTENT" --data "$TASK4_DATA"
 # Plan is immutable between prepare and queue: an existing differing plan aborts.
 plan="$TASK4_JOB_DIR/queue_plan.tsv"
 tmpplan="$(mktemp "$TASK4_JOB_DIR/.queue_plan.XXXXXXXX")"
 trap 'rm -f "$tmpplan"' EXIT
-python "$TASK4_SOURCE/scripts/adaptive/task4_schedule.py" --cycles "$cycles" \
+python "$TASK4_SOURCE/scripts/research/historical_replay/task4/task4_schedule.py" --cycles "$cycles" \
   --early-walltime "$early_walltime" --late-walltime "$late_walltime" > "$tmpplan"
 if [[ -e "$plan" ]]; then
   cmp -s "$tmpplan" "$plan" || { echo "Prepared Task4 job plan changed: $plan" >&2; exit 1; }
@@ -46,7 +46,7 @@ for seed in 135 246 357; do
     "${TASK4_ARGS[@]}" --device cpu > "$TASK4_JOB_DIR/plan_seed_$seed.txt"
   echo "Seed $seed preflight passed; plan saved in $TASK4_JOB_DIR/plan_seed_$seed.txt"
 done
-python "$TASK4_SOURCE/scripts/adaptive/task4_preflight.py" \
+python "$TASK4_SOURCE/scripts/research/historical_replay/task4/task4_preflight.py" \
   --persistent "$TASK4_PERSISTENT" --data "$TASK4_DATA" \
   --base-suite "$TASK4_BASE_SUITE_ID" --suite "$TASK4_SUITE_ID"
 if [[ "$mode" == --prepare-only ]]; then
@@ -69,5 +69,5 @@ for policy in ("random","entropy","entropy_diversity","entropy_balanced_explore"
     raise SystemExit(f"Task4 already progressed; do not resubmit blindly: {state}")
 PY
 # Submit from the immutable prepared plan using the frozen scheduler script.
-bash "$TASK4_SOURCE/scripts/adaptive/task4_enqueue.sh" \
+bash "$TASK4_SOURCE/scripts/research/historical_replay/task4/task4_enqueue.sh" \
   "$plan" "$TASK4_SOURCE" "$TASK4_JOB_DIR" "$cycles"
