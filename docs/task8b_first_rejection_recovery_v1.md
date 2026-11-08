@@ -25,9 +25,9 @@ python -m pytest tests/core/test_seed_recovery.py tests/astronomy/test_task8b_ca
 ### Before GPU submission (CPU/login, read-only)
 
 ```bash
-python scripts/adaptive/task8b.py plan
-python scripts/adaptive/task8b.py prepare
-python scripts/adaptive/task8b.py verify
+python scripts/research/historical_replay/task8b/task8b.py plan
+python scripts/research/historical_replay/task8b/task8b.py prepare
+python scripts/research/historical_replay/task8b/task8b.py verify
 ```
 
 `prepare` copies **Task4's already frozen `src/`** and adds only the new Task8B modules and scripts under the isolated Task8B HDD job directory; writes a frozen `registry.toml`, complete source hash manifest and `plan.json`. It validates the selected six cases against the existing merged 8A `first_rejections.csv`, its hash, all 6 saved cumulative manifests, checkpoint/evaluation SHA256s, Task4 trainer policies, and the Task4 frozen source snapshot. Prepare and verify **submit no Slurm jobs and perform no GPU operations**. Re-running prepare verifies equality; source changes require a distinct suite.
@@ -35,7 +35,7 @@ python scripts/adaptive/task8b.py verify
 ### Submit (explicit user action only)
 
 ```bash
-python scripts/adaptive/task8b.py submit --walltime 00:20:00 --max-concurrent 3
+python scripts/research/historical_replay/task8b/task8b.py submit --walltime 00:20:00 --max-concurrent 3
 ```
 
 This submits a single SLURM GPU array (`0-29%3`); each array element is one independent training + validation-only evaluation. It uses the `gpuA40x4` partition and `bcrv-delta-gpu` account, at most 3 concurrent A40 GPU jobs. **The 20-minute walltime is a limit, not an expected runtime.** A GPU fit and its validation inference must both finish; if timeouts occur, do not blindly resubmit partial directories. Discuss safe recovery first. To reduce scheduling contention, use `--max-concurrent 1` or `2`; increase walltime only if actually necessary. SLURM logs: `$JOB_DIR/logs/T8B_%A_%a.{out,err}` where `$JOB_DIR=/work/hdd/bcrv/dkourtesis/applecider_adaptive/recovery/astrominn_task8b_first_rejection_recovery_v1`.
@@ -43,8 +43,8 @@ This submits a single SLURM GPU array (`0-29%3`); each array element is one inde
 ### Status and reporting
 
 ```bash
-python scripts/adaptive/task8b.py status
-python scripts/adaptive/task8b_report.py
+python scripts/research/historical_replay/task8b/task8b.py status
+python scripts/research/historical_replay/task8b/task8b_report.py
 ```
 
 The report requires all 30 completed fits unless `--allow-partial` is set. Produces `report/summary.json`, `report/case_summary.csv`, `report/model_comparisons.csv`, `report/per_class_comparisons.csv`, `report/prediction_flips.csv` (only if changed objects). Status verifies checkpoints; report additionally verifies provenance, predictions and class order. Run `task8b_report.py --allow-partial` for an initial inspection before all jobs finish, noting incomplete ensembles. 

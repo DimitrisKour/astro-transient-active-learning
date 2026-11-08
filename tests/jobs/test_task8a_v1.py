@@ -10,7 +10,7 @@ import pytest
 
 from al_pipeline.astronomy.analysis.checkpoint_audit import CLASS_NAMES, SUITES
 
-SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'adaptive' / 'task8a.py'
+SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'research' / 'historical_replay' / 'task8a' / 'task8a.py'
 spec = importlib.util.spec_from_file_location('task8a_audit_runner', SCRIPT)
 runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)

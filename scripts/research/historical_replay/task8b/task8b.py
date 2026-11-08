@@ -30,9 +30,9 @@ OVERLAY_FILES = (
     'src/al_pipeline/core/analysis/seed_recovery.py',
     'src/al_pipeline/astronomy/analysis/__init__.py',
     'src/al_pipeline/astronomy/analysis/seed_recovery.py',
-    'scripts/adaptive/task8b.py',
-    'scripts/adaptive/task8b_report.py',
-    'scripts/adaptive/task8b_worker.sbatch',
+    'scripts/research/historical_replay/task8b/task8b.py',
+    'scripts/research/historical_replay/task8b/task8b_report.py',
+    'scripts/research/historical_replay/task8b/task8b_worker.sbatch',
 )
 
 
@@ -248,7 +248,7 @@ def status(job_dir: Path) -> dict:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('command', choices=('plan', 'prepare', 'verify', 'submit', 'run', 'status'))
-    p.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[2])
+    p.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[4])
     p.add_argument('--job-dir', type=Path, default=JOB_DIR)
     p.add_argument('--task4', type=Path, default=REFERENCE)
     p.add_argument('--report', type=Path, default=REPORT)
@@ -285,7 +285,7 @@ def main() -> None:
             p.error('--max-concurrent must be 1–6')
         if not __import__('re').fullmatch(r'\d{2}:\d{2}:\d{2}', a.walltime):
             p.error('Invalid walltime')
-        worker = a.job_dir / 'source' / 'scripts' / 'adaptive' / 'task8b_worker.sbatch'
+        worker = a.job_dir / 'source' / 'scripts' / 'research' / 'historical_replay' / 'task8b' / 'task8b_worker.sbatch'
         cmd = ['sbatch', f'--time={a.walltime}',
                f'--array=0-{len(plan["jobs"])-1}%{a.max_concurrent}',
                f'--output={a.job_dir}/logs/T8B_%A_%a.out',

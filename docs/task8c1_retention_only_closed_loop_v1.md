@@ -60,9 +60,9 @@ Expected **20 passing synthetic/local tests**; these are not a substitute for re
 ## Review and prepare — no training, no submission
 
 ```bash
-python scripts/adaptive/task8c1.py plan
-python scripts/adaptive/task8c1.py prepare
-python scripts/adaptive/task8c1.py verify
+python scripts/research/historical_replay/task8c1/task8c1.py plan
+python scripts/research/historical_replay/task8c1/task8c1.py prepare
+python scripts/research/historical_replay/task8c1/task8c1.py verify
 ```
 
 `prepare` freezes all sources under HDD. Rerunning it with identical inputs verifies the snapshot. It never submits or runs SLURM jobs.
@@ -70,9 +70,9 @@ python scripts/adaptive/task8c1.py verify
 ## Phase I — CPU read-only replay
 
 ```bash
-python scripts/adaptive/task8c1.py submit-prefill --walltime 00:20:00
+python scripts/research/historical_replay/task8c1/task8c1.py submit-prefill --walltime 00:20:00
 squeue -u "$USER"
-python scripts/adaptive/task8c1.py status
+python scripts/research/historical_replay/task8c1/task8c1.py status
 ```
 
 Exactly **six independent CPU-array tasks** replay the first-rejection prefix. The CPU code aborts rather than training if the observed first-rejection cycle disagrees with Task 8A. After they complete, `status` should show first rejection **4/4/5** for entropy and **4/3/6** for balanced exploration and matching `decisions` counts. Inspect `closed_loop/.../logs/T8C1_pf_*.out` and `*.err` if any case failed. **Do not submit GPU jobs until all six prefixes verify.**
@@ -80,9 +80,9 @@ Exactly **six independent CPU-array tasks** replay the first-rejection prefix. T
 ## Phase II — GPU continuation
 
 ```bash
-python scripts/adaptive/task8c1.py submit --walltime 00:20:00
+python scripts/research/historical_replay/task8c1/task8c1.py submit --walltime 00:20:00
 squeue -u "$USER" -o "%.18i %.35j %.2t %.10M %R"
-python scripts/adaptive/task8c1.py status
+python scripts/research/historical_replay/task8c1/task8c1.py status
 ```
 
 `submit` checks all six prefill states and queues **28 GPU jobs** in six per-trajectory `afterok` dependency chains, held until all submissions succeed. If submission fails, it attempts to cancel the queued jobs and preserves failure markers requiring manual inspection. Every job performs exactly one newly divergent cycle. The default walltime is 20 minutes, but you can adjust the flag if needed before submission. No Task 4 training is duplicated.
@@ -91,7 +91,7 @@ python scripts/adaptive/task8c1.py status
 
 ```bash
 OUT=/work/hdd/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_task8c1_retention_macro1pp_v1/report
-python scripts/adaptive/task8c1_report.py --out "$OUT"
+python scripts/research/historical_replay/task8c1/task8c1_report.py --out "$OUT"
 cat "$OUT/summary.json"
 tar -czf /work/hdd/bcrv/dkourtesis/applecider_adaptive/task8c1_review_v1.tar.gz \
   -C "$OUT" summary.json decisions.csv class_recall.csv acquisition_overlap.csv trajectories.csv

@@ -22,4 +22,4 @@ export PYTHONPATH="$SOURCE/src" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM
 RUNTIME="$JOB/runtime/${SLURM_JOB_ID}"
 mkdir -p "$RUNTIME"/{tmp,torch,matplotlib}
 export TMPDIR="$RUNTIME/tmp" TORCH_HOME="$RUNTIME/torch" MPLCONFIGDIR="$RUNTIME/matplotlib"
-python "$SOURCE/scripts/adaptive/task9b_swa.py" run --job-dir "$JOB" --index "$INDEX"
+python "$SOURCE/scripts/research/historical_replay/task9/task9b_swa.py" run --job-dir "$JOB" --index "$INDEX"

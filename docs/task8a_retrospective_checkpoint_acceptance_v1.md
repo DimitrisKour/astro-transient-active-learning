@@ -59,9 +59,9 @@ predictions. Each object is included once, not once per alert.
 - `src/al_pipeline/astronomy/analysis/checkpoint_audit.py`: AstroMiNN NPZ
   and JSON readers, snapshot alignment, experiment paths, revealed labels,
   alert multiplicity diagnostics.
-- `scripts/adaptive/task8a.py`: audit orchestration and CSV/JSON reporting.
-- `scripts/adaptive/task8a_plot.py`: optional PNG plots from generated CSV reports.
-- `scripts/adaptive/task8a_worker.sbatch`: single *read-only* reporting job;
+- `scripts/research/historical_replay/task8a/task8a.py`: audit orchestration and CSV/JSON reporting.
+- `scripts/research/historical_replay/task8a/task8a_plot.py`: optional PNG plots from generated CSV reports.
+- `scripts/research/historical_replay/task8a/task8a_worker.sbatch`: single *read-only* reporting job;
   no training, inference, GPU kernels, or modifications to source experiments.
   A GPU is allocated only because the available Delta account is GPU-only.
 - Tests: `tests/core/test_checkpoint_acceptance.py`,
@@ -83,7 +83,7 @@ unzip -n /projects/bcrv/dkourtesis/task8a_checkpoint_acceptance_v1.zip -d .
 conda activate al-pipeline
 python -m pytest tests/core/test_checkpoint_acceptance.py \
   tests/astronomy/test_task8a_snapshot.py tests/jobs/test_task8a_v1.py -q
-python scripts/adaptive/task8a.py plan
+python scripts/research/historical_replay/task8a/task8a.py plan
 ```
 
 If the repository was updated previously, inspect paths before running an
@@ -96,7 +96,7 @@ cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 OUT=/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task8a_retrospective_acceptance_v1
 mkdir -p "$OUT/logs"
 sbatch --output="$OUT/logs/T8A_%j.out" --error="$OUT/logs/T8A_%j.err" \
-  scripts/adaptive/task8a_worker.sbatch "$PWD" "$OUT"
+  scripts/research/historical_replay/task8a/task8a_worker.sbatch "$PWD" "$OUT"
 ```
 
 The source code reads snapshots only under the three fixed suite names, and
@@ -133,7 +133,7 @@ When complete, on Delta (figures are optional and generated from saved CSVs):
 
 ```bash
 OUT=/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task8a_retrospective_acceptance_v1
-python scripts/adaptive/task8a_plot.py --report "$OUT"
+python scripts/research/historical_replay/task8a/task8a_plot.py --report "$OUT"
 cat "$OUT/summary.json"
 tar -czf /work/hdd/bcrv/dkourtesis/applecider_adaptive/task8a_review_v1.tar.gz \
   -C "$OUT" summary.json adjacent_comparisons.csv per_class_changes.csv \
@@ -187,7 +187,7 @@ for SUITE in task4 task6b task6c; do
   sbatch --job-name="T8A_${SUITE}" \
     --output="$OUT/logs/T8A_${SUITE}_%j.out" \
     --error="$OUT/logs/T8A_${SUITE}_%j.err" \
-    scripts/adaptive/task8a_worker_cpu_shard.sbatch \
+    scripts/research/historical_replay/task8a/task8a_worker_cpu_shard.sbatch \
     "$PWD" "$OUT/shards/$SUITE" "$SUITE"
 done
 ```
@@ -196,8 +196,8 @@ Check that all three individual `shards/{task4,task6b,task6c}/summary.json`
 files exist. Then merge and plot **without** submitting a fourth job:
 
 ```bash
-python scripts/adaptive/task8a_merge.py --output "$OUT"
-python scripts/adaptive/task8a_plot.py --report "$OUT"
+python scripts/research/historical_replay/task8a/task8a_merge.py --output "$OUT"
+python scripts/research/historical_replay/task8a/task8a_plot.py --report "$OUT"
 cat "$OUT/summary.json"
 ```
 

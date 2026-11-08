@@ -17,4 +17,4 @@ export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 JOB="$1"
 export PYTHONPATH="$JOB/source/src"
-python "$JOB/source/scripts/adaptive/task8c1.py" prefill --job-dir "$JOB" --index "$SLURM_ARRAY_TASK_ID"
+python "$JOB/source/scripts/research/historical_replay/task8c1/task8c1.py" prefill --job-dir "$JOB" --index "$SLURM_ARRAY_TASK_ID"

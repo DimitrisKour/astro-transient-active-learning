@@ -13,7 +13,7 @@ set -euo pipefail
 # Explicit stdout/stderr paths should be passed to sbatch pointing to /work/hdd.
 SOURCE_ROOT="${1:?Pass repository root}"
 OUTPUT_DIR="${2:?Pass HDD-backed audit output directory}"
-if [[ ! -f "$SOURCE_ROOT/scripts/adaptive/task8a.py" ]]; then
+if [[ ! -f "$SOURCE_ROOT/scripts/research/historical_replay/task8a/task8a.py" ]]; then
     echo 'Missing Task 8A runner in repository' >&2
     exit 2
 fi
@@ -29,7 +29,7 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
 export OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 export PYTHONUNBUFFERED=1
 mkdir -p "$OUTPUT_DIR"
-python "$SOURCE_ROOT/scripts/adaptive/task8a.py" run \
+python "$SOURCE_ROOT/scripts/research/historical_replay/task8a/task8a.py" run \
     --persistent /projects/bcrv/dkourtesis/applecider_adaptive \
     --data /work/hdd/bcrv/dkourtesis/applecider_adaptive \
     --output "$OUTPUT_DIR" --bootstrap 600

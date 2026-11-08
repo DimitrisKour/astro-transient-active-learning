@@ -19,7 +19,7 @@ import sys
 B=Path('/work/hdd/bcrv/dkourtesis/applecider_adaptive/recovery/astrominn_task8b_first_rejection_recovery_v1')
 ROOT=Path('/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9b_swa_continuations_bn_v2')
 OVERLAYS=('src/al_pipeline/astronomy/analysis/swa_continuation_bn_v2.py',
-          'scripts/adaptive/task9b_swa_bn_v2.py','scripts/adaptive/task9b_swa_worker_bn_v2.sbatch')
+          'scripts/research/historical_replay/task9/task9b_swa_bn_v2.py','scripts/research/historical_replay/task9/task9b_swa_worker_bn_v2.sbatch')
 
 
 def hash_file(path):
@@ -184,7 +184,7 @@ def submit(root:Path,indices:list[int],walltime:str):
     for idx in indices:
         if (root/f'submitted_case_{idx}.json').exists() or (Path(plan['cases'][idx]['output_dir'])/'complete.json').exists():
             raise RuntimeError(f'Case {idx} already queued or completed')
-    worker=root/'source/scripts/adaptive/task9b_swa_worker_bn_v2.sbatch'
+    worker=root/'source/scripts/research/historical_replay/task9/task9b_swa_worker_bn_v2.sbatch'
     for idx in indices:
         cmd=['sbatch','--parsable',f'--time={walltime}',
              f'--job-name=T9B_swa_{idx}',f'--output={root}/logs/T9B_%j.out',
@@ -200,7 +200,7 @@ def submit(root:Path,indices:list[int],walltime:str):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=('plan','prepare','verify','submit','run','status'))
-    parser.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
+    parser.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[4])
     parser.add_argument('--task8b',type=Path,default=B)
     parser.add_argument('--job-dir',type=Path,default=ROOT)
     parser.add_argument('--index',type=int)

@@ -23,15 +23,15 @@ Reference comparisons: Task4 incumbent; original rejected Task4 candidate; the f
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 conda activate al-pipeline
 python -m pytest tests/jobs/test_task9a_ensemble.py tests/jobs/test_task9b_swa.py -q
-python scripts/adaptive/task9a_ensemble.py verify
+python scripts/research/historical_replay/task9/task9a_ensemble.py verify
 mkdir -p /work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9a_fixed_ensembles_v1/logs
 sbatch --parsable \
   --output=/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9a_fixed_ensembles_v1/logs/%j.out \
   --error=/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9a_fixed_ensembles_v1/logs/%j.err \
-  scripts/adaptive/task9a_ensemble_worker.sbatch "$PWD"
+  scripts/research/historical_replay/task9/task9a_ensemble_worker.sbatch "$PWD"
 ```
 
-Check `sacct -j <jobid>`, then `.../analysis/task9a_fixed_ensembles_v1/summary.json`. No need to submit an `sbatch` if preferred: `python scripts/adaptive/task9a_ensemble.py run` is CPU-only, but using a CPU job protects login resources.
+Check `sacct -j <jobid>`, then `.../analysis/task9a_fixed_ensembles_v1/summary.json`. No need to submit an `sbatch` if preferred: `python scripts/research/historical_replay/task9/task9a_ensemble.py run` is CPU-only, but using a CPU job protects login resources.
 
 ### Task 9B — Ten-epoch SWA continuation (GPU)
 
@@ -44,9 +44,9 @@ The final nonaveraged continuation is the essential control: its comparison to S
 ```bash
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 conda activate al-pipeline
-python scripts/adaptive/task9b_swa.py plan
-python scripts/adaptive/task9b_swa.py prepare
-python scripts/adaptive/task9b_swa.py verify
+python scripts/research/historical_replay/task9/task9b_swa.py plan
+python scripts/research/historical_replay/task9/task9b_swa.py prepare
+python scripts/research/historical_replay/task9/task9b_swa.py verify
 ```
 
 Preflight freezes the exact Task8B `source/src` scientific code and adds only the new SWA module/worker. The plan records input SHA-256s and rejects mutation, duplicate output, or wrong case. All work is placed under `/work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task9b_swa_continuations_v1`.
@@ -54,16 +54,16 @@ Preflight freezes the exact Task8B `source/src` scientific code and adds only th
 **Queue two GPU pilots (one per policy):** Cases use sorted keys, so 0 = balanced-exploration seed135, 3 = entropy seed135.
 
 ```bash
-python scripts/adaptive/task9b_swa.py submit --indices 0,3 --walltime 00:20:00
-python scripts/adaptive/task9b_swa.py status
+python scripts/research/historical_replay/task9/task9b_swa.py submit --indices 0,3 --walltime 00:20:00
+python scripts/research/historical_replay/task9/task9b_swa.py status
 ```
 
 Inspect both jobs via `sacct` and the separate logs. This is ~2 GPU jobs, not an array requiring other cases. If both finish, queue the **remaining four** without modifying the code or policy:
 
 ```bash
-python scripts/adaptive/task9b_swa.py submit --indices 1,2,4,5 --walltime 00:20:00
-python scripts/adaptive/task9b_swa.py status
-python scripts/adaptive/task9b_swa_report.py
+python scripts/research/historical_replay/task9/task9b_swa.py submit --indices 1,2,4,5 --walltime 00:20:00
+python scripts/research/historical_replay/task9/task9b_swa.py status
+python scripts/research/historical_replay/task9/task9b_swa_report.py
 ```
 
 The training worker activates `al-pipeline`, preloads Conda `libstdc++.so.6`, and pins the frozen source with `PYTHONPATH`. Each epoch saves an atomic restart state including AdamW, RNG states, accumulated SWA and loader RNG. A Slurm failure requires explicit investigation and **manual, intentional** resubmission; duplicate submit markers prevent unintentional second runs. If truly recovering a previously failed case with a valid saved restart state, submit the exact frozen worker directly with its existing index instead of deleting checkpoints. Finished jobs do not restart training.

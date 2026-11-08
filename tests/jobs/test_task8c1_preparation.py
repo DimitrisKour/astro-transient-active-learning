@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import pytest
 
-SCRIPT=Path(__file__).resolve().parents[2]/'scripts/adaptive/task8c1.py'
+SCRIPT=Path(__file__).resolve().parents[2]/'scripts/research/historical_replay/task8c1/task8c1.py'
 spec=importlib.util.spec_from_file_location('task8c1_script',SCRIPT)
 task=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(task)
