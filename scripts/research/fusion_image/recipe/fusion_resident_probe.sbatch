@@ -1,15 +1,14 @@
 #!/bin/bash -l
-#SBATCH --job-name=pre_task0_ram
+#SBATCH --job-name=fusion_ram_probe
 #SBATCH --account=bcrv-delta-gpu
 #SBATCH --partition=gpuA40x4
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
-#SBATCH --time=01:00:00
+#SBATCH --mem=16G
+#SBATCH --time=00:10:00
 set -euo pipefail
-: "${PRETASK_CASE:?PRETASK_CASE is required}"
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 module load miniforge3-python
 eval "$(conda shell.bash hook)"
@@ -18,4 +17,4 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
-python -u scripts/adaptive/fusion_pre_task0_resident.py run --case "$PRETASK_CASE"
+python -u scripts/research/fusion_image/recipe/fusion_resident_probe.py --train-batches 8 --val-batches 4

@@ -10,9 +10,9 @@ import pytest
 BASE=Path(__file__).resolve().parents[3]
 F=BASE/'src/al_pipeline/astronomy/fusion_image/resident_cache.py'
 TRAINER=BASE/'src/al_pipeline/astronomy/fusion_image/recipe_training_resident.py'
-RUNNER=BASE/'scripts/adaptive/fusion_pre_task0_resident.py'
-PROBE=BASE/'scripts/adaptive/fusion_resident_probe.py'
-LAUNCHER=BASE/'scripts/adaptive/submit_fusion_pre_task0_resident.sh'
+RUNNER=BASE/'scripts/research/fusion_image/recipe/fusion_pre_task0_resident.py'
+PROBE=BASE/'scripts/research/fusion_image/recipe/fusion_resident_probe.py'
+LAUNCHER=BASE/'scripts/research/fusion_image/recipe/submit_fusion_pre_task0_resident.sh'
 spec=importlib.util.spec_from_file_location('resident_cache_v3_test',F)
 module=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)

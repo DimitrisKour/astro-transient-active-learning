@@ -18,7 +18,7 @@ from al_pipeline.astronomy.fusion_image.contracts import load_rows, sha256
 
 
 def module():
-    script = Path(__file__).resolve().parents[3] / 'scripts/adaptive/fusion_full_historical_cache_v1.py'
+    script = Path(__file__).resolve().parents[3] / 'scripts/research/fusion_image/cache/fusion_full_historical_cache_v1.py'
     spec = importlib.util.spec_from_file_location('fusion_full_historical_cache_tested', script)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

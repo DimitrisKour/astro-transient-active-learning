@@ -43,18 +43,18 @@ From Delta:
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -o /projects/bcrv/dkourtesis/fusion_pre_task0_extensions_v1.zip -d .
 python -m pytest tests/astronomy/fusion_image/test_pre_task0_extensions_v1.py -q
-bash scripts/adaptive/submit_fusion_pre_task0_extensions.sh --check
-bash scripts/adaptive/submit_fusion_pre_task0_extensions.sh --prepare
-bash scripts/adaptive/submit_fusion_pre_task0_extensions.sh --submit-case cosine_aug_short
-bash scripts/adaptive/submit_fusion_pre_task0_extensions.sh --submit-case cosine_aug_effnum
-bash scripts/adaptive/submit_fusion_pre_task0_extensions.sh --status
+bash scripts/research/fusion_image/recipe/submit_fusion_pre_task0_extensions.sh --check
+bash scripts/research/fusion_image/recipe/submit_fusion_pre_task0_extensions.sh --prepare
+bash scripts/research/fusion_image/recipe/submit_fusion_pre_task0_extensions.sh --submit-case cosine_aug_short
+bash scripts/research/fusion_image/recipe/submit_fusion_pre_task0_extensions.sh --submit-case cosine_aug_effnum
+bash scripts/research/fusion_image/recipe/submit_fusion_pre_task0_extensions.sh --status
 ```
 Both jobs are independent and request 15 minutes, **not guaranteed sufficient** for
 an unusually long 80-epoch run. Training history is saved after each epoch; partial
 output is preserved for audit, and retries must use a new experiment identity.
 After completion:
 ```
-bash scripts/adaptive/submit_fusion_pre_task0_extensions.sh --report
+bash scripts/research/fusion_image/recipe/submit_fusion_pre_task0_extensions.sh --report
 ROOT=/projects/bcrv/dkourtesis/applecider_adaptive/new_image_pre_task0_extensions_v1
 cat "$ROOT/comparison.csv"
 ```

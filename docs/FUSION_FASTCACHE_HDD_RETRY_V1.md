@@ -8,7 +8,7 @@ Extract at the root of the `active-learning` checkout:
 
 ```bash
 unzip -o /projects/bcrv/dkourtesis/fusion_fastcache_hdd_retry_v1.zip -d .
-bash -n scripts/adaptive/fusion_fastcache_cpu_hdd.sbatch
+bash -n scripts/research/fusion_image/cache/fusion_fastcache_cpu_hdd.sbatch
 ```
 
 The separate `fusion_fastcache_buffered_v2.zip` and `fusion_fastcache_v1.zip` files must already have been installed; the new sbatch calls their existing `fusion_fastcache.py` CLI.
@@ -18,7 +18,7 @@ The separate `fusion_fastcache_buffered_v2.zip` and `fusion_fastcache_v1.zip` fi
 ```bash
 REPORT=/projects/bcrv/dkourtesis/applecider_adaptive/new_image_fastcache_cpu_hdd_v1
 mkdir -p "$REPORT/logs"
-sbatch --output="$REPORT/logs/fastcache_%j.out" --error="$REPORT/logs/fastcache_%j.err" scripts/adaptive/fusion_fastcache_cpu_hdd.sbatch
+sbatch --output="$REPORT/logs/fastcache_%j.out" --error="$REPORT/logs/fastcache_%j.err" scripts/research/fusion_image/cache/fusion_fastcache_cpu_hdd.sbatch
 ```
 
 This builds and validates 43,309 stage inputs for the 29,161-row training and 14,148-row validation splits; no training or test access. Files are published only after internal validation. The job also benchmarks independent dataset startup, 1024 random accesses, and one complete DataLoader pass of each split. It uses 2 CPU, 12 GB, max 30 minutes. The output target is `/work/hdd/bcrv/dkourtesis/applecider_adaptive/new_image_full_historical_fastcache_hdd_v1`.
