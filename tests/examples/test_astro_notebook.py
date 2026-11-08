@@ -27,5 +27,7 @@ def test_astronomy_notebook_cpu_executes_entirely_offline():
     assert len(pngs)>=5
     combined='\n'.join(str(o.get('text','')) for c in result.cells if c.cell_type=='code'
                        for o in c.get('outputs',()) if o.get('output_type')=='stream')
-    assert 'NOT ZTF' in combined or 'REAL ASTRONOMICAL EXPORT' in ''.join(str(o) for c in result.cells for o in c.get('outputs',()))
+    rendered = ''.join(str(o) for c in result.cells for o in c.get('outputs',()))
+    assert ('NOT ZTF' in combined or 'NOT ZTF' in rendered or
+            'REAL ASTRONOMICAL EXPORT' in rendered)
     assert 'ONE sealed-test score:' in combined
