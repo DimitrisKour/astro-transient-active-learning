@@ -1,59 +1,45 @@
-# Teaching data — historical AstroMiNN validation histories
+# Astronomy notebook — included teaching data
 
-Notebook [02](../02_applecider_astronomy_active_learning.ipynb) is a **read-only, CPU-only investigation** of completed active-learning experiments. It does not train AstroMiNN or run a new acquisition loop. The interactive mechanics of pool-based active learning are taught in notebook 01 (handwritten digits).
+[Notebook 02](../02_applecider_astronomy_active_learning.ipynb) uses **small, precomputed results from completed AstroMiNN active-learning experiments**. Students can analyze the learning curves, class-level outcomes and acquisition overlaps without downloading observations, loading trained models or using a GPU.
 
-## Data included
+## Files
 
-- `astro_recent_validation.csv` — **1,020 observed validation metric rows**, representing 51 policy/seed trajectories across eight experiment suites. Every trajectory has cycles 0–9, and every cycle has macro-F1 and balanced accuracy. No unmeasured cycles are fabricated.
-- `astro_recent_provenance.json` — schema, original suite identifiers, SHA-256 of the CSV, experimental scope and interpretation limitations.
+| File | Contents |
+| --- | --- |
+| `astro_recent_validation.csv` | 1,020 recorded validation measurements (macro-F1 and balanced accuracy) from 51 trajectories, each evaluated at cycles 0–9 |
+| `astro_recent_per_class.csv` | 2,550 object-level validation precision, recall, F1 and support records across five classes (AGN, TDE, SN I, SN II, CV) |
+| `astro_cycle2_overlap_by_seed.csv` | 45 seed-level policy-pair overlap records at cycle 2 |
+| `astro_cycle2_overlap_mean.csv` | 15 policy-pair summaries averaged over three matched seeds |
+| `astro_recent_provenance.json`, `astro_recent_per_class_provenance.json`, `astro_cycle2_overlap_provenance.json` | Data origin, schema and export scope |
 
-The aggregate-metric export was generated from **completed archived `evaluation_history.json` files**. It contains **only** aggregate validation metrics, policy, seed, cycle, labeled count and cumulative acquisition count. It contains no raw astronomical images, candidate/object identifiers, label oracle responses, checkpoints, test metrics, or credentials. No external download or local HPC configuration is required.
+**Cumulative Jaccard overlap** uses the sets of acquired objects from **cycles 1 and 2 combined** (946 objects per policy), excluding the shared initial labeled set. The matrix compares entropy, entropy + diversity, BADGE, BALD and TAILOR. Values are means of same-seed Jaccard coefficients; no selected-object IDs are distributed.
 
-## Setup and run
+## Run the student notebook
 
-From the repository root:
+From a local clone of this repository:
 
 ```bash
 python -m pip install -e ".[teaching]"
 python scripts/examples/execute_astro_notebook.py --output astro_school_local.ipynb
 ```
 
-Or open the notebook interactively in a Jupyter environment. It uses NumPy, pandas, Matplotlib and the optional plotting theme from the repository. The notebook can be restarted and executed completely offline on a CPU.
+Or simply open the [executed notebook](../02_applecider_astronomy_active_learning.ipynb) in Jupyter or VS Code. Everything required for its plots is included here; no Delta configuration, model training or internet access is needed.
 
-## How to interpret the comparisons
+## Interpretation
 
-- The introductory figure compares BADGE, entropy and entropy + diversity. The two entropy variants share a suite; BADGE belongs to a separate suite, so the combined view is **illustrative rather than a controlled policy comparison**.
-- The BALD, TAILOR and uniform-mixture figure is a **descriptive cross-suite comparison**: same recorded cycle-zero metrics *by seed* and same label budgets, but the bundle does **not** certify identical initialization, training objective, or checkpoint selection across the source runs.
-- An alternate-$L_0$ sensitivity example (Task 17) is deliberately plotted separately because the initial labeled objects differ.
-- Mean curves have no error bands to reduce clutter; individual-seed variability is visualized in its own figure. Three seeds are not sufficient for a formal significance claim.
-- Per-class and acquired-class conclusions cannot be drawn from the bundled aggregate CSV. Recorded per-class validation scores can be exported separately from saved result files without loading images or checkpoints.
+- All curves and per-class measurements come from **saved validation evaluations**, not from newly trained student models.
+- The first learning-curve figure combines two entropy policies from one suite with BADGE from another. The BALD/TAILOR comparisons similarly span recorded suites; matching label budgets and baseline scores alone **do not establish full protocol equivalence**.
+- The alternative initial labeled set is shown separately. Three seeds support descriptive variability analysis, not formal significance testing.
+- The class-level metrics describe **validation performance**; the overlap tables describe **which candidate objects were selected**. Neither includes test metrics, raw observations, checkpoints, revealed candidate identities or hidden-label tables.
 
+## Recreating the exports (instructor/research use)
 
-## Optional instructor-only class-metric export
+The following scripts read existing recorded artifacts and do **not** train or evaluate models from scratch:
 
-On Delta, the already-computed AstroMiNN object-level validation metrics can be gathered **without rerunning inference**:
+- [`export_recent_astro_replay.py`](../../scripts/examples/export_recent_astro_replay.py) — validation histories from persistent run state.
+- [`export_recent_astro_per_class.py`](../../scripts/examples/export_recent_astro_per_class.py) — recorded per-class evaluation files.
+- [`export_cycle2_selection_overlap.py`](../../scripts/examples/export_cycle2_selection_overlap.py) — recorded selections; exports aggregate overlap, not IDs.
 
-```bash
-python scripts/examples/export_recent_astro_per_class.py \
-  --validation-csv examples/data/astro_recent_validation.csv \
-  --artifact-root /work/hdd/bcrv/dkourtesis/applecider_adaptive \
-  --output ~/astro_recent_per_class_pilot.zip
-```
+Running those exporters requires access to the historical research files; **students do not need to run them**. Older optional feature-export scripts in `scripts/examples/` are retained for research reuse but are not part of notebook 02.
 
-The exporter checks that all 51 trajectories have class metrics for cycles 0–9, and that per-class F1 averages reproduce the bundled validation macro-F1. It writes only aggregated class-level precision, recall, F1 and support, with a provenance JSON. The output is for review first; inclusion in the student notebook requires a redistribution check and a separate notebook update. It does not include acquired-object labels or identities.
-
-## Included class-level and acquisition-overlap tables
-
-- `astro_recent_per_class.csv` (2,550 rows): precomputed validation precision, recall, F1 and support, with suite, policy, seed and cycle. Metrics were calculated in the original experiments, not by rerunning models in the notebook.
-- `astro_cycle2_overlap_by_seed.csv` (45 rows) and `astro_cycle2_overlap_mean.csv` (15 rows): intersection, union and Jaccard overlap for five policies at acquisition cycle 2. The notebook uses the **cumulative union of selected objects from cycles 1 and 2** (946 selected per policy), excluding the initial labeled set; the mean is taken over three corresponding seeds.
-- `astro_recent_per_class_provenance.json` and `astro_cycle2_overlap_provenance.json` document the export scope and exclusions.
-
-The blue symmetric Jaccard matrix in notebook 02 is a small, read-only summary, with the diagonal omitted and each off-diagonal cell labeled as a percentage. These tables are suitable for CPU-only student analysis. Cross-suite protocol equivalence is **not established** by matching cycle-zero scores or label budgets alone.
-
-## Source and publication review
-
-The user-provided ZIP `astro_recent_school_pilot.zip` supplied the validation-only CSV and an internal analysis audit. The resulting data file is reproduced in the repository for consistent, offline teaching, while the public-facing provenance JSON omits machine-specific and candidate-level information.
-
-**Current status:** teaching review, not a full cross-suite protocol comparability or publication-rights certification. Before distributing these archived research measurements outside an authorized teaching audience, check rights, attribution and scientific interpretation with the project collaborators. Do not publish the raw historical samples, checkpoints or private manifests by copying these teaching files.
-
-Legacy preparation scripts for the earlier optional image-feature demonstration remain in `scripts/examples/` for research reuse but are **not needed to run notebook 02**.
+**Redistribution:** this is a research-derived teaching export. Review permission to share these numerical results outside an authorized audience; do not copy private raw data, credentials or checkpoints into the repository.

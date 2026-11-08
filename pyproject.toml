@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "al-pipeline"
 version = "0.1.0"
-description = "Reusable active-learning infrastructure with separate astronomy integrations"
+description = "Active learning for astronomical transients with a reusable model-independent core"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.24"]

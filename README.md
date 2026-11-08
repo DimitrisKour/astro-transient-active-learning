@@ -1,101 +1,105 @@
-# AL Pipeline
+# Active Learning for Astronomical Transients
 
-Reusable active-learning infrastructure with explicit astronomy integrations.
-Extracted from `DimitrisKour/AppleCiDer-AL`, commit
-`b0aa85c11644b50db05e4dc0e9d94e656017fb17`.
+**A Python toolkit for selecting informative transient candidates, managing label acquisition, and evaluating active-learning strategies.** It combines a reusable, model-independent active-learning core with astronomical integrations developed for AppleCiDEr and historical AstroMiNN experiments.
 
-## Start on Delta
+The central question is practical: **which objects should we label next, and how much does each acquisition improve classification?** The code supports both exploratory learning experiments and archived, multi-seed studies of early transient classification.
 
-See [Delta installation](docs/delta_installation.md). The first extraction
-preserves existing dataset, legacy AstroMiNN code, model configuration, and
-checkpoint paths. It does not move data or resume existing production runs.
+## What is included?
 
-## Find the code
-
-| Package | Responsibility |
+| Capability | Where to look |
 | --- | --- |
-| `al_pipeline.core.scoring` and `selection` | Convert classifier outputs or embeddings to acquisition priorities; select eligible IDs |
-| `al_pipeline.core.loop` and `pool` | Propose/commit acquisition and manage logical states |
-| `al_pipeline.core.evidence` and `oracle` | Provider-independent evidence and label-resolution contracts |
-| `al_pipeline.core.workflow` | Acquire, gather evidence, resolve labels, apply lifecycle policy |
-| `al_pipeline.core.state` | Object history and durable run progress |
-| `al_pipeline.core.training`, `evaluation`, `experiments` | Backend contracts, metrics/history, and run policies |
-| `al_pipeline.astronomy.boom` | BOOM client, pool materialization, and catalogue evidence |
-| `al_pipeline.astronomy.ztf` | ZTF packet interpretation, photometry, eligibility, and preprocessing |
-| `al_pipeline.astronomy.labels` | AppleCiDEr-specific catalogue-to-taxonomy rules |
-| `al_pipeline.astronomy.data` | Survey manifest schema, dataset registry, cumulative labelled CSVs |
-| `al_pipeline.astronomy.astrominn` | Legacy model loading, inference, training, evaluation, and candidate inspection |
-| `al_pipeline.astronomy.experiments` | Retrospective A/B coordinators and their dataset-specific setup |
-| `al_pipeline.astronomy.evaluation` | Multi-seed reporting of the existing astronomy run artifacts |
+| **Pool-based active learning** — uncertainty scoring, selection, budgets, and labeled/unlabeled/pending states | [`al_pipeline.core`](src/al_pipeline/core/) |
+| **Label evidence and oracles** — provider-independent evidence collection and resolution contracts | [`core.evidence`, `core.oracle`, `core.workflow`](src/al_pipeline/core/) |
+| **Astronomical integrations** — ZTF alert handling, BOOM catalogue access, historical survey manifests, AppleCiDEr taxonomy rules | [`al_pipeline.astronomy`](src/al_pipeline/astronomy/) |
+| **Historical AstroMiNN studies** — acquisition policies including random, entropy, diversity, BADGE, BALD, TAILOR, SIMILAR, DIRECT, and AnchorAL | [`research/historical_replay`](scripts/research/historical_replay/README.md) |
+| **Evaluation and diagnostics** — validation curves, per-class scores, seed variation, acquisition overlap, and run histories | [`core.evaluation`](src/al_pipeline/core/evaluation/), [teaching results](examples/data/README.md) |
+| **Two CPU teaching notebooks** — run an acquisition loop, then analyze real archived astronomy experiments | [Examples](examples/README.md) |
 
-`core` never imports `astronomy`. Its basic loop and resolution workflow need
-only NumPy and the Python standard library. Analysis utilities add optional
-pandas, Matplotlib, and scikit-learn dependencies. Astronomy integrations add
-PyTorch, torchvision, and Astropy. No AppleCiDEr, Hyrax, or FLARE import is
-required to use this extracted package.
+The **core is independent of astronomy and PyTorch**. Historical AstroMiNN studies, by contrast, can require archived datasets, model checkpoints, external code, and HPC resources. The teaching notebooks do not.
 
-The retrospective coordinator remains in `astronomy/experiments/simulated.py`
-because it assumes survey/alert manifests and the current artifact layout.
-Reusable orchestration lives in `core/loop.py` and `core/workflow.py`; we do not
-pretend the retrospective manifest schema is domain-independent.
+## Quick start: notebooks on your own computer
 
-## Experiments and notebooks
-
-- [Experiment A](docs/simulated_active_learning_runs.md): historical data plus
-  cumulative acquired BOOM/TNS labels, with the existing initialization policies.
-- [Experiment B](docs/astrominn_historical_replay_experiment_b.md): historical-only
-  replay, fixed object split, seed-specific bootstrap, random ViT retraining.
-- [Architecture and migration](docs/migration.md): import mapping and preserved behavior.
-
-Launchers retain their argument names. Change the registry argument to
-`configs/delta.toml`. Omitting `--run` retains each launcher's existing preflight
-behavior; A can materialize its holdout and B its deterministic split, so use
-fresh suite IDs for new checks. The guides use the `al-pipeline` environment
-and a per-process Delta C++ runtime helper. Keep one-epoch checks separate
-from full-budget experiments; retain the same settings when resuming a run.
-
-Delta validation on 2026-10-08 passed all 316 tests, matched A's holdout rows
-and B's split rows/source hashes against the original runs, and completed
-one entropy cycle in both GPU smoke suites (including B's bootstrap).
-Full-budget numerical reproduction remains unverified. See
-[migration validation](docs/migration.md#validation-status-on-delta).
-
-Notebooks are not copied yet. Adapt them using the module and symbol maps in
-`docs/`; old `applecider.adaptive` imports are deliberately not installed as
-aliases. Upstream AppleCiDEr and FLARE remain separate sibling repositories.
-The original code has no standalone FLARE adapter to extract; future notebook
-migration can use the sibling FLARE package or add an adapter here when needed.
-
-## Testing
-
-The default test suite is **portable**: no Delta filesystem, private
-datasets, broker credentials, GPU, or historical model checkpoints are needed.
+Requires **Python 3.11 or newer**. Clone the repository and install the teaching dependencies:
 
 ```bash
-python -m pip install -e ".[dev]"
-python -m pytest -q
+git clone https://github.com/DimitrisKour/astro-transient-active-learning.git
+cd astro-transient-active-learning
+python -m venv .venv
+source .venv/bin/activate                 # macOS/Linux
+python -m pip install -e ".[teaching]"
 ```
 
-This runs the core and synthetic integration tests. Optional PyTorch-dependent
-checks are skipped when PyTorch is unavailable. GitHub Actions exercises the
-same commands on clean Python 3.11/3.12 environments.
+On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead. The repository may require GitHub access while it remains private.
 
-The historical research/Slurm tests are retained but explicitly opt-in.
-They can require optional dependencies and frozen experiment artifacts:
+Both student notebooks **already contain executed figures** and can be opened immediately in Jupyter or VS Code. To run them from scratch on CPU and save separate, executed copies:
 
 ```bash
-python -m pip install -e ".[dev,astronomy]"
-python -m pytest tests -q
+python scripts/examples/execute_digits_notebook.py --mode core --output digits_core_local.ipynb
+python scripts/examples/execute_astro_notebook.py --output astro_school_local.ipynb
 ```
 
-See [the testing guide](docs/testing.md) for required environment variables,
-test selection, and the distinction between portable and historical checks.
+| Notebook | What you do | Data and hardware |
+| --- | --- | --- |
+| [01 · Pool-based active learning with digits](examples/01_active_learning_digits.ipynb) | Run random, entropy, and margin acquisition; inspect the pool and solve five guided exercises | Bundled scikit-learn digits; CPU |
+| [02 · Active learning for astronomical transients](examples/02_applecider_astronomy_active_learning.ipynb) | Analyze completed AstroMiNN learning curves, TDE/CV class metrics, seed variation, and a cumulative acquisition-overlap matrix | Bundled, precomputed research tables; CPU and offline |
 
-## Local development
+The second notebook analyzes **recorded experiments**, not a newly trained astronomical model. Its [data guide](examples/data/README.md) explains the scope of the archived measurements and limitations of cross-suite comparisons.
+
+## Use the core in Python
+
+For example, select the most uncertain object from three candidates, using predictive entropy:
+
+```python
+import numpy as np
+from al_pipeline.core.loop import ActiveLearningLoop
+from al_pipeline.core.pool import Pool
+from al_pipeline.core.scoring.entropy import EntropyScorer
+from al_pipeline.core.selection import TopKSelector
+from al_pipeline.core.types import ClassificationPredictions
+
+ids = ["candidate-a", "candidate-b", "candidate-c"]
+probabilities = ClassificationPredictions(
+    values=np.array([[0.95, 0.05], [0.51, 0.49], [0.80, 0.20]]),
+    output_type="probabilities",
+)
+pool = Pool(unlabeled_ids=ids)
+loop = ActiveLearningLoop(pool=pool, scorer=EntropyScorer(), selector=TopKSelector())
+selection = loop.acquire(ids=ids, acquisition_data=probabilities, k=1)
+print(selection.ids)  # ['candidate-b']
+```
+
+`acquire()` marks selected candidates as **pending**; labels are handled separately by the oracle/resolution workflow. The core does not need an astronomical dataset or pretrained model to run.
+
+## Installation options
+
+Install from the **repository root** using editable mode:
 
 ```bash
-python -m ruff check .
-python -m ruff format --check .
+python -m pip install -e .                # Minimal core (NumPy)
+python -m pip install -e ".[analysis]"     # Pandas, Matplotlib, scikit-learn
+python -m pip install -e ".[teaching]"     # Both offline notebooks
+python -m pip install -e ".[astronomy]"    # PyTorch/torchvision, Astropy, analysis tools
+python -m pip install -e ".[dev,teaching]" # Tests, linting, and notebooks
 ```
 
-Use the Delta instructions to reuse existing dependencies without upgrading them.
+The **GitHub repository name is separate from the Python package name**: the installed distribution remains `al-pipeline`, and imports remain `al_pipeline`. Astronomy extras install dependencies, but **do not download historical datasets, trained checkpoints, private registry files, or upstream model implementations**. For the frozen Delta environment, use the [HPC installation guide](docs/delta_installation.md) instead of casually upgrading its scientific dependencies.
+
+## Repository guide
+
+- [`src/al_pipeline/core/`](src/al_pipeline/core/) — portable acquisition, selection, pool, label, training and evaluation interfaces.
+- [`src/al_pipeline/astronomy/`](src/al_pipeline/astronomy/) — broker, ZTF, resolver, AstroMiNN, data and experiment integrations.
+- [`examples/`](examples/README.md) — student notebooks and portable CPU runners.
+- [`scripts/`](scripts/README.md) — teaching tools, research launchers and archived experiments; not every script is a public quickstart.
+- [`docs/`](docs/) — experiment protocols, migration notes and environment guides.
+
+## Testing and reproducibility
+
+```bash
+python -m pip install -e ".[dev,teaching]"
+python -m pytest -q                                      # Portable default suite
+python -m pytest -q tests/examples                       # Notebook and export checks
+```
+
+The default suite runs without private astronomy data or GPUs. Historical experiment tests may need external artifacts, optional packages, and specific environments; consult the [testing guide](docs/testing.md) and [research script navigation](scripts/README.md). For implementation provenance, see the [migration notes](docs/migration.md).
+
+**Research-data note:** the included teaching tables contain summarized validation results, not raw survey observations or model weights. Differences across independently executed experiment suites are descriptive unless their full protocols are established as comparable. Review the [data and redistribution notes](examples/data/README.md) before sharing research-derived measurements outside an authorized audience.

@@ -14,8 +14,22 @@ checkpoint APIs are in `src/al_pipeline/core/`. The
 
 The experimental files below are **not** generic public quickstarts:
 they can assume historic data, model weights, external upstream packages or
-Delta/HPC-specific settings. Standalone portable training-school examples
-will be added separately and documented as their own supported workflow.
+Delta/HPC-specific settings. Portable training-school notebooks and their CPU runners are already included;
+see [examples](../examples/README.md).
+
+## Portable teaching examples
+
+- [Notebook 01: handwritten digits](../examples/01_active_learning_digits.ipynb) — an interactive CPU acquisition loop, with guided exercises.
+- [Notebook 02: astronomical transients](../examples/02_applecider_astronomy_active_learning.ipynb) — offline analysis of real archived AstroMiNN learning curves, class scores and cumulative acquisition overlap.
+
+After installing `.[teaching]` from the repository root, these commands execute the student notebooks without changing any research experiment:
+
+```bash
+python scripts/examples/execute_digits_notebook.py --mode core --output digits_core_local.ipynb
+python scripts/examples/execute_astro_notebook.py --output astro_school_local.ipynb
+```
+
+The read-only teaching-data exporters are under `scripts/examples/`; unlike the notebooks, re-exporting source records requires access to the original research artifacts.
 
 ## Research and historical runs
 

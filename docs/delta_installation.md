@@ -1,7 +1,8 @@
-# Delta installation
+# Delta installation for historical research
 
-The extraction patch is applied to the empty sibling `active-learning` repository.
-The old checkout, upstream clones, datasets, and running experiments are preserved.
+This guide describes the existing Delta/HPC setup for the **historical astronomical experiments**. A local clone can run the [core and teaching notebooks](../README.md) without the steps below. The original research checkout remains under the directory name `active-learning`; that on-disk name is independent of the GitHub repository name. Do not move it while frozen jobs, environments, or absolute artifact paths still refer to it.
+
+The historical checkout, upstream clones, datasets, checkpoints, and experiment artifacts are preserved.
 
 ## Environment and editable installs
 
