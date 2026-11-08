@@ -42,7 +42,13 @@ jobs:
           python -m pip install pytest
       - name: Validate notebook syntax, contracts and execute every cell on CPU
         run: python -m pytest -q tests/examples/test_digits_notebook.py
-      - name: Verify Delta-style runner writes an executed notebook
+      - name: Verify notebook 02 data exports and execute CPU astronomy example
+        run: python -m pytest -q tests/examples/test_astro_teaching_data.py tests/examples/test_astro_notebook.py
+      - name: Verify notebook 02 standalone CPU runner
+        run: |
+          python scripts/examples/execute_astro_notebook.py --output "${{ runner.temp }}/astro_executed.ipynb"
+          test -s "${{ runner.temp }}/astro_executed.ipynb"
+      - name: Verify notebook 01 runner writes an executed notebook
         run: |
           python scripts/examples/execute_digits_notebook.py --output "${{ runner.temp }}/digits_executed.ipynb"
           test -s "${{ runner.temp }}/digits_executed.ipynb"
