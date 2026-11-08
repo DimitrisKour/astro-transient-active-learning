@@ -17,7 +17,7 @@ eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 export FUSION_V2_SOURCE_PLAN="$PLAN" FUSION_V2_CACHE_ROOT="$CACHE"
-python -u scripts/adaptive/fusion_cache_v2.py prepare \
+python -u scripts/archive/fusion_image/early_l0/fusion_cache_v2.py prepare \
   --source-plan "$PLAN" --cache-root "$CACHE" --shards "$N_SHARDS"
 if [[ "$MODE" == --prepare ]]; then
   echo 'Prepared L0+validation shard plan; zero jobs submitted.'
@@ -58,7 +58,7 @@ if [[ "${#missing[@]}" -gt 0 ]]; then
     --export=ALL,FUSION_V2_SOURCE_PLAN,FUSION_V2_CACHE_ROOT \
     --output="$PIPELINE/logs/shard_%A_%a.out" \
     --error="$PIPELINE/logs/shard_%A_%a.err" \
-    scripts/adaptive/fusion_cache_v2_shard.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_cache_v2_shard.sbatch)
   dependency="afterok:${array_id}"
 else
   array_id=none
@@ -69,16 +69,16 @@ if [[ -n "$dependency" ]]; then
   final_id=$(sbatch --parsable --dependency="$dependency" \
     --export=ALL,FUSION_V2_SOURCE_PLAN,FUSION_V2_CACHE_ROOT \
     --output="$PIPELINE/logs/join_%j.out" --error="$PIPELINE/logs/join_%j.err" \
-    scripts/adaptive/fusion_cache_v2_finalize.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_cache_v2_finalize.sbatch)
 else
   final_id=$(sbatch --parsable \
     --export=ALL,FUSION_V2_SOURCE_PLAN,FUSION_V2_CACHE_ROOT \
     --output="$PIPELINE/logs/join_%j.out" --error="$PIPELINE/logs/join_%j.err" \
-    scripts/adaptive/fusion_cache_v2_finalize.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_cache_v2_finalize.sbatch)
 fi
 bench_id=$(sbatch --parsable --dependency="afterok:${final_id}" \
     --output="$PIPELINE/logs/bench_%j.out" --error="$PIPELINE/logs/bench_%j.err" \
-    scripts/adaptive/fusion_cache_v2_benchmark.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_cache_v2_benchmark.sbatch)
 {
   printf 'job\tjob_id\n'
   printf 'cpu_shards\t%s\n' "$array_id"

@@ -23,7 +23,7 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-python scripts/adaptive/fusion_l0_matrix.py prepare \
+python scripts/archive/fusion_image/early_l0/fusion_l0_matrix.py prepare \
     --repo "$REPO" --run-root "$ROOT" --registry "$REG" \
     --audit "$AUDIT" --new-index "$INDEX" --upstream-repo "$UPSTREAM" \
     --hf-snapshot "$HF" --hf-weights-sha256 "$HF_SHA" \
@@ -44,23 +44,23 @@ pre_id=$(sbatch --parsable \
     --export=ALL,FUSION_L0_KIND=pilot,FUSION_L0_INIT=pretrained \
     --job-name=fusion_pilot_pre --time=00:45:00 \
     --output="$ROOT/logs/pilot_pre_%j.out" --error="$ROOT/logs/pilot_pre_%j.err" \
-    scripts/adaptive/fusion_l0_gpu.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_l0_gpu.sbatch)
 ran_id=$(sbatch --parsable \
     --export=ALL,FUSION_L0_KIND=pilot,FUSION_L0_INIT=randomized \
     --job-name=fusion_pilot_ran --time=00:45:00 \
     --output="$ROOT/logs/pilot_ran_%j.out" --error="$ROOT/logs/pilot_ran_%j.err" \
-    scripts/adaptive/fusion_l0_gpu.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_l0_gpu.sbatch)
 arr_id=$(sbatch --parsable \
     --dependency="afterok:$pre_id:$ran_id" --array=0-5%2 \
     --export=ALL,FUSION_L0_KIND=full \
     --job-name=fusion_l0_matrix --time=03:00:00 \
     --output="$ROOT/logs/full_%A_%a.out" --error="$ROOT/logs/full_%A_%a.err" \
-    scripts/adaptive/fusion_l0_gpu.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_l0_gpu.sbatch)
 report_id=$(sbatch --parsable \
     --dependency="afterok:$arr_id" \
     --export=ALL \
     --output="$ROOT/logs/report_%j.out" --error="$ROOT/logs/report_%j.err" \
-    scripts/adaptive/fusion_l0_report.sbatch)
+    scripts/archive/fusion_image/early_l0/fusion_l0_report.sbatch)
 {
   printf 'job\tjob_id\n'
   printf 'pilot_pretrained\t%s\n' "$pre_id"

@@ -29,7 +29,7 @@ from al_pipeline.core.training.base import TrainingRequest
 SEEDS = (135, 246, 357)
 INITS = ('pretrained', 'randomized')
 RUNS = tuple((init, seed) for init in INITS for seed in SEEDS)
-SCRIPT_REL = 'scripts/adaptive/fusion_l0_matrix.py'
+SCRIPT_REL = 'scripts/archive/fusion_image/early_l0/fusion_l0_matrix.py'
 SOURCE_FILES = (SCRIPT_REL, 'src/al_pipeline/astronomy/fusion_image/contracts.py',
                 'src/al_pipeline/astronomy/fusion_image/data.py',
                 'src/al_pipeline/astronomy/fusion_image/model.py',
