@@ -37,7 +37,7 @@ LEGACY_GIT_BLOBS = {
 
 def git_blob_sha(path: Path) -> str:
     data = path.read_bytes()
-    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + bytes((0,)) + data).hexdigest()
 
 
 @pytest.mark.parametrize("name,sha", LEGACY_GIT_BLOBS.items())
@@ -67,7 +67,8 @@ def test_grouped_paths_are_self_consistent_and_not_old_write_roots():
             text = (base / name).read_text()
             for n in names:
                 assert f"scripts/adaptive/{n}" not in text, (name, n)
-        assert "scripts/adaptive/" not in (base / f"{task}_closed_loop.py").read_text() if task == "task1" else True
+        if task == "task1":
+            assert "scripts/adaptive/" not in (base / "task1_closed_loop.py").read_text()
 
     t0 = (NEW / "task0" / "task0_full_history.py").read_text()
     assert "new_image_task0_full_historical_grouped_v1" in t0
