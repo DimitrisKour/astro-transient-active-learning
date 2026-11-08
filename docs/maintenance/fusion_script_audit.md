@@ -117,3 +117,17 @@ their queue state has **not been checked** in this GitHub-only audit.
   superseded pilots and one-time repairs with explicit provenance.
 - Run both clean-install portable tests and an explicit review of the
   **entire Git history** before making the repo public.
+
+## Task 0/1 grouped migration update
+
+The canonical Task 0 and Task 1 controllers, schedulers, Slurm workers and
+launchers now also exist under `scripts/research/fusion_image/task0/` and
+`task1/`. They use separate experiment identities and were validated against
+both the old scientific tests and new compatibility contracts. **All 14 old
+files remain unchanged in `scripts/adaptive/`**, because the actual Delta
+job queue was not available to inspect. Their removal remains blocked on
+confirming that no live, pending or held job needs them. The grouped copies
+are for new versioned runs, not resumptions of existing frozen suites.
+
+See `scripts/research/fusion_image/task0_task1_README.md` for the separate
+output directories, source identity guarantees and tests.
