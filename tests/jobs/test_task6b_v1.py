@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS=ROOT/'scripts/adaptive'
+SCRIPTS=ROOT/'scripts/research/historical_replay/task6b'
 sys.path.insert(0,str(SCRIPTS))
 import task6b as jobs
 import task6b_build as build
@@ -164,7 +164,7 @@ def test_freeze_is_isolated_and_immutable(tmp_path,monkeypatch):
     package=repo/'src/al_pipeline/astronomy/astrominn'
     package.mkdir(parents=True)
     (package/'training.py').write_text('upstream training')
-    scripts=repo/'scripts/adaptive'
+    scripts=repo/'scripts/research/historical_replay/task6b'
     scripts.mkdir(parents=True)
     for name in ('task6b.py','task6b_build.py','task6b_prepare.py','task6b_common.sh','task6b_worker.sbatch'):
         (scripts/name).write_text(name)
@@ -185,10 +185,10 @@ def test_freeze_is_isolated_and_immutable(tmp_path,monkeypatch):
 
 def test_preflight_materializes_before_split_comparison(tmp_path,monkeypatch):
     source=tmp_path/'source'
-    (source/'scripts/adaptive').mkdir(parents=True)
+    (source/'scripts/research/historical_replay/task6b').mkdir(parents=True)
     (source/'scripts/run_task6b_closed_loop.py').write_text('x')
     (source/'src').mkdir(parents=True)
-    (source/'scripts/adaptive/task6b_common.sh').write_text('')
+    (source/'scripts/research/historical_replay/task6b/task6b_common.sh').write_text('')
     monkeypatch.setattr(jobs,'_arguments',lambda root,seed,policy:['--fake',str(seed)])
     monkeypatch.setattr(jobs,'scientific_env',lambda root:{})
     seen=[]
