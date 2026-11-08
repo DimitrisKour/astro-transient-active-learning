@@ -285,7 +285,7 @@ def main() -> None:
             p.error('--max-concurrent must be 1–6')
         if not __import__('re').fullmatch(r'\d{2}:\d{2}:\d{2}', a.walltime):
             p.error('Invalid walltime')
-        worker = a.job_dir / 'source' / 'scripts' / 'adaptive' / 'task8b_worker.sbatch'
+        worker = a.job_dir / 'source' / 'scripts' / 'research' / 'historical_replay' / 'task8b' / 'task8b_worker.sbatch'
         cmd = ['sbatch', f'--time={a.walltime}',
                f'--array=0-{len(plan["jobs"])-1}%{a.max_concurrent}',
                f'--output={a.job_dir}/logs/T8B_%A_%a.out',
