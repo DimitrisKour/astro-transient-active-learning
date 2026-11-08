@@ -25,4 +25,4 @@ RT="${JOB_DIR}/runtime/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
 mkdir -p "$RT"/{tmp,torch,matplotlib}
 export TMPDIR="$RT/tmp" TORCH_HOME="$RT/torch" MPLCONFIGDIR="$RT/matplotlib"
 echo "Task8B retry: Slurm job ${SLURM_JOB_ID}; index ${SLURM_ARRAY_TASK_ID}"
-python "$SOURCE/scripts/adaptive/task8b.py" run --job-dir "$JOB_DIR" --index "$SLURM_ARRAY_TASK_ID"
+python "$SOURCE/scripts/research/historical_replay/task8b/task8b.py" run --job-dir "$JOB_DIR" --index "$SLURM_ARRAY_TASK_ID"

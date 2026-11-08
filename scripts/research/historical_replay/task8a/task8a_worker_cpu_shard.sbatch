@@ -17,7 +17,7 @@ case "$OUTPUT_DIR" in
     /work/hdd/bcrv/dkourtesis/applecider_adaptive/analysis/task8a_retrospective_acceptance_v1/shards/"$SUITE") ;;
     *) echo 'Unexpected HDD shard output directory' >&2; exit 2 ;;
 esac
-[[ -f "$SOURCE_ROOT/scripts/adaptive/task8a.py" ]] || { echo 'Task8A script missing' >&2; exit 2; }
+[[ -f "$SOURCE_ROOT/scripts/research/historical_replay/task8a/task8a.py" ]] || { echo 'Task8A script missing' >&2; exit 2; }
 module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
@@ -26,7 +26,7 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-2}"
 export OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 export PYTHONUNBUFFERED=1
 mkdir -p "$OUTPUT_DIR"
-python "$SOURCE_ROOT/scripts/adaptive/task8a.py" run \
+python "$SOURCE_ROOT/scripts/research/historical_replay/task8a/task8a.py" run \
     --persistent /projects/bcrv/dkourtesis/applecider_adaptive \
     --data /work/hdd/bcrv/dkourtesis/applecider_adaptive \
     --output "$OUTPUT_DIR" \
