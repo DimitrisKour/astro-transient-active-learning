@@ -25,10 +25,10 @@ Delta (don't source the strict common shell in your interactive session):
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -n /projects/bcrv/dkourtesis/task6c_equal_object_dynamic_v1.zip -d .
 python -m pytest tests/jobs/test_task6c_v1.py -q
-python scripts/adaptive/task6c.py prepare --selection loss
-python scripts/adaptive/task6c.py prepare --selection macro_f1
-python scripts/adaptive/task6c.py verify --selection loss
-python scripts/adaptive/task6c.py verify --selection macro_f1
+python scripts/research/historical_replay/task6c/task6c.py prepare --selection loss
+python scripts/research/historical_replay/task6c/task6c.py prepare --selection macro_f1
+python scripts/research/historical_replay/task6c/task6c.py verify --selection loss
+python scripts/research/historical_replay/task6c/task6c.py verify --selection macro_f1
 ```
 
 `prepare` freezes each mode's scientific runner and creates the replay split **without training or requiring Task 6B to be finished**. `verify` checks source/registry/split and reports L₀ readiness. An unfinished Task 6B should produce `bootstrap ready=False` for the macro-F1 choice, not an error.
@@ -38,16 +38,16 @@ python scripts/adaptive/task6c.py verify --selection macro_f1
 Choose **one** checkpoint strategy. Dry-run is harmless:
 
 ```bash
-python scripts/adaptive/task6c.py plan --selection loss
-python scripts/adaptive/task6c.py plan --selection macro_f1
-python scripts/adaptive/task6c.py preflight --selection CHOSEN_MODE
-python scripts/adaptive/task6c.py submit --selection CHOSEN_MODE --walltime 00:20:00
+python scripts/research/historical_replay/task6c/task6c.py plan --selection loss
+python scripts/research/historical_replay/task6c/task6c.py plan --selection macro_f1
+python scripts/research/historical_replay/task6c/task6c.py preflight --selection CHOSEN_MODE
+python scripts/research/historical_replay/task6c/task6c.py submit --selection CHOSEN_MODE --walltime 00:20:00
 ```
 
 The `preflight` reads and validates the three existing L₀ checkpoints using the frozen runner and confirms no training will be started on the login node. Only then, and only after confirming no prior submission for the chosen mode:
 
 ```bash
-python scripts/adaptive/task6c.py submit --selection CHOSEN_MODE --walltime 00:20:00 --submit
+python scripts/research/historical_replay/task6c/task6c.py submit --selection CHOSEN_MODE --walltime 00:20:00 --submit
 ```
 
 It submits **54 held jobs**, installs one `afterok` dependency per consecutive cycle of the **same seed/policy**, and releases them in reverse order. It blocks all other re-submission attempts if a submission marker or trajectory state exists. The six first-cycle jobs are independent and reuse the appropriate matching L₀ checkpoint.
@@ -57,7 +57,7 @@ For progress: `squeue -u "$USER" -o '%.18i %.35j %.2t %.10M %R'`.
 ## Reporting
 
 ```bash
-python scripts/adaptive/task6c_report.py --selection CHOSEN_MODE
+python scripts/research/historical_replay/task6c/task6c_report.py --selection CHOSEN_MODE
 ```
 
 Report output is under `closed_loop/<suite>/report/` with `summary.json`, `paired_validation.csv`, `paired_per_class.csv`, and `run_status.csv`, compared exclusively against the matched checkpoint-selection reference. Test is report-only, not used to choose future protocols.
