@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import pytest
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'scripts/adaptive'))
+sys.path.insert(0,str(ROOT/'scripts/research/historical_replay/task9'))
 sys.path.insert(0,str(ROOT/'src'))
 from task9b_swa_bn_v2 import make_plan,submit,status,atomic_json
 from al_pipeline.astronomy.analysis.swa_continuation_bn_v2 import (EPOCHS,START_AVERAGING,CONTINUATION_LR,
