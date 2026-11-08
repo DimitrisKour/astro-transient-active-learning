@@ -19,8 +19,8 @@ The cache saves **no class labels**, and the runtime can instantiate `ShardedHis
 ## Contents and compatibility
 
 The overlay introduces:
-- `scripts/adaptive/fusion_full_historical_cache_v1.py`: strict source/audit guard and full train+validation runner.
-- `scripts/adaptive/submit_fusion_full_historical_cache_v1.sh`: prepare, submit, status, retry; NO GPU jobs.
+- `scripts/research/fusion_image/cache/fusion_full_historical_cache_v1.py`: strict source/audit guard and full train+validation runner.
+- `scripts/research/fusion_image/cache/submit_fusion_full_historical_cache_v1.sh`: prepare, submit, status, retry; NO GPU jobs.
 - Two SLURM job scripts: 24 CPU shards (max 6 simultaneous) then one dependent CPU finalization.
 - `tests/astronomy/fusion_image/test_full_historical_cache_v1.py`: test expected behavior with synthetic compressed object NPZs.
 - A *backward-compatible two-line* update to `src/al_pipeline/astronomy/fusion_image/cache_v2.py`: `finalize(root, *, source='L0+validation only')`. This lets the new manifest truthfully record `source='historical_full_train_plus_fixed_validation'`. Previous v3 runs retain the original behavior.
@@ -43,7 +43,7 @@ unzip -o /projects/bcrv/dkourtesis/fusion_full_historical_cache_v1.zip -d .
 python -m pytest tests/astronomy/fusion_image/test_full_historical_cache_v1.py \
   tests/astronomy/fusion_image/test_sharded_cache_v2.py -q
 python -m pytest tests/astronomy/fusion_image -q
-bash scripts/adaptive/submit_fusion_full_historical_cache_v1.sh --prepare
+bash scripts/research/fusion_image/cache/submit_fusion_full_historical_cache_v1.sh --prepare
 ```
 
 **Check the printed scope carefully**: `training_objects` should be 4,729, `training_rows` should be 29,161, and `previous_small_l0_rows` should be 2,890. Confirm `validation_rows` is 14,148. Stop and inspect if the values differ from the historical audit. Note this depends on the older pinned audit and original CSVs being present/unchanged.
@@ -51,13 +51,13 @@ bash scripts/adaptive/submit_fusion_full_historical_cache_v1.sh --prepare
 To launch CPU preprocessing only:
 
 ```bash
-bash scripts/adaptive/submit_fusion_full_historical_cache_v1.sh --submit
+bash scripts/research/fusion_image/cache/submit_fusion_full_historical_cache_v1.sh --submit
 ```
 
 Monitor:
 
 ```bash
-bash scripts/adaptive/submit_fusion_full_historical_cache_v1.sh --status
+bash scripts/research/fusion_image/cache/submit_fusion_full_historical_cache_v1.sh --status
 squeue -u "$USER"
 PIPE=/projects/bcrv/dkourtesis/applecider_adaptive/new_image_full_historical_cache_pipeline_v1
 CACHE=/work/hdd/bcrv/dkourtesis/applecider_adaptive/new_image_full_historical_train_cache_v1
@@ -75,7 +75,7 @@ The final file is:
 Retry only after earlier shard/finalization jobs have stopped, and inspect any `.shard_NNN_*` incomplete temporary directories first:
 
 ```bash
-bash scripts/adaptive/submit_fusion_full_historical_cache_v1.sh --retry
+bash scripts/research/fusion_image/cache/submit_fusion_full_historical_cache_v1.sh --retry
 ```
 
 No existing cache or model checkpoint is overwritten. No full-data training, test evaluation or active learning is submitted. In particular **do not run** `submit_fusion_l0_matrix.sh --submit` until a new full-history-aware training matrix is separately verified: the old one is bound to a different cache and dataset plan.
