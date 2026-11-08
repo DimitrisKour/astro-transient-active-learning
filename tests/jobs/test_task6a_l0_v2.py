@@ -70,6 +70,7 @@ def test_builder_full_script_science_contract(tmp_path):
     repo=tmp_path/'repo'
     (repo/'scripts/research/historical_replay/task6a').mkdir(parents=True)
     (repo/'scripts/run_astrominn_historical_replay.py').write_text('ORIGINAL')
+    (repo/'scripts/research/historical_replay/task4').mkdir(parents=True)
     (repo/'scripts/research/historical_replay/task4/task4_build_runner.py').write_text('''
 def build_runner(source):
     return """    if args.bootstrap_source_suite_id == args.suite_id:
