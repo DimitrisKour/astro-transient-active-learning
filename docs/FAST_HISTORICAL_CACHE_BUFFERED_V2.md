@@ -1,3 +1,5 @@
+> **Archive notice:** This document reproduces an earlier fusion-image prototype or diagnostic. The scripts below are now under `scripts/archive/fusion_image/`, rather than the supported full-history resident-cache/Task 0/Task 1 workflow. Consult the archive README before any historical submission. Existing frozen snapshots must not be overwritten.
+
 # Fast historical cache — buffered build fix v2
 
 ## Why
@@ -36,7 +38,7 @@ REPORT=/projects/bcrv/dkourtesis/applecider_adaptive/new_image_fastcache_cpu_v2
 mkdir -p "$REPORT/logs"
 sbatch --output="$REPORT/logs/fastcache_%j.out" \
        --error="$REPORT/logs/fastcache_%j.err" \
-       scripts/adaptive/fusion_fastcache_cpu_safe.sbatch
+       scripts/archive/fusion_image/early_diagnostics/fusion_fastcache_cpu_safe.sbatch
 ```
 
 This does one buffered build of the previously verified full-history cache, checks exact array shapes and sampled numerical equality, and benchmarks lazy mapping and a full train+validation pass; **no GPU**. Requests 2 CPUs, 12 GB RAM, 30-minute wall limit. The published path remains `/work/nvme/bcrv/dkourtesis/applecider_adaptive/new_image_full_historical_fastcache_v1`, which does not yet exist. If this final directory exists, the build refuses to overwrite it.
