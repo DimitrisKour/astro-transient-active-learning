@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Task8C.1: CPU Task4 replay until first rejection; GPU retention-only continuations.
+"""Task8C.2: CPU Task4 replay before first rejection; GPU bounded-retry continuations.
 
 prepare, plan, verify, and status submit NO jobs. prefill uses cached Task4
 predictions and checkpoints (no training), run executes ONE new GPU cycle.
@@ -22,7 +22,7 @@ P = Path('/projects/bcrv/dkourtesis/applecider_adaptive')
 D = Path('/work/hdd/bcrv/dkourtesis/applecider_adaptive')
 REFERENCE = P/'closed_loop'/'astrominn_closed_loop_warm_v1'
 AUDIT = D/'analysis'/'task8a_retrospective_acceptance_v1'/'first_rejections.csv'
-SUITE = 'astrominn_task8c1_retention_macro1pp_v1'
+SUITE = 'astrominn_task8c2_retry4_macro1pp_v1'
 JOB = D/'closed_loop'/SUITE
 POLICIES = ('entropy', 'entropy_balanced_explore')
 SEEDS = (135, 246, 357)
@@ -32,9 +32,10 @@ EXPECTED = {('entropy',135):4, ('entropy',246):4, ('entropy',357):5,
 OVERLAYS = ('src/al_pipeline/core/analysis/__init__.py',
             'src/al_pipeline/core/analysis/retention_gate.py',
             'src/al_pipeline/astronomy/experiments/retention.py',
-            'scripts/adaptive/task8c1.py','scripts/adaptive/task8c1_report.py',
-            'scripts/adaptive/task8c1_worker_cpu.sbatch',
-            'scripts/adaptive/task8c1_worker_gpu.sbatch')
+            'src/al_pipeline/astronomy/experiments/retention_retry.py',
+            'scripts/research/historical_replay/task8c2/task8c2.py','scripts/research/historical_replay/task8c2/task8c2_report.py',
+            'scripts/research/historical_replay/task8c2/task8c2_worker_cpu.sbatch',
+            'scripts/research/historical_replay/task8c2/task8c2_worker_gpu.sbatch')
 
 
 def sha(path):
@@ -140,7 +141,7 @@ def build_plan(reference:Path,audit:Path,data:Path):
         if not boot.is_file():raise FileNotFoundError(boot)
         row['bootstrap_checkpoint']=str(boot)
         row['bootstrap_sha256']=sha(boot)
-    return {'schema':'task8c1_retention_v1','suite':SUITE,'cases':cases,
+    return {'schema':'task8c2_retry4_v1','suite':SUITE,'cases':cases,
         'source_suite':'astrominn_closed_loop_warm_v1',
         'reference':str(reference),'reference_snapshot_sha256':reference_digest,
         'reference_registry_sha256':sha(reference/'registry.toml'),
@@ -154,15 +155,18 @@ def build_plan(reference:Path,audit:Path,data:Path):
         'training':{'max_epochs':50,'patience':10,'class_weight_exponent':0.85,
                     'weighting':'per_sample','checkpoint_selection':'weighted_loss_best',
                     'expert_towers':'frozen','initialization':'last_accepted_checkpoint',
+                    'retry_initialization':'same_incumbent_checkpoint',
                     'test_used_for_selection':False},
         'first_rejection_replay':True,'full_cycles':9,
         'planned_new_gpu_cycles':sum(9-c['first_rejection'] for c in cases),
+        'retry_seeds':[1001,1002,1003,1004],
+        'planned_gpu_job_slots':sum(4+5*(9-c['first_rejection']) for c in cases),
         'submissions':False}
 
 
 def prepare(repo:Path,job:Path,reference:Path,audit:Path,data:Path):
     repo=repo.resolve()
-    if data.resolve() not in job.resolve().parents:raise ValueError('Task8C1 state must be on HDD')
+    if data.resolve() not in job.resolve().parents:raise ValueError('Task8C2 state must be on HDD')
     plan=build_plan(reference,audit,data)
     content={str(p.relative_to(reference/'source')):p.read_bytes()
              for p in (reference/'source'/'src').rglob('*.py')}
@@ -170,7 +174,7 @@ def prepare(repo:Path,job:Path,reference:Path,audit:Path,data:Path):
         p=repo/rel
         if not p.is_file():raise FileNotFoundError(p)
         if rel in content and content[rel]!=p.read_bytes():
-            raise ValueError(f'Task8C1 overlay would change frozen Task4 code: {rel}')
+            raise ValueError(f'Task8C2 overlay would change frozen Task4 code: {rel}')
         content[rel]=p.read_bytes()
     hashes={rel:hashlib.sha256(raw).hexdigest() for rel,raw in content.items()}
     registry=routed_registry(reference,data)
@@ -178,11 +182,11 @@ def prepare(repo:Path,job:Path,reference:Path,audit:Path,data:Path):
         if (json_load(job/'plan.json')!=plan or
             json_load(job/'source_snapshot.json')!=hashes or
             (job/'registry.toml').read_text()!=registry):
-            raise ValueError('Existing frozen Task8C1 scientific plan differs')
+            raise ValueError('Existing frozen Task8C2 scientific plan differs')
         verify(job,deep=True)
         return plan
     if (job/'source').exists() or (job/'registry.toml').exists():
-        raise RuntimeError('Partial frozen Task8C1 snapshot: inspect before retrying')
+        raise RuntimeError('Partial frozen Task8C2 snapshot: inspect before retrying')
     for rel,blob in content.items():
         target=job/'source'/rel
         target.parent.mkdir(parents=True,exist_ok=True)
@@ -197,13 +201,13 @@ def prepare(repo:Path,job:Path,reference:Path,audit:Path,data:Path):
 
 def verify(job:Path,deep=False):
     plan=json_load(job/'plan.json')
-    if (plan.get('schema')!='task8c1_retention_v1' or plan.get('suite')!=SUITE or
+    if (plan.get('schema')!='task8c2_retry4_v1' or plan.get('suite')!=SUITE or
         len(plan.get('cases',()))!=6 or plan.get('planned_new_gpu_cycles')!=28):
-        raise ValueError('Invalid Task8C1 planned identity')
+        raise ValueError('Invalid Task8C2 planned identity')
     hashes=json_load(job/'source_snapshot.json')
     for rel,expected in hashes.items():
         p=job/'source'/rel
-        if not p.is_file() or sha(p)!=expected:raise ValueError('Frozen 8C1 file modified: '+str(p))
+        if not p.is_file() or sha(p)!=expected:raise ValueError('Frozen 8C2 file modified: '+str(p))
     if sha(Path(plan['audit']))!=plan['audit_sha256'] or sha(Path(plan['source_l0']))!=plan['l0_sha256'] or sha(Path(plan['source_pool']))!=plan['pool_sha256'] or sha(Path(plan['source_hidden_labels']))!=plan['hidden_labels_sha256']:
         raise ValueError('Reference input checksum mismatch')
     if sha(Path(plan['reference'])/'registry.toml')!=plan['reference_registry_sha256']:
@@ -229,7 +233,7 @@ def experiment_for(job:Path,case_idx:int):
     from al_pipeline.astronomy.astrominn.evaluation import AstroMiNNViTEvaluator
     from al_pipeline.astronomy.data.registry import DatasetRegistry
     from al_pipeline.core.experiments.batch_policy import BatchAcquisitionConfig
-    from al_pipeline.astronomy.experiments.retention import RetentionExperiment
+    from al_pipeline.astronomy.experiments.retention_retry import RetryRetentionExperiment
     policy_name,seed=case['policy'],case['seed']
     source_run=D/'runs'/'astrominn_closed_loop_warm_v1'/policy_name/f'seed_{seed}'
     source_training=json_load(source_run/'cycle_001'/'training'/'training_summary.json')
@@ -263,57 +267,83 @@ def experiment_for(job:Path,case_idx:int):
         manifests={'validation':orig.dataset.validation_manifest},
         device=orig.trainer.device,batch_size=2048,num_workers=0,
         artifact_dir=artifact)
-    return RetentionExperiment.from_experiment(orig,
+    return RetryRetentionExperiment.from_experiment(orig,
         reference_persistent=P,reference_data=D)
 
 
 def prefill(job:Path,index:int):
     plan=verify(job,deep=True)
     case=plan['cases'][index]
+    first=case['first_rejection']
     exp=experiment_for(job,index)
     exp.evaluate_baseline()
-    for c in range(1,case['first_rejection']+1):
-        state=exp.recover_completed_decisions()
-        if state.last_completed_cycle >= c:continue
-        if state.last_completed_cycle!=c-1:
-            raise RuntimeError('Prefill cycle order wrong')
-        if not exp._can_reference_replay(c):
-            raise RuntimeError('CPU prefill refused: cycle requires non-reference training')
-        # Hard safety boundary: even a bug in reference detection cannot start training.
-        def prohibit_training(*args, **kwargs):
-            raise RuntimeError('CPU prefill must never call the training backend')
-        exp.trainer.train = prohibit_training
-        exp.run_next_cycle()
-        decision=json_load(exp._decision_path(c))
-        if decision['accepted'] != (c < case['first_rejection']):
-            raise ValueError(f'Frozen Task8A first-rejection mismatch: {case} cycle {c}')
-        if not decision['reference_reused']:
-            raise RuntimeError('Prefill unexpectedly required new GPU training')
-    print(json.dumps({'prefilled':case['key'], 'last_completed_cycle':case['first_rejection'],
-                      'first_rejection_verified':True}))
+    for cycle in range(1,first+1):
+        state=exp.initialize()
+        if state.last_completed_cycle>=cycle:
+            if cycle<first:
+                row=exp.check_final(cycle)
+                if not row['accepted'] or not row['reference_reused']:
+                    raise RuntimeError('Cached CPU prefill decision is not accepted Task4')
+            else:
+                base=json_load(exp._base_path(cycle))
+                if base['comparison']['accepted'] or not base['reference_reused'] or exp._decision_path(cycle).exists():
+                    raise RuntimeError('First rejected original checkpoint should remain pending retry')
+            continue
+        if state.last_completed_cycle!=cycle-1 or not exp._can_reference_replay(cycle):
+            raise RuntimeError('CPU prefill out of order or unable to reuse Task4')
+        def prohibit_training(*args,**kwargs):
+            raise RuntimeError('CPU prefill must never start model training')
+        exp.trainer.train=prohibit_training
+        base=exp.base_stage(cycle)
+        if not base['reference_reused'] or base['comparison']['accepted']!=(cycle<first):
+            raise RuntimeError('Task8A first-rejection replay not reproduced')
+        if cycle<first:
+            if not exp.check_final(cycle)['accepted']:
+                raise RuntimeError('Unexpected historical pre-rejection checkpoint rejection')
+        elif exp._decision_path(cycle).exists():
+            raise RuntimeError('First rejected checkpoint must not be finalized before retries')
+    print(json.dumps({'prefilled':case['key'], 'last_completed_cycle':first,
+                      'first_rejected_candidate_pending_retries':True}))
 
 
-def run_gpu(job:Path,index:int,cycle:int):
+def run_gpu(job:Path,index:int,cycle:int,stage:str,retry_number:int|None):
     if 'SLURM_JOB_ID' not in os.environ:
-        raise RuntimeError('Task8C.1 GPU training can run only inside SLURM')
-    import torch
-    if not torch.cuda.is_available():raise RuntimeError('CUDA unavailable; no CPU training fallback')
+        raise RuntimeError('Task8C.2 GPU stages run only inside SLURM')
     plan=verify(job,deep=True)
     case=plan['cases'][index]
-    if not case['first_rejection'] < cycle <= 9:
-        raise ValueError('GPU cycle must follow read-only first-rejection replay')
+    if not case['first_rejection'] <= cycle <= 9:
+        raise ValueError('GPU cycle outside divergent closed-loop phase')
+    if stage not in ('base','retry') or (stage=='base' and retry_number is not None) or (stage=='retry' and retry_number not in (1,2,3,4)):
+        raise ValueError('Invalid GPU stage/index combination')
+    if stage=='retry':
+        final=Path(plan['data'])/'runs'/SUITE/case['policy']/f"seed_{case['seed']}"/f'cycle_{cycle:03d}'/'retention_decision.json'
+        if final.is_file():
+            # A finalized decision guarantees no further training is required.
+            # Verify its identity and checkpoint content without loading PyTorch.
+            row=json_load(final)
+            if row['schema']!='task8c2_bounded_retry_v1' or row['policy']!=case['policy'] or row['seed']!=case['seed'] or row['cycle']!=cycle:
+                raise ValueError('Existing final decision has the wrong identity')
+            if sha(Path(row['incumbent_checkpoint'])) != row['incumbent_sha256']:
+                raise ValueError('Final incumbent checkpoint hash changed')
+            if sha(Path(row['training_manifest'])) != row['training_manifest_sha256']:
+                raise ValueError('Final training manifest changed')
+            print(json.dumps({'case':case['key'],'cycle':cycle,'stage':'retry',
+                              'attempt':retry_number,'outcome':'skipped_already_finalized'}))
+            return
+    import torch
+    if not torch.cuda.is_available():
+        raise RuntimeError('CUDA unavailable; cannot use CPU fallback')
     exp=experiment_for(job,index)
-    state=exp.recover_completed_decisions()
-    if state.last_completed_cycle >= cycle:
-        dec=exp._decision_path(cycle)
-        if not dec.is_file():raise ValueError('Completed cycle missing retention decision')
-        print('Already completed',case['key'],cycle)
-        return
-    if state.last_completed_cycle != cycle-1 or state.active_cycle not in (None,cycle):
-        raise RuntimeError('Previous dependent cycle has not completed')
-    exp.run_next_cycle()
-    print(json.dumps({'completed':case['key'],'cycle':cycle,
-                      'decision':json_load(exp._decision_path(cycle))['accepted']}))
+    if stage=='base':
+        result=exp.base_stage(cycle)
+        print(json.dumps({'cycle':cycle,'case':case['key'],'stage':'base',
+                          'accepted':result['comparison']['accepted'],
+                          'reference_reused':result['reference_reused']}))
+    else:
+        result=exp.retry_stage(cycle,retry_number)
+        print(json.dumps({'cycle':cycle,'case':case['key'],'stage':'retry',
+                          'attempt':retry_number,'outcome':result.get('skipped','trained'),
+                          'accepted':result.get('comparison',{}).get('accepted')}))
 
 
 def status(job:Path):
@@ -321,99 +351,139 @@ def status(job:Path):
     rows=[]
     for case in plan['cases']:
         run=Path(plan['data'])/'runs'/SUITE/case['policy']/f"seed_{case['seed']}"
-        status_path=run/'run_state.json'
-        stat=json_load(status_path) if status_path.is_file() else {}
+        state_path=run/'run_state.json'
+        stat=json_load(state_path) if state_path.is_file() else {}
         completed=int(stat.get('last_completed_cycle',0))
-        decisions=[read for c in range(1,completed+1)
-                   if (read:=run/f'cycle_{c:03d}'/'retention_decision.json').is_file()]
-        rejected=[c for c in range(1,completed+1)
-                  if (run/f'cycle_{c:03d}'/'retention_decision.json').is_file() and
-                  not json_load(run/f'cycle_{c:03d}'/'retention_decision.json')['accepted']]
-        rows.append({'case':case['key'],'completed':completed,
-                     'decisions':len(decisions),'rejected_cycles':rejected,'active':stat.get('active_cycle')})
+        finalized=[c for c in range(1,completed+1)
+                   if (run/f'cycle_{c:03d}'/'retention_decision.json').is_file()]
+        rejected=[c for c in finalized if not json_load(run/f'cycle_{c:03d}'/'retention_decision.json')['accepted']]
+        retry_accepted=[c for c in finalized if json_load(run/f'cycle_{c:03d}'/'retention_decision.json')['accepted_retry_seed'] is not None]
+        executed_retries=sum(sum((run/f'cycle_{c:03d}'/'retry_attempts'/f'retry_{a}.json').is_file()
+                                 for a in (1,2,3,4)) for c in range(1,completed+1))
+        rows.append({'case':case['key'],'completed':completed,'decisions':len(finalized),
+                     'rejected_cycles':rejected,'retry_accepted_cycles':retry_accepted,
+                     'trained_retries':executed_retries,'active':stat.get('active_cycle'),
+                     'incomplete_decision_cycles':[c for c in range(1,completed+1) if c not in finalized]})
     return {'cases':rows,'completed_trajectories':sum(x['completed']==9 and x['decisions']==9 for x in rows)}
 
 
 def submit_prefill(job:Path,walltime:str):
-    plan=verify(job,deep=True)
-    if (job/'prefill_submitted.json').exists():raise RuntimeError('Prefill already submitted')
-    command=['sbatch','--parsable',f'--time={walltime}', '--array=0-5',
-       f'--output={job}/logs/T8C1_pf_%A_%a.out',f'--error={job}/logs/T8C1_pf_%A_%a.err',
-       str(job/'source/scripts/adaptive/task8c1_worker_cpu.sbatch'),str(job)]
-    jid=subprocess.check_output(command,text=True).strip().split(';')[0]
-    if not jid.isdigit():raise RuntimeError('Unexpected SLURM job id '+jid)
-    atomic_json(job/'prefill_submitted.json',{'job_id':jid,'command':command})
-    print('Prefill CPU array submitted:',jid)
+    verify(job,deep=True)
+    if (job/'prefill_submitted.json').exists():raise RuntimeError('CPU prefill already submitted')
+    cmd=['sbatch','--parsable',f'--time={walltime}', '--array=0-5',
+         f'--output={job}/logs/T8C2_pf_%A_%a.out',
+         f'--error={job}/logs/T8C2_pf_%A_%a.err',
+         str(job/'source/scripts/research/historical_replay/task8c2/task8c2_worker_cpu.sbatch'),str(job)]
+    jid=subprocess.check_output(cmd,text=True).strip().split(';')[0]
+    if not jid.isdigit():raise RuntimeError('Unexpected CPU Slurm job ID '+jid)
+    atomic_json(job/'prefill_submitted.json',{'job_id':jid,'command':cmd})
+    print('Submitted CPU prefill array:',jid)
 
 
-def submit_gpu(job:Path,walltime:str):
+def stage_plan(cases, indices):
+    """Build all attempts in six deterministic chains; no speculative retry fits."""
+    jobs=[]
+    for index in indices:
+        case=cases[index]
+        for cycle in range(case['first_rejection'],10):
+            if cycle>case['first_rejection']:
+                jobs.append({'case_index':index,'case':case['key'],'cycle':cycle,
+                             'stage':'base','retry_number':None})
+            for number in (1,2,3,4):
+                jobs.append({'case_index':index,'case':case['key'],'cycle':cycle,
+                             'stage':'retry','retry_number':number})
+    return jobs
+
+
+def submit_gpu(job:Path,walltime:str,case_index:int|None=None):
     plan=verify(job,deep=True)
-    if (job/'gpu_submitted.json').exists() or (job/'gpu_submission_pending.json').exists():
-        raise RuntimeError('GPU experiment already submitted or incomplete submission requires audit')
-    checks=status(job)['cases']
-    for case,st in zip(plan['cases'],checks):
-        if st['completed']!=case['first_rejection'] or st['decisions']!=case['first_rejection'] or st['rejected_cycles']!=[case['first_rejection']]:
-            raise RuntimeError(f'Read-only prefill has not passed: {case["key"]} => {st}')
-    records=[]
-    pending=job/'gpu_submission_pending.json'
-    try:
-        for index,case in enumerate(plan['cases']):
-            parent=None
-            for cycle in range(case['first_rejection']+1,10):
-                name=f'T8C1_{index}_c{cycle}'
+    check=status(job)['cases']
+    indices=[case_index] if case_index is not None else list(range(6))
+    if any(i not in range(6) for i in indices):raise ValueError('Invalid case-index')
+    for i in indices:
+        row,st=plan['cases'][i],check[i]
+        first=row['first_rejection']
+        if (st['completed']!=first or st['decisions']!=first-1 or
+            st['rejected_cycles'] or st['incomplete_decision_cycles']!=[first]):
+            raise RuntimeError(f'CPU first rejection has not been verified: {row["key"]}: {st}')
+        basedir=Path(plan['data'])/'runs'/SUITE/row['policy']/f"seed_{row['seed']}"/f'cycle_{first:03d}'
+        base=json_load(basedir/'base_attempt.json')
+        if base['comparison']['accepted'] or not base['reference_reused']:
+            raise RuntimeError('Original first rejected candidate not reproduced')
+    for i in indices:
+        if (job/f'gpu_submitted_case_{i}.json').exists() or (job/f'gpu_submission_pending_case_{i}.json').exists() or (job/f'gpu_submission_failed_case_{i}.json').exists():
+            raise RuntimeError(f'GPU case {i} has an existing submission marker; do not duplicate')
+    for i in indices:
+        records=[]
+        pending=job/f'gpu_submission_pending_case_{i}.json'
+        parent=None
+        try:
+            for row in stage_plan(plan['cases'],[i]):
+                label='b' if row['stage']=='base' else f'r{row["retry_number"]}'
+                name=f'T8C2_{i}_c{row["cycle"]}_{label}'
                 cmd=['sbatch','--parsable','--hold',f'--time={walltime}',f'--job-name={name}',
                      f'--output={job}/logs/%x_%j.out',f'--error={job}/logs/%x_%j.err']
                 if parent:cmd.append(f'--dependency=afterok:{parent}')
-                cmd.extend([str(job/'source/scripts/adaptive/task8c1_worker_gpu.sbatch'),
-                            str(job),str(index),str(cycle)])
+                cmd.extend([str(job/'source/scripts/research/historical_replay/task8c2/task8c2_worker_gpu.sbatch'),
+                            str(job),str(i),str(row['cycle']),row['stage'],
+                            str(row['retry_number'] or 0)])
                 jid=subprocess.check_output(cmd,text=True).strip().split(';')[0]
-                if not jid.isdigit():raise RuntimeError(f'Invalid job ID {jid!r}')
-                records.append({'case':case['key'],'cycle':cycle,'job_id':jid,'parent':parent})
-                pending.parent.mkdir(parents=True,exist_ok=True)
+                if not jid.isdigit():raise RuntimeError(f'Invalid Slurm job ID {jid!r}')
+                records.append({**row,'job_id':jid,'parent':parent})
                 atomic_json(pending,{'status':'held','jobs':records})
                 parent=jid
-        # Release reverse dependency order to avoid triggering child jobs early.
-        for r in reversed(records):subprocess.run(['scontrol','release',r['job_id']],check=True)
-        atomic_json(job/'gpu_submitted.json',{'status':'released','jobs':records})
-        pending.unlink()
-    except BaseException:
-        if records:subprocess.run(['scancel',*[r['job_id'] for r in records]],check=False)
-        atomic_json(job/'gpu_submission_failed.json',{'jobs':records,'cancellation_requested':True})
-        raise
-    print('Submitted',len(records),'GPU jobs in six dependent chains')
+            for row in reversed(records):
+                subprocess.run(['scontrol','release',row['job_id']],check=True)
+            atomic_json(job/f'gpu_submitted_case_{i}.json',{'status':'released','jobs':records})
+            pending.unlink()
+        except BaseException:
+            if records:subprocess.run(['scancel',*[x['job_id'] for x in records]],check=False)
+            atomic_json(job/f'gpu_submission_failed_case_{i}.json',
+                        {'jobs':records,'cancellation_requested':True})
+            raise
+        print('Submitted',len(records),'staged jobs for',plan['cases'][i]['key'],
+              '(skipped retry stages consume no training GPU time)')
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('command', choices=('plan','prepare','verify','prefill','run','status','submit-prefill','submit'))
-    p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
+    p.add_argument('command',choices=('plan','prepare','verify','prefill','run','status','submit-prefill','submit'))
+    p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[4])
     p.add_argument('--job-dir',type=Path,default=JOB)
     p.add_argument('--reference',type=Path,default=REFERENCE)
     p.add_argument('--audit',type=Path,default=AUDIT)
     p.add_argument('--data',type=Path,default=D)
     p.add_argument('--index',type=int)
     p.add_argument('--cycle',type=int)
+    p.add_argument('--stage',choices=('base','retry'))
+    p.add_argument('--retry-number',type=int)
+    p.add_argument('--case-index',type=int)
     p.add_argument('--walltime',default='00:20:00')
     args=p.parse_args()
     if args.command=='plan':
         plan=build_plan(args.reference,args.audit,args.data)
-        print(json.dumps({'cases':plan['cases'],'new_GPU_cycles':plan['planned_new_gpu_cycles']},indent=2))
+        print(json.dumps({'cases':plan['cases'],
+          'base_cycles_to_execute':plan['planned_new_gpu_cycles'],
+          'conditional_retry_stage_slots':plan['planned_gpu_job_slots']-plan['planned_new_gpu_cycles'],
+          'total_slurm_job_slots':plan['planned_gpu_job_slots']},indent=2))
     elif args.command=='prepare':
         prepare(args.repo,args.job_dir,args.reference,args.audit,args.data)
-        print('Frozen 8C.1 prepared; NO jobs submitted')
+        print('Frozen Task8C.2 prepared; NO Slurm jobs submitted')
     elif args.command=='verify':
         verify(args.job_dir,deep=True)
-        print('Frozen source, input hashes, and macro-F1 rule verified')
+        print('Frozen Task8C.2 sources and inputs verified')
     elif args.command=='prefill':
         if args.index is None:p.error('--index required')
         prefill(args.job_dir,args.index)
     elif args.command=='run':
-        if args.index is None or args.cycle is None:p.error('--index and --cycle required')
-        run_gpu(args.job_dir,args.index,args.cycle)
+        if args.index is None or args.cycle is None or args.stage is None:
+            p.error('--index, --cycle and --stage required')
+        run_gpu(args.job_dir,args.index,args.cycle,args.stage,args.retry_number)
     elif args.command=='status':print(json.dumps(status(args.job_dir),indent=2))
-    elif args.command in ('submit-prefill','submit'):
-        if not re.fullmatch(r'\d{1,2}:[0-5]\d:[0-5]\d',args.walltime):p.error('Invalid time HH:MM:SS')
+    else:
+        if not re.fullmatch(r'\d{1,2}:[0-5]\d:[0-5]\d',args.walltime):
+            p.error('Invalid time HH:MM:SS')
         if args.command=='submit-prefill':submit_prefill(args.job_dir,args.walltime)
-        else:submit_gpu(args.job_dir,args.walltime)
+        else:submit_gpu(args.job_dir,args.walltime,args.case_index)
 
 if __name__=='__main__':main()
