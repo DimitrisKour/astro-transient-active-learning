@@ -31,10 +31,10 @@ def digest(path: Path) -> str:
 
 def selected_files(repo: Path) -> list[Path]:
     files = [*sorted((repo / 'src' / 'al_pipeline').rglob('*.py')),
-             repo/'scripts/adaptive/task6b.py',
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6b_*.py')),
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6b_*.sh')),
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6b_*.sbatch'))]
+             repo/'scripts/research/historical_replay/task6b/task6b.py',
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6b').glob('task6b_*.py')),
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6b').glob('task6b_*.sh')),
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6b').glob('task6b_*.sbatch'))]
     if not files or any(not f.is_file() for f in files):
         raise FileNotFoundError('Required Task6B source file missing')
     return files

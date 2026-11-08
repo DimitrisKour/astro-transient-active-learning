@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-TASK6B_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+TASK6B_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 TASK6B_SUITE_ID=astrominn_closed_loop_warm_f1best_085_v1
 TASK6B_BASE_SUITE_ID="$TASK6B_SUITE_ID"
 TASK6B_REFERENCE_SUITE_ID=astrominn_closed_loop_warm_v1
