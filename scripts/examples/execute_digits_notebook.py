@@ -50,8 +50,21 @@ def main() -> None:
         resources={"metadata": {"path": str(ROOT)}},
         allow_errors=False,
     ).execute()
+    figure_count = sum(
+        "image/png" in part.get("data", {})
+        for cell in executed.cells if cell.cell_type == "code"
+        for part in cell.get("outputs", [])
+        if part.get("output_type") in ("display_data", "execute_result")
+    )
+    if figure_count < 5:
+        raise RuntimeError(
+            f"Expected at least five embedded figures, found {figure_count}; "
+            "refusing to save an incomplete teaching notebook."
+        )
+
     nbformat.write(executed, output)
     print(f"Executed notebook saved: {output}")
+    print(f"Embedded figures: {figure_count}")
     print(f"Cells: {len(executed.cells)}, "
           f"code cells: {sum(c.cell_type == 'code' for c in executed.cells)}")
     print("No astronomical data, GPU, or Slurm submission was used.")
