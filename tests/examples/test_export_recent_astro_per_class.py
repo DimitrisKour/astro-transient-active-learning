@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import pytest
 
-SCRIPT = Path(__file__).resolve().parent / 'export_recent_astro_per_class.py'
+SCRIPT = Path(__file__).resolve().parents[2] / 'scripts/examples/export_recent_astro_per_class.py'
 spec = importlib.util.spec_from_file_location('astro_school_per_class_export', SCRIPT)
 export = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(export)
