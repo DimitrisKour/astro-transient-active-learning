@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts' / 'adaptive'
+SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts' / 'research' / 'historical_replay' / 'task6a'
 sys.path.insert(0, str(SCRIPTS))
 import task6a_submit_chains as submission
 
