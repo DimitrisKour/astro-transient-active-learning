@@ -93,17 +93,17 @@ def planned_changes(repo: Path) -> dict[Path, str]:
         source = src / f"task4_{name}"
         if not source.is_file():
             raise FileNotFoundError(
-                f"Missing {source}; check out feat/entropy-batch-policies with Task 4 v2 first.")
+                f"Missing {source}; restore the historical Task4 script family first.")
         original = source.read_text(encoding="utf-8")
         generated = remake(name, original)
         target = dest / f"task5_{name}"
         changes[target] = generated
     # Sanity-check the three key scientific constraints BEFORE writing files.
-    assert '--training-initialization restart_from_baseline' in changes[src / "task5_common.sh"]
-    assert 'L0_fixed_baseline_each_cycle' in changes[src / "task5_build_runner.py"]
-    assert 'summary["inference_checkpoint"]' in changes[src / "task5_report.py"]
-    assert 'summary["training_initial_checkpoint"]' in changes[src / "task5_report.py"]
-    assert 'training_summary["initial_checkpoint"]' in changes[src / "task5_report.py"]
+    assert '--training-initialization restart_from_baseline' in changes[dest / "task5_common.sh"]
+    assert 'L0_fixed_baseline_each_cycle' in changes[dest / "task5_build_runner.py"]
+    assert 'summary["inference_checkpoint"]' in changes[dest / "task5_report.py"]
+    assert 'summary["training_initial_checkpoint"]' in changes[dest / "task5_report.py"]
+    assert 'training_summary["initial_checkpoint"]' in changes[dest / "task5_report.py"]
     return changes
 
 
