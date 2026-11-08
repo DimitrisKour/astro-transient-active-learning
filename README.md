@@ -66,11 +66,34 @@ aliases. Upstream AppleCiDEr and FLARE remain separate sibling repositories.
 The original code has no standalone FLARE adapter to extract; future notebook
 migration can use the sibling FLARE package or add an adapter here when needed.
 
+## Testing
+
+The default test suite is **portable**: no Delta filesystem, private
+datasets, broker credentials, GPU, or historical model checkpoints are needed.
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+```
+
+This runs the core and synthetic integration tests. Optional PyTorch-dependent
+checks are skipped when PyTorch is unavailable. GitHub Actions exercises the
+same commands on clean Python 3.11/3.12 environments.
+
+The historical research/Slurm tests are retained but explicitly opt-in.
+They can require optional dependencies and frozen experiment artifacts:
+
+```bash
+python -m pip install -e ".[dev,astronomy]"
+python -m pytest tests -q
+```
+
+See [the testing guide](docs/testing.md) for required environment variables,
+test selection, and the distinction between portable and historical checks.
+
 ## Local development
 
 ```bash
-python -m pip install -e '.[dev,astronomy]'
-python -m pytest -q
 python -m ruff check .
 python -m ruff format --check .
 ```
