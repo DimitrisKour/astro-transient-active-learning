@@ -1,3 +1,5 @@
+> **Archive notice:** This document reproduces an earlier fusion-image prototype or diagnostic. The scripts below are now under `scripts/archive/fusion_image/`, rather than the supported full-history resident-cache/Task 0/Task 1 workflow. Consult the archive README before any historical submission. Existing frozen snapshots must not be overwritten.
+
 # Fast historical cache diagnostic — no GPU jobs or existing experiment modifications
 
 ## Why
@@ -22,7 +24,7 @@ python -m pytest tests/astronomy/fusion_image/test_fast_cache_v1.py -q
 Run first-failure diagnosis (no changes):
 
 ```bash
-bash scripts/adaptive/diagnose_fusion_pre_task0.sh
+bash scripts/archive/fusion_image/early_diagnostics/diagnose_fusion_pre_task0.sh
 ```
 
 ## CPU-only consolidation and benchmark
@@ -34,7 +36,7 @@ mkdir -p "$REPORT/logs"
 cd "$REPO"
 sbatch --output="$REPORT/logs/fastcache_%j.out" \
        --error="$REPORT/logs/fastcache_%j.err" \
-       scripts/adaptive/fusion_fastcache_cpu.sbatch
+       scripts/archive/fusion_image/early_diagnostics/fusion_fastcache_cpu.sbatch
 ```
 
 This runs one CPU job (2 CPUs, 12 GiB, 30 minute limit). It:
