@@ -28,7 +28,7 @@ def run(args:list[str],**kwargs):
 
 def command_args(source:Path, seed:int)->list[str]:
     proc=run(['bash','-c','source "$1"; task7a_arguments "$2"; printf "%s\\n" "${TASK7A_ARGS[@]}"',
-              '_',str(source/'scripts/adaptive/task7a_common.sh'),str(seed)],capture_output=True)
+              '_',str(source/'scripts/research/historical_replay/task7a/task7a_common.sh'),str(seed)],capture_output=True)
     return proc.stdout.splitlines()
 
 
@@ -97,7 +97,7 @@ def sbatch_command(job:Path,row:dict,parent_job:str|None,walltime:str)->list[str
             f'--job-name={name}',f'--output={job}/logs/%x_%j.out',
             f'--error={job}/logs/%x_%j.err']
     if parent_job:result.append(f'--dependency=afterok:{parent_job}')
-    return result+[str(job/'source/scripts/adaptive/task7a_worker.sbatch'),
+    return result+[str(job/'source/scripts/research/historical_replay/task7a/task7a_worker.sbatch'),
                    str(job/'source'),str(row['seed']),str(row['cycle'])]
 
 
@@ -137,7 +137,7 @@ def main()->None:
     for cmd in ('prepare','verify','plan','submit'):
         q=sub.add_parser(cmd)
         q.add_argument('--job-dir',type=Path,default=ROOT)
-        if cmd=='prepare':q.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
+        if cmd=='prepare':q.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[4])
         if cmd=='verify':q.add_argument('--source-only',action='store_true')
         if cmd=='submit':
             q.add_argument('--walltime',default='00:20:00');q.add_argument('--submit',action='store_true')
