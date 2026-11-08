@@ -115,30 +115,40 @@ for one final evaluation. TODO 4 varies the balanced initial set *across*
 replicates but holds it fixed *between* policies within a replicate.
 
 
-## 02 — Active learning for astronomical transients
+## 02 — Historical active learning for astronomical transients
 
-**[Open the astronomy notebook](02_applecider_astronomy_active_learning.ipynb)**
+**[Open the executed student notebook](02_applecider_astronomy_active_learning.ipynb)**
 
-A second, CPU-only laboratory connecting the same pool/acquisition/oracle interfaces to AppleCiDEr-style five-class astronomical classification. It combines:
+A standalone, **CPU-only, read-only research-analysis lab** based on real, completed AstroMiNN active-learning experiments. Unlike the digits notebook, this notebook analyzes archived learning histories rather than retraining models. It requires **no GPU, astronomical images, model checkpoints, synthetic fallback, or connection to Delta**.
 
-- **Part A: an interactive active-learning loop** for a small lightweight classifier on image-derived features and metadata, with random, entropy, margin and entropy-diversity policies, learning curves, a cutout gallery and rare-class recovery diagnostics.
-- **Part B: historical AstroMiNN analysis** based on a small, clearly attributed excerpt of actual research results and, when supplied, complete small CSV exports from the previous multi-seed experiments.
+The small [included validation-history CSV](data/astro_recent_validation.csv) contains 1,020 metric records from 51 complete nine-cycle trajectories, with three seeds across eight suites. It includes **validation macro-F1, balanced accuracy, and label budgets only**—no candidate IDs, class-level acquisition outcomes, or test metrics. Its [provenance and limitations](data/README.md) are documented alongside the data.
 
-A new clone runs fully offline using an **explicitly labeled synthetic fallback** for Part A (no astronomical performance claims). The real-data export has **not yet been published**: the instructor must produce, review and add `examples/data/astro_real_v1.npz` before the interactive portion can use real ZTF-derived observations. The archive's full per-cycle metrics also require a reviewed export. See [the data/export guide](data/README.md).
+### Guided learning sequence
 
-**Run on CPU (no checkpoint or telescope archive required):**
+- Verify the experimental label budget and validation metric contract.
+- Compare random, entropy, and diversity sampling within a shared suite.
+- Explore BALD, TAILOR, and uniform-mixture trajectories in a **separate, explicitly provisional cross-suite comparison**.
+- Analyze early performance, final performance and seed variability.
+- Compare original and alternative initial labeled sets in separate panels.
+- Complete four open-ended, unsolved exercises involving budget thresholds, early efficiency, stability and methodological comparability.
+
+Figures follow the presentation-inspired muted palette. Policy comparisons use at most three lines per panel; seed variation is shown separately without crowded error bars.
+
+### Running it offline
+
+From the repository root:
 
 ```bash
 python -m pip install -e ".[teaching]"
-python scripts/examples/execute_astro_notebook.py --output astro_astronomy_executed.ipynb
+python scripts/examples/execute_astro_notebook.py --output astro_school_local.ipynb
 ```
 
-Or open it in Jupyter/VS Code and run the cells manually. The notebook uses the same presentation-inspired plotting theme as notebook 01; users can disable it with `USE_PRESENTATION_STYLE=False`.
+You can also open `examples/02_applecider_astronomy_active_learning.ipynb` in Jupyter or VS Code and **Restart Kernel and Run All**. Its four core figures are already embedded for GitHub preview.
 
-This is a **surrogate classifier** experiment. The historical AstroMiNN CSVs are read-only outcomes of independent GPU training runs, **not** a way to re-train AstroMiNN under arbitrary new acquisitions. The two models' scores are not directly comparable.
-
-For portable checks:
+To verify the historical data and notebook:
 
 ```bash
-python -m pytest -q tests/examples/test_astro_teaching_data.py tests/examples/test_astro_notebook.py
+python -m pytest -q tests/examples/test_astro_notebook.py tests/examples/test_astro_replay_data.py
 ```
+
+**Scientific limits:** equal cycle-zero metrics and identical budgets do not themselves prove that separate experiment suites are causally comparable. The alternative-`L0` experiment is treated separately; per-class/TDE/CV conclusions require an additional audited export. No results are inferred for unrecorded acquisitions.
