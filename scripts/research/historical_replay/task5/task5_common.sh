@@ -1,7 +1,7 @@
 #!/bin/bash
 # Task 5 is intentionally isolated from the original policy suite.
 set -euo pipefail
-TASK5_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+TASK5_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 TASK5_SUITE_ID="astrominn_closed_loop_baseline_restart_v1"
 TASK5_BASE_SUITE_ID="astrominn_historical_replay_v1"
 TASK5_PERSISTENT="/projects/bcrv/dkourtesis/applecider_adaptive"
