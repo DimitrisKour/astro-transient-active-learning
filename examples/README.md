@@ -64,7 +64,17 @@ This test executes **every cell** with `nbclient` on a CPU and fails if
 any cell raises an exception. The same test runs automatically on clean
 GitHub-hosted Python 3.11 and 3.12 CPUs.
 
-To explicitly **save an executed copy with figures**, run:
+To explicitly **save an executed copy with figures and tables**, use the provided CPU runner:
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python scripts/examples/execute_digits_notebook.py \
+  --output ~/digits_active_learning_executed.ipynb
+```
+
+The runner refuses to overwrite existing files and keeps the source notebook unchanged. It does not submit Slurm jobs.
+
+Alternatively, run directly using the standard `nbclient` API:
 
 ```bash
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python - <<'PY'
