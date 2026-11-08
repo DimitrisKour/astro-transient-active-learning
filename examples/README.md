@@ -119,36 +119,33 @@ replicates but holds it fixed *between* policies within a replicate.
 
 **[Open the executed student notebook](02_applecider_astronomy_active_learning.ipynb)**
 
-A standalone, **CPU-only, read-only research-analysis lab** based on real, completed AstroMiNN active-learning experiments. Unlike the digits notebook, this notebook analyzes archived learning histories rather than retraining models. It requires **no GPU, astronomical images, model checkpoints, synthetic fallback, or connection to Delta**.
+A self-contained **CPU-only analysis laboratory** using real, completed AstroMiNN acquisition experiments. Students analyze archived validation trajectories rather than train an astronomical model. The notebook needs no GPU, network access, images, checkpoints or connection to Delta.
 
-The small [included validation-history CSV](data/astro_recent_validation.csv) contains 1,020 metric records from 51 complete nine-cycle trajectories, with three seeds across eight suites. It includes **validation macro-F1, balanced accuracy, and label budgets only**—no candidate IDs, class-level acquisition outcomes, or test metrics. Its [provenance and limitations](data/README.md) are documented alongside the data.
+The bundled [data tables](data/README.md) contain 1,020 aggregate validation measurements across 51 nine-cycle trajectories, 2,550 class-level measurements (precision, recall, F1 and support), and matched acquisition-overlap summaries at cycle 2. No object identifiers, raw predictions or hidden candidate labels are distributed.
 
 ### Guided learning sequence
 
-- Verify the experimental label budget and validation metric contract.
-- Compare random, entropy, and diversity sampling within a shared suite.
-- Explore BALD, TAILOR, and uniform-mixture trajectories in a **separate, explicitly provisional cross-suite comparison**.
-- Analyze early performance, final performance and seed variability.
-- Compare original and alternative initial labeled sets in separate panels.
-- Complete four open-ended, unsolved exercises involving budget thresholds, early efficiency, stability and methodological comparability.
+- Understand the labeled-set and acquisition budget.
+- Compare entropy, entropy + diversity and BADGE in a legible three-curve figure.
+- Examine BALD, TAILOR and uniform mixture as a separate, provisional cross-suite comparison.
+- Study **TDE and CV** class-level performance using recorded evaluations.
+- Read a presentation-style **cumulative Jaccard overlap matrix** through cycle 2, excluding the shared initial labeled set.
+- Explore seed variation and sensitivity to an alternative initial labeled set.
+- Complete four unsolved exercises on label efficiency, policy rankings, variability and comparability.
 
-Figures follow the presentation-inspired muted palette. Policy comparisons use at most three lines per panel; seed variation is shown separately without crowded error bars.
+Figures use the muted palette; the main learning curves have no crowded uncertainty bands. The notebook includes **six executed figures** for GitHub preview.
 
-### Running it offline
-
-From the repository root:
+### Run entirely offline
 
 ```bash
 python -m pip install -e ".[teaching]"
 python scripts/examples/execute_astro_notebook.py --output astro_school_local.ipynb
 ```
 
-You can also open `examples/02_applecider_astronomy_active_learning.ipynb` in Jupyter or VS Code and **Restart Kernel and Run All**. Its four core figures are already embedded for GitHub preview.
-
-To verify the historical data and notebook:
+Alternatively open the student notebook in Jupyter or VS Code and choose **Restart Kernel and Run All**.
 
 ```bash
 python -m pytest -q tests/examples/test_astro_notebook.py tests/examples/test_astro_replay_data.py
 ```
 
-**Scientific limits:** equal cycle-zero metrics and identical budgets do not themselves prove that separate experiment suites are causally comparable. The alternative-`L0` experiment is treated separately; per-class/TDE/CV conclusions require an additional audited export. No results are inferred for unrecorded acquisitions.
+**Interpretation:** comparisons across independently executed experiment suites are descriptive unless the complete protocols are verified equivalent. The alternative initial labeled set is shown separately. The notebook reads recorded data; it does not simulate new acquisitions or retrain AstroMiNN.
