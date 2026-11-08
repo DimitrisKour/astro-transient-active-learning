@@ -20,9 +20,9 @@ def files_to_freeze(repo: Path) -> list[Path]:
     return [
         *sorted((repo / "src" / "al_pipeline").rglob("*.py")),
         repo / "scripts" / "run_astrominn_closed_loop_restart.py",
-        *sorted((repo / "scripts" / "adaptive").glob("task5_*.py")),
-        *sorted((repo / "scripts" / "adaptive").glob("task5_*.sh")),
-        *sorted((repo / "scripts" / "adaptive").glob("task5_*.sbatch")),
+        *sorted((repo / "scripts" / "research" / "historical_replay" / "task5").glob("task5_*.py")),
+        *sorted((repo / "scripts" / "research" / "historical_replay" / "task5").glob("task5_*.sh")),
+        *sorted((repo / "scripts" / "research" / "historical_replay" / "task5").glob("task5_*.sbatch")),
     ]
 
 
@@ -53,7 +53,7 @@ def prepare(*, repo: Path, job_dir: Path, source_registry: Path,
     repo, job_dir = repo.resolve(), job_dir.resolve()
     if not job_dir.is_relative_to(persistent.resolve()):
         raise ValueError("Task5 job directory must be inside persistent storage")
-    from_file = repo / "scripts" / "adaptive" / "task5_build_runner.py"
+    from_file = repo / "scripts" / "research" / "historical_replay" / "task5" / "task5_build_runner.py"
     subprocess.run(["python", str(from_file), "--repo", str(repo)], check=True)
     files = files_to_freeze(repo)
     if not files or not all(p.is_file() for p in files):

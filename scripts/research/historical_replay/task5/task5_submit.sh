@@ -1,5 +1,5 @@
 #!/bin/bash -l
-# Usage: bash scripts/adaptive/task5_submit.sh --prepare-only|--submit [--cycles 9]
+# Usage: bash scripts/research/historical_replay/task5/task5_submit.sh --prepare-only|--submit [--cycles 9]
 #          [--early-walltime 00:15:00] [--late-walltime 00:20:00]
 # One fit per GPU job, with 12 independent seed/policy dependency chains.
 set -euo pipefail
@@ -25,14 +25,14 @@ done
 task5_activate
 export PYTHONPATH="$TASK5_REPO/src${PYTHONPATH:+:$PYTHONPATH}"
 cd "$TASK5_REPO"
-python scripts/adaptive/task5_prepare.py --repo "$TASK5_REPO" \
+python scripts/research/historical_replay/task5/task5_prepare.py --repo "$TASK5_REPO" \
   --job-dir "$TASK5_JOB_DIR" --source-registry "$TASK5_SOURCE_REGISTRY" \
   --persistent "$TASK5_PERSISTENT" --data "$TASK5_DATA"
 # Plan is immutable between prepare and queue: an existing differing plan aborts.
 plan="$TASK5_JOB_DIR/queue_plan.tsv"
 tmpplan="$(mktemp "$TASK5_JOB_DIR/.queue_plan.XXXXXXXX")"
 trap 'rm -f "$tmpplan"' EXIT
-python "$TASK5_SOURCE/scripts/adaptive/task5_schedule.py" --cycles "$cycles" \
+python "$TASK5_SOURCE/scripts/research/historical_replay/task5/task5_schedule.py" --cycles "$cycles" \
   --early-walltime "$early_walltime" --late-walltime "$late_walltime" > "$tmpplan"
 if [[ -e "$plan" ]]; then
   cmp -s "$tmpplan" "$plan" || { echo "Prepared Task5 job plan changed: $plan" >&2; exit 1; }
@@ -46,7 +46,7 @@ for seed in 135 246 357; do
     "${TASK5_ARGS[@]}" --device cpu > "$TASK5_JOB_DIR/plan_seed_$seed.txt"
   echo "Seed $seed preflight passed; plan saved in $TASK5_JOB_DIR/plan_seed_$seed.txt"
 done
-python "$TASK5_SOURCE/scripts/adaptive/task5_preflight.py" \
+python "$TASK5_SOURCE/scripts/research/historical_replay/task5/task5_preflight.py" \
   --persistent "$TASK5_PERSISTENT" --data "$TASK5_DATA" \
   --base-suite "$TASK5_BASE_SUITE_ID" --suite "$TASK5_SUITE_ID"
 if [[ "$mode" == --prepare-only ]]; then
@@ -69,5 +69,5 @@ for policy in ("random","entropy","entropy_diversity","entropy_balanced_explore"
     raise SystemExit(f"Task5 already progressed; do not resubmit blindly: {state}")
 PY
 # Submit from the immutable prepared plan using the frozen scheduler script.
-bash "$TASK5_SOURCE/scripts/adaptive/task5_enqueue.sh" \
+bash "$TASK5_SOURCE/scripts/research/historical_replay/task5/task5_enqueue.sh" \
   "$plan" "$TASK5_SOURCE" "$TASK5_JOB_DIR" "$cycles"
