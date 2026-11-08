@@ -1,123 +1,122 @@
-# Training-school notebooks
+# Example notebooks
 
-## 01 — Active learning with handwritten digits
+Hands-on examples of the reusable `al_pipeline` active-learning interfaces.
+The notebooks are designed for participants on their own computers, in Jupyter
+environments, or on shared computing systems. No particular institution or HPC
+platform is required for the introductory example.
 
-**[Open the complete notebook](01_active_learning_digits.ipynb)**
+## 01 — Pool-based active learning with handwritten digits
 
-This is a guided, laptop-friendly, **CPU-only** introduction to pool-based
-active learning using scikit-learn's built-in `load_digits()` dataset.
-It requires **no network downloads, astronomy data, pretrained weights,
-GPUs, or broker access**.
+**[Open the student notebook](01_active_learning_digits.ipynb)**
+
+A CPU-only introduction using scikit-learn's bundled handwritten-digits
+dataset. It requires no astronomical data, external downloads, GPU, API token,
+survey broker, or pretrained model checkpoint.
+
+The notebook **already includes an executed core demonstration** (text,
+tables, plots, and learning curves). Every TODO remains an exercise for the
+student. In particular, the provided code for TODO 3–5 is scaffolding, *not*
+a worked solution.
 
 ### Learning objectives
 
-- Distinguish the small labeled set `L0`, eligible unlabeled pool `U0`,
-  pending labels, a fixed validation set and a sealed test set.
-- Inspect class-probability vectors and predictive entropy, then compare
-  predictive entropy with top-two margin uncertainty.
-- Use the **actual** `al_pipeline.core` `Pool`, `ActiveLearningLoop`,
-  `TopKSelector`, `ExistingLabelsOracle`, `ClassificationPredictions`,
-  `EvaluationHistory`, and metrics/plotting utilities.
-- Run random, entropy and margin acquisition with identical initial labels
-  and total budgets; compare macro-F1 and balanced accuracy.
-- Explore optional exercises in batch sizing, multiple seeds and diversity.
+- Distinguish labeled, unlabeled, and pending pool states; keep validation and
+  sealed test data separate.
+- Calculate predictive entropy and margin uncertainty.
+- Use `al_pipeline.core` scoring, selection, pool, acquisition loop, oracle,
+  evaluation history, and plotting functionality.
+- Compare random, entropy, and margin acquisition under the same labeled-set
+  initialization and total acquisition budget.
+- Investigate batch-size choices, paired repeated runs, and uncertain-but-diverse
+  selection through optional exercises.
 
-The main notebook is **fully executable with unsolved exercises**:
-`RUN_EXERCISES=False` and `RUN_OPTIONAL_EXPERIMENTS=False` by default.
-Students can enable them after filling in the TODO functions or for
-additional research challenges.
+### Installation and running
 
-### Portable installation
-
-From the repository root (Python 3.11+):
+Use Python 3.11 or newer. From a clone of this repository:
 
 ```bash
 python -m pip install -e ".[teaching]"
+```
+
+Open `examples/01_active_learning_digits.ipynb` in JupyterLab, Jupyter
+Notebook, VS Code, or another notebook frontend with the Python environment
+where you installed `al-pipeline`. A graphical notebook frontend may need
+to be installed or enabled separately.
+
+If your editor requires a separately registered kernel:
+
+```bash
 python -m ipykernel install --user --name al-pipeline-teaching --display-name "AL Pipeline (CPU)"
-jupyter notebook examples/01_active_learning_digits.ipynb
 ```
 
-If `jupyter notebook` is not available, launch the existing JupyterLab or
-Jupyter Notebook frontend supplied by your environment and select the
-`AL Pipeline (CPU)` kernel. `.[teaching]` installs the kernel/backend,
-not necessarily a full standalone notebook frontend.
+The instructions above also apply on remote computing systems, subject to their
+local environment and resource-use policies.
 
-### CPU verification — on Delta or locally
+### Worked core and student exercises
 
-Use these steps **without submitting any Slurm jobs**, from the checked-out
-repo. Use an interactive CPU allocation if required by your site's policies.
-For Delta with conda already installed:
+The supplied notebook preserves the core's executed outputs for reading and
+comparison. To reproduce them, choose **Restart Kernel and Run All** in your
+notebook editor. The following defaults ensure that the core executes
+successfully even though the exercises are not yet solved:
+
+```python
+RUN_EXERCISES = False
+RUN_OPTIONAL_EXPERIMENTS = False
+```
+
+The five exercises are intentionally unfinished:
+
+1. Implement the predictive entropy formula.
+2. Analyze entropy versus margin and implement a margin scorer.
+3. Compare different acquisition batch sizes for a fixed labeling budget.
+4. Compare repeated, **paired** initial labeled sets and uncertainty results.
+5. Compare entropy with an uncertainty-plus-diversity selector.
+
+After completing TODO 1–2, enable `RUN_EXERCISES=True` to run their checks.
+For TODO 3–5, complete their guarded cells first, then enable
+`RUN_OPTIONAL_EXPERIMENTS=True`. These later exercises perform additional model
+fits; they are not required to reproduce the core notebook. The repository does
+not distribute an instructor solutions notebook.
+
+### Automated verification
+
+From the repository root, the CPU runner saves a newly executed copy without
+overwriting the published notebook:
 
 ```bash
-cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
-git fetch origin
-git switch feat/cpu-active-learning-digits-notebook
-git pull --ff-only origin feat/cpu-active-learning-digits-notebook
-conda activate al-pipeline
-python -m pip install -e ".[teaching]"
+python scripts/examples/execute_digits_notebook.py \
+  --mode core \
+  --output digits_core_local.ipynb
+```
+
+To test the unsolved student notebook's structure and core execution:
+
+```bash
 python -m pip install pytest
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-  python -m pytest -q tests/examples/test_digits_notebook.py
+python -m pytest -q tests/examples/test_digits_notebook.py
 ```
 
-This test executes **every cell** with `nbclient` on a CPU and fails if
-any cell raises an exception. The same test runs automatically on clean
-GitHub-hosted Python 3.11 and 3.12 CPUs.
+An optional runner mode is available *after* solutions have been completed,
+and the instructor-only mode requires a locally supplied, unpublished
+solutions notebook. Neither mode is necessary for participants.
 
-To explicitly **save an executed copy with figures and tables**, use the provided CPU runner:
+### Experimental design and limitations
 
-```bash
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-  python scripts/examples/execute_digits_notebook.py \
-  --output ~/digits_active_learning_executed.ipynb
-```
+The main experiment uses 50 initial labels (five per digit) and three
+policies—random, predictive entropy, and top-two margin—each acquiring 160
+additional labels over eight cycles. The classifier is multinomial logistic
+regression; the results are a teaching demonstration, not a claim that one
+acquisition policy is universally superior.
 
-The runner refuses to overwrite existing files and keeps the source notebook unchanged. It does not submit Slurm jobs.
+The simulated oracle stores the candidate ground truth and reveals only labels
+requested by a selection. Candidate labels are not given to the acquisition
+scorer. Policies are chosen using validation macro-F1; the test split is used
+for one final evaluation. TODO 4 varies the balanced initial set *across*
+replicates but holds it fixed *between* policies within a replicate.
 
-Alternatively, run directly using the standard `nbclient` API:
+### Next example: astronomy
 
-```bash
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python - <<'PY'
-from pathlib import Path
-import nbformat
-from nbclient import NotebookClient
-source = Path("examples/01_active_learning_digits.ipynb")
-out = Path("examples/01_active_learning_digits_executed.ipynb")
-notebook = nbformat.read(source, as_version=4)
-executed = NotebookClient(
-    notebook, timeout=300, kernel_name="python3",
-    resources={"metadata": {"path": str(Path.cwd())}},
-).execute()
-nbformat.write(executed, out)
-print("Saved:", out)
-PY
-```
-
-The executed file is a *local experiment output*; do not commit generated
-notebook results or plots without reviewing them.
-
-### Experimental constraints
-
-The notebook has exactly the same initial labeled IDs and fixed
-train/validation/test partition for all default policies. All three policies
-acquire 160 labels in eight rounds of 20 each. Logistic regression is trained
-from scratch at each cycle using **only observed labels**.
-
-The existing labels of otherwise unlabeled candidates are held inside an
-`ExistingLabelsOracle` and revealed only for the selected batch. Hidden
-labels are never used to choose candidates. The test split is evaluated
-**only once at the end**, after selecting a policy using validation macro-F1.
-
-An optional seed exercise deliberately keeps the split and `L0` fixed;
-it only probes acquisition RNG variability (not full experiment variance).
-A follow-up notebook can vary the initial set, label noise, or a more
-expensive oracle.
-
-### Relationship to the astronomical project
-
-The classification model here is logistic regression, **not** the
-AstroMiNN/ConvNeXt image model. The relevant generalizable abstractions
-are scoring, pool state, selection, oracle, budgets and evaluation.
-
-We will design a *separate*, optional astronomy example after confirming
-the classroom experience and CPU runtime of this first notebook.
+The introductory example is intentionally independent of astronomical data.
+A separate astronomy notebook will illustrate which general interfaces remain
+the same when moving from a simple digits classifier to scientific imaging,
+survey data, and real-world label-oracle considerations.
