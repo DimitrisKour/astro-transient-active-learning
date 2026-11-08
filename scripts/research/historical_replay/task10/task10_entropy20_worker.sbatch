@@ -25,4 +25,4 @@ RT="$JOB/runtime/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
 mkdir -p "$RT"/{tmp,torch,matplotlib}
 export TMPDIR="$RT/tmp" TORCH_HOME="$RT/torch" MPLCONFIGDIR="$RT/matplotlib"
 echo "Task10 seed20 index=$SLURM_ARRAY_TASK_ID job=$SLURM_JOB_ID"
-python "$SOURCE/scripts/adaptive/task10_entropy20.py" run --job-dir "$JOB" --index "$SLURM_ARRAY_TASK_ID"
+python "$SOURCE/scripts/research/historical_replay/task10/task10_entropy20.py" run --job-dir "$JOB" --index "$SLURM_ARRAY_TASK_ID"

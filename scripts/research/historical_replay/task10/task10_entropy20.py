@@ -24,9 +24,9 @@ CASE_KEY = 'entropy_s357'
 SEEDS = tuple(range(2001, 2021))
 SCHEMA = 'task10_entropy20_v1'
 SCRIPTS = (
-    'scripts/adaptive/task10_entropy20.py',
-    'scripts/adaptive/task10_entropy20_report.py',
-    'scripts/adaptive/task10_entropy20_worker.sbatch',
+    'scripts/research/historical_replay/task10/task10_entropy20.py',
+    'scripts/research/historical_replay/task10/task10_entropy20_report.py',
+    'scripts/research/historical_replay/task10/task10_entropy20_worker.sbatch',
 )
 
 
@@ -259,7 +259,7 @@ def submit(job: Path, walltime: str, max_concurrent: int):
     state = status(job)
     if state['invalid'] or state['completed'] or len(state['pending_seeds']) != 20:
         raise RuntimeError('Refusing to submit nonempty or inconsistent experiment')
-    worker = job/'source/scripts/adaptive/task10_entropy20_worker.sbatch'
+    worker = job/'source/scripts/research/historical_replay/task10/task10_entropy20_worker.sbatch'
     cmd = ['sbatch', '--parsable', f'--time={walltime}',
            f'--array=0-19%{max_concurrent}',
            f'--output={job}/logs/T10_%A_%a.out',
@@ -283,7 +283,7 @@ def submit(job: Path, walltime: str, max_concurrent: int):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=('plan', 'prepare', 'verify', 'status', 'submit', 'run'))
-    parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[4])
     parser.add_argument('--source-task8b', type=Path, default=SOURCE)
     parser.add_argument('--job-dir', type=Path, default=ROOT)
     parser.add_argument('--index', type=int)
