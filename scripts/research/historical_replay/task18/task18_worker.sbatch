@@ -28,12 +28,12 @@ export TMPDIR="$RUNTIME/tmp"
 export MPLCONFIGDIR="$RUNTIME/matplotlib"
 export TORCH_HOME="$RUNTIME/torch"
 export JUPYTER_RUNTIME_DIR="$RUNTIME/jupyter"
-python "$JOB/source/scripts/adaptive/task18.py" verify --job-dir "$JOB"
+python "$JOB/source/scripts/research/historical_replay/task18/task18.py" verify --job-dir "$JOB"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 if [[ "$MODE" == "pilot" ]]; then
-  python "$JOB/source/scripts/adaptive/task18.py" pilot --seed "$SEED"
+  python "$JOB/source/scripts/research/historical_replay/task18/task18.py" pilot --seed "$SEED"
 elif [[ "$MODE" == "job" ]]; then
-  python "$JOB/source/scripts/adaptive/task18.py" job "$SEED" "$CYCLE" --job-dir "$JOB"
+  python "$JOB/source/scripts/research/historical_replay/task18/task18.py" job "$SEED" "$CYCLE" --job-dir "$JOB"
 else
   echo "Unrecognized Task11 worker mode: $MODE" >&2; exit 2
 fi

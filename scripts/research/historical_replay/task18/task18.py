@@ -88,8 +88,9 @@ def prepare(overlay):
     try:
         shutil.copytree(TASK11/'source',stage,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
         for p in (stage/'scripts/adaptive').glob('task11*'):p.unlink()
-        for p in (overlay/'scripts/adaptive').glob('task18*'):
-            shutil.copy2(p,stage/'scripts/adaptive'/p.name)
+        (stage/'scripts/research/historical_replay/task18').mkdir(parents=True, exist_ok=True)
+        for p in (overlay/'scripts/research/historical_replay/task18').glob('task18*'):
+            shutil.copy2(p,stage/'scripts/research/historical_replay/task18'/p.name)
         changed=patch_source(stage,overlay)
         for f in stage.rglob('*.py'):
             ast.parse(f.read_text(),filename=str(f))
@@ -218,7 +219,7 @@ def submit(walltime):
                  '--output',str(JOB/'logs/%x_%j.out'),
                  '--error',str(JOB/'logs/%x_%j.err')]
             if previous:cmd+=['--dependency',f'afterok:{previous["job_id"]}']
-            cmd += [str(JOB/'source/scripts/adaptive/task18_worker.sbatch'),
+            cmd += [str(JOB/'source/scripts/research/historical_replay/task18/task18_worker.sbatch'),
                     str(JOB),'job',str(seed),str(cycle)]
             out=subprocess.check_output(cmd,text=True).strip().split(';')[0]
             if not out.isdigit():raise RuntimeError('Unexpected Slurm job ID '+out)
@@ -296,7 +297,7 @@ def main():
     p.add_argument('--cycle',type=int)
     p.add_argument('--all',action='store_true')
     p.add_argument('--walltime',default='00:20:00')
-    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
+    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[4])
     p.add_argument('--job-dir',type=Path,default=JOB)
     p.add_argument('--destination',type=Path,default=Path('/u/dkourtesis/task18_anchoral_results.zip'))
     a=p.parse_args()

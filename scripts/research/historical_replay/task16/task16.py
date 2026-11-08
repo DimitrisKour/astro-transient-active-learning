@@ -174,8 +174,9 @@ def prepare(overlay):
         shutil.copytree(TASK11 / 'source', temp, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
         for old in (temp / 'scripts/adaptive').glob('task11*'):
             old.unlink()
-        for src in (overlay / 'scripts/adaptive').glob('task16*'):
-            shutil.copy2(src, temp / 'scripts/adaptive' / src.name)
+        (temp / 'scripts/research/historical_replay/task16').mkdir(parents=True, exist_ok=True)
+        for src in (overlay / 'scripts/research/historical_replay/task16').glob('task16*'):
+            shutil.copy2(src, temp / 'scripts/research/historical_replay/task16' / src.name)
         changed = patch_source(temp, overlay)
         import ast
         for p in source_files(temp):
@@ -409,7 +410,7 @@ def submit(walltime, fraction_filter=None, policy_filter=None, seed_filter=None)
                        '--error', str(JOB/'logs/%x_%j.err')]
                 if last:
                     cmd += ['--dependency', f'afterok:{last}']
-                cmd += [str(JOB/'source/scripts/adaptive/task16_worker.sbatch'),
+                cmd += [str(JOB/'source/scripts/research/historical_replay/task16/task16_worker.sbatch'),
                         str(JOB), 'job', fraction, policy, str(seed), str(cycle)]
                 response = subprocess.check_output(cmd, text=True).strip().split(';')[0]
                 if not response.isdigit():
@@ -549,7 +550,7 @@ def main():
     ap.add_argument('--policy', choices=POLICIES)
     ap.add_argument('--seed', type=int, default=None)
     ap.add_argument('--cycle', type=int)
-    ap.add_argument('--overlay', type=Path, default=Path(__file__).resolve().parents[2])
+    ap.add_argument('--overlay', type=Path, default=Path(__file__).resolve().parents[4])
     ap.add_argument('--job-dir', type=Path, default=JOB)
     ap.add_argument('--walltime', default='00:35:00')
     ap.add_argument('--all', action='store_true')

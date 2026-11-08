@@ -1,0 +1,38 @@
+name: Task16–18 research packaging
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/research/historical_replay/task16/**"
+      - "scripts/research/historical_replay/task17/**"
+      - "scripts/research/historical_replay/task18/**"
+      - "tests/test_task16*.py"
+      - "tests/test_task17*.py"
+      - "tests/test_task18*.py"
+      - ".github/workflows/task16-task18-packaging.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install portable scientific test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Test budget, scheduling, random L0 and AnchorAL without private Task11 source
+        run: |
+          python -m pytest -q \
+            tests/test_task16_batchsize.py \
+            tests/test_task17_full9.py \
+            tests/test_task17_random_l0.py \
+            tests/test_task18_anchoral.py \
+            -k "not budget_corresponds_to_frozen_runner and not patch_is_narrow_and_strict and not preparation_and_freeze and not strict_patch_three_files_and_python_syntax and not actual_uniform_object_selection_order_independence_and_idempotence and not missing_class_weight_smoothing_no_hidden_labels and not local_prepare_and_verify"

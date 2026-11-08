@@ -28,12 +28,12 @@ export TMPDIR="$RUNTIME/tmp"
 export MPLCONFIGDIR="$RUNTIME/matplotlib"
 export TORCH_HOME="$RUNTIME/torch"
 export JUPYTER_RUNTIME_DIR="$RUNTIME/jupyter"
-python "$JOB/source/scripts/adaptive/task17.py" verify --job-dir "$JOB"
-python "$JOB/source/scripts/adaptive/task17.py" filesystem-probe
+python "$JOB/source/scripts/research/historical_replay/task17/task17.py" verify --job-dir "$JOB"
+python "$JOB/source/scripts/research/historical_replay/task17/task17.py" filesystem-probe
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 case "$MODE" in
-  bootstrap) python "$JOB/source/scripts/adaptive/task17.py" job-bootstrap "$3" --job-dir "$JOB" ;;
-  pilot) python "$JOB/source/scripts/adaptive/task17.py" pilot --seed "$3" --job-dir "$JOB" ;;
-  cycle) python "$JOB/source/scripts/adaptive/task17.py" job-cycle "$3" "$4" "$5" --job-dir "$JOB" ;;
+  bootstrap) python "$JOB/source/scripts/research/historical_replay/task17/task17.py" job-bootstrap "$3" --job-dir "$JOB" ;;
+  pilot) python "$JOB/source/scripts/research/historical_replay/task17/task17.py" pilot --seed "$3" --job-dir "$JOB" ;;
+  cycle) python "$JOB/source/scripts/research/historical_replay/task17/task17.py" job-cycle "$3" "$4" "$5" --job-dir "$JOB" ;;
   *) echo "Unknown Task17 worker mode: $MODE" >&2; exit 2 ;;
 esac

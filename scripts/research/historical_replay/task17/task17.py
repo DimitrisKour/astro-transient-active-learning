@@ -143,8 +143,9 @@ def prepare(overlay):
         shutil.copytree(TASK11/'source', temp, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
         for old in (temp/'scripts/adaptive').glob('task11*'):
             old.unlink()
-        for src in (overlay/'scripts/adaptive').glob('task17*'):
-            shutil.copy2(src, temp/'scripts/adaptive'/src.name)
+        (temp/'scripts/research/historical_replay/task17').mkdir(parents=True, exist_ok=True)
+        for src in (overlay/'scripts/research/historical_replay/task17').glob('task17*'):
+            shutil.copy2(src, temp/'scripts/research/historical_replay/task17'/src.name)
         patched = patch_source(temp, overlay)
         import ast
         for f in source_files(temp):
@@ -368,7 +369,7 @@ def submit_bootstraps(walltime, seed_filter=None):
                '--job-name',f'T17_L0_{seed}',
                '--output',str(JOB/'logs/%x_%j.out'),
                '--error',str(JOB/'logs/%x_%j.err'),
-               str(JOB/'source/scripts/adaptive/task17_worker.sbatch'),
+               str(JOB/'source/scripts/research/historical_replay/task17/task17_worker.sbatch'),
                str(JOB),'bootstrap',str(seed)]
         jid = subprocess.check_output(cmd, text=True).strip().split(';')[0]
         if not jid.isdigit():
@@ -425,7 +426,7 @@ def submit_cycles(walltime, policy_filter=None, seed_filter=None):
                            '--error',str(JOB/'logs/%x_%j.err')]
                     if prior:
                         cmd += ['--dependency',f'afterok:{prior}']
-                    cmd += [str(JOB/'source/scripts/adaptive/task17_worker.sbatch'),
+                    cmd += [str(JOB/'source/scripts/research/historical_replay/task17/task17_worker.sbatch'),
                             str(JOB),'cycle',policy,str(seed),str(cycle)]
                     jid = subprocess.check_output(cmd,text=True).strip().split(';')[0]
                     if not jid.isdigit():
@@ -550,7 +551,7 @@ def main():
         'submit-bootstrap','release-bootstrap','job-bootstrap','pilot','pilot-status',
         'submit-cycles','release-cycles','job-cycle','status','collect'])
     p.add_argument('positional',nargs='*')
-    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
+    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[4])
     p.add_argument('--job-dir',type=Path,default=JOB)
     p.add_argument('--walltime',default='00:35:00')
     p.add_argument('--seed',type=int)

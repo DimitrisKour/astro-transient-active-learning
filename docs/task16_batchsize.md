@@ -57,12 +57,12 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 if [[ -f "$CONDA_PREFIX/lib/libstdc++.so.6" ]]; then
   export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
-python scripts/adaptive/task16.py plan
-python scripts/adaptive/task16.py prepare
-python scripts/adaptive/task16.py verify
+python scripts/research/historical_replay/task16/task16.py plan
+python scripts/research/historical_replay/task16/task16.py prepare
+python scripts/research/historical_replay/task16/task16.py verify
 TASK16_JOB=/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_task16_batchsize_sensitivity_v1
 PYTHONPATH="$TASK16_JOB/source/src" python -m pytest -q tests/test_task16_batchsize.py
-python scripts/adaptive/task16.py preflight
+python scripts/research/historical_replay/task16/task16.py preflight
 ```
 
 Preflight validates compatibility for all seeds in both suites, confirms L0
@@ -77,14 +77,14 @@ sbatch --parsable \
   --job-name=T16_pilot \
   --output="$TASK16_JOB/logs/%x_%j.out" \
   --error="$TASK16_JOB/logs/%x_%j.err" \
-  "$TASK16_JOB/source/scripts/adaptive/task16_worker.sbatch" \
+  "$TASK16_JOB/source/scripts/research/historical_replay/task16/task16_worker.sbatch" \
   "$TASK16_JOB" pilot _ _ 135
 ```
 
 Once finished:
 
 ```bash
-python scripts/adaptive/task16.py pilot-status
+python scripts/research/historical_replay/task16/task16.py pilot-status
 sacct -u "$USER" --starttime 2026-10-31 -X \
   --format=JobID,JobName%35,State,ExitCode,Elapsed | grep T16_
 ```
@@ -97,8 +97,8 @@ all 138 training jobs.
 ### Submit held jobs (NOT before successful pilot)
 
 ```bash
-python scripts/adaptive/task16.py submit --walltime 00:35:00
-python scripts/adaptive/task16.py status
+python scripts/research/historical_replay/task16/task16.py submit --walltime 00:35:00
+python scripts/research/historical_replay/task16/task16.py status
 ```
 
 **This creates held jobs only**, with no training released. Since there are
@@ -106,10 +106,10 @@ python scripts/adaptive/task16.py status
 
 ```bash
 # 30 jobs (20%: two policies x three seeds x five cycles)
-python scripts/adaptive/task16.py submit --walltime 00:35:00 --submit-fraction 20
+python scripts/research/historical_replay/task16/task16.py submit --walltime 00:35:00 --submit-fraction 20
 
 # Example: 18 jobs (5%: one policy and one seed)
-python scripts/adaptive/task16.py submit --walltime 00:35:00 \
+python scripts/research/historical_replay/task16/task16.py submit --walltime 00:35:00 \
   --submit-fraction 05 --submit-policy entropy --submit-seed 135
 ```
 
@@ -123,7 +123,7 @@ pending-job limit before attempting a large batch.
 Release the first `entropy` seed-135 5% job (or another first-cycle case):
 
 ```bash
-python scripts/adaptive/task16.py release \
+python scripts/research/historical_replay/task16/task16.py release \
   --fraction 05 --policy entropy --seed 135 --cycle 1
 ```
 
@@ -131,7 +131,7 @@ After verifying checkpoint/evaluation/revealed-label state, and confirming
 queue capacity, explicitly release the remaining jobs:
 
 ```bash
-python scripts/adaptive/task16.py release --all
+python scripts/research/historical_replay/task16/task16.py release --all
 ```
 
 If Slurm rejects a submission, inspect the ledger and `squeue` before retrying.
@@ -140,8 +140,8 @@ The script uses recorded `(fraction, policy, seed)` cases to avoid duplicate cha
 ### Result collection
 
 ```bash
-python scripts/adaptive/task16.py status
-python scripts/adaptive/task16.py collect --destination /u/dkourtesis/task16_results.zip
+python scripts/research/historical_replay/task16/task16.py status
+python scripts/research/historical_replay/task16/task16.py collect --destination /u/dkourtesis/task16_results.zip
 ```
 
 The collector includes both new schedules and the original Task 4 reference

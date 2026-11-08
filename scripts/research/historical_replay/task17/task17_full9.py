@@ -83,7 +83,7 @@ def prepare(controller=CONTROL, repo=None):
         return
     if controller.exists() and any(controller.iterdir()):
         raise RuntimeError('Partial controller found; inspect rather than overwrite')
-    src = (Path(repo) / 'scripts/adaptive') if repo is not None else Path(__file__).resolve().parent
+    src = (Path(repo) / 'scripts/research/historical_replay/task17') if repo is not None else Path(__file__).resolve().parent
     for name in FILES:
         if not (src / name).is_file():
             raise FileNotFoundError(src / name)
