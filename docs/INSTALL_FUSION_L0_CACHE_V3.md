@@ -1,3 +1,5 @@
+> **Historical/archived workflow:** The initial L0-only cache/benchmark scripts have been moved to `scripts/archive/fusion_image/early_l0/`. They are retained for reproduction, not recommended as the current full-historical Task 0/Task 1 workflow. See `scripts/archive/fusion_image/early_l0/README.md` before running any old submission commands.
+
 # New-model L0 + validation cache and single-epoch benchmark
 
 This is a **self-contained overlay**, built for the existing `al-pipeline` checkout on NCSA Delta. It adds two new modules `cache_helpers.py` and `cache_v2.py` and a bounded SLURM orchestration. It does **not** overwrite the existing `backends.py`, L0 source plan, original manifests, historical data, or any AL training code. The current backend already supports cache version 2 whenever `FUSION_IMAGE_CACHE_ROOT` is set.
@@ -31,13 +33,13 @@ conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 python -m pytest tests/astronomy/fusion_image/test_sharded_cache_v2.py -q
 python -m pytest tests/astronomy/fusion_image -q
-bash scripts/adaptive/submit_fusion_cache_v3.sh --prepare
+bash scripts/archive/fusion_image/early_l0/submit_fusion_cache_v3.sh --prepare
 ```
 
 Check the `--prepare` printed object and stage counts and the two source manifest paths. Then run:
 
 ```bash
-bash scripts/adaptive/submit_fusion_cache_v3.sh --submit
+bash scripts/archive/fusion_image/early_l0/submit_fusion_cache_v3.sh --submit
 ```
 
 This submits up to six 1-CPU preprocessing shards concurrently (24 shards total), a dependent CPU finalization step, and **one** dependent A40 GPU one-epoch benchmark. The batch script runs only after the cache completes successfully. Do not submit the original L0 six-fit matrix.
@@ -69,7 +71,7 @@ The most useful metrics are `training_seconds`, `validation_seconds`, `epoch_sec
 If a shard fails, inspect the corresponding log and residual `.shard_XXX_*` staging directory first. Once the old jobs have finished, use:
 
 ```bash
-bash scripts/adaptive/submit_fusion_cache_v3.sh --retry
+bash scripts/archive/fusion_image/early_l0/submit_fusion_cache_v3.sh --retry
 ```
 
 Completed shards are reused. Never delete `shard_*/done.json` blindly. Do not reuse this L0+validation cache for pool inference or test evaluation: missing stages will raise an error. If cache finalization succeeded but the benchmark failed, investigate the benchmark logs before submitting the standalone `fusion_cache_v2_benchmark.sbatch` job manually.
