@@ -49,7 +49,7 @@ def sha(path):
 
 
 def parent():
-    path = T17 / 'source/scripts/adaptive/task17.py'
+    path = T17 / 'source/scripts/research/historical_replay/task17/task17.py'
     spec = importlib.util.spec_from_file_location('_frozen_task17_full9_parent', path)
     if spec is None or spec.loader is None:
         raise RuntimeError('Frozen Task17 manager is missing')
@@ -83,7 +83,7 @@ def prepare(controller=CONTROL, repo=None):
         return
     if controller.exists() and any(controller.iterdir()):
         raise RuntimeError('Partial controller found; inspect rather than overwrite')
-    src = (Path(repo) / 'scripts/adaptive') if repo is not None else Path(__file__).resolve().parent
+    src = (Path(repo) / 'scripts/research/historical_replay/task17') if repo is not None else Path(__file__).resolve().parent
     for name in FILES:
         if not (src / name).is_file():
             raise FileNotFoundError(src / name)
@@ -213,7 +213,7 @@ def submit(controller=CONTROL, walltime='00:20:00'):
                 if dependency:
                     cmd += ['--dependency', f'afterok:{dependency}']
                 if cycle <= 3:
-                    cmd += [str(T17 / 'source/scripts/adaptive/task17_worker.sbatch'),
+                    cmd += [str(T17 / 'source/scripts/research/historical_replay/task17/task17_worker.sbatch'),
                             str(T17), 'cycle', policy, str(seed), str(cycle)]
                 else:
                     cmd += [str(controller / 'source/task17_full9_worker.sbatch'),
