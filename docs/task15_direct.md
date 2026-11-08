@@ -35,12 +35,12 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 if [[ -f "$CONDA_PREFIX/lib/libstdc++.so.6" ]]; then
   export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
-python scripts/adaptive/task15.py plan
-python scripts/adaptive/task15.py prepare
-python scripts/adaptive/task15.py verify
+python scripts/research/historical_replay/task15/task15.py plan
+python scripts/research/historical_replay/task15/task15.py prepare
+python scripts/research/historical_replay/task15/task15.py verify
 TASK15_JOB=/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_task15_direct_vreduce_v1
 PYTHONPATH="$TASK15_JOB/source/src" python -m pytest -q tests/test_task15_direct.py
-python scripts/adaptive/task15.py preflight
+python scripts/research/historical_replay/task15/task15.py preflight
 ```
 
 `prepare` verifies the **entire Task11 frozen source manifest** and checkpoints before copying and patching it into a separate experiment directory. It never changes Task11–14 artifacts. If a check fails, stop and inspect, don't overwrite the frozen source.
@@ -54,7 +54,7 @@ sbatch --parsable \
   --job-name=T15_pilot_direct \
   --output="$TASK15_JOB/logs/%x_%j.out" \
   --error="$TASK15_JOB/logs/%x_%j.err" \
-  "$TASK15_JOB/source/scripts/adaptive/task15_worker.sbatch" \
+  "$TASK15_JOB/source/scripts/research/historical_replay/task15/task15_worker.sbatch" \
   "$TASK15_JOB" pilot direct 135
 ```
 
@@ -63,7 +63,7 @@ Unlike entropy/BALD acquisition-only pilots, this pilot **does query historical 
 Check:
 
 ```bash
-python scripts/adaptive/task15.py pilot-status
+python scripts/research/historical_replay/task15/task15.py pilot-status
 sacct -u "$USER" --starttime 2026-10-31 -X --format=JobID,JobName%35,State,ExitCode,Elapsed | grep T15_
 ```
 
@@ -72,8 +72,8 @@ Inspect the `pilot/direct/seed_135/result.json` transcript and selection before 
 ## Hold and optionally release training (after pilot confirmation)
 
 ```bash
-python scripts/adaptive/task15.py submit --walltime 00:35:00
-python scripts/adaptive/task15.py status
+python scripts/research/historical_replay/task15/task15.py submit --walltime 00:35:00
+python scripts/research/historical_replay/task15/task15.py status
 ```
 
 Submission creates **27 HELD jobs**, three independent seed-specific `afterok` chains, no Task11/12/13/14 dependencies. It does **not** release jobs automatically.
@@ -81,19 +81,19 @@ Submission creates **27 HELD jobs**, three independent seed-specific `afterok` c
 First end-to-end validation:
 
 ```bash
-python scripts/adaptive/task15.py release --policy direct --seed 135 --cycle 1
+python scripts/research/historical_replay/task15/task15.py release --policy direct --seed 135 --cycle 1
 ```
 
 After inspecting full cycle 1 outputs and `direct_oracle_journal.json`, release all remaining jobs:
 
 ```bash
-python scripts/adaptive/task15.py release --all
+python scripts/research/historical_replay/task15/task15.py release --all
 ```
 
 Report collection (later):
 
 ```bash
-python scripts/adaptive/task15.py collect --destination /u/dkourtesis/task15_direct_results.zip
+python scripts/research/historical_replay/task15/task15.py collect --destination /u/dkourtesis/task15_direct_results.zip
 ```
 
 Then **Windows PowerShell**:
