@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 import pytest
 
-SCRIPTS=Path(__file__).resolve().parents[2]/'scripts/adaptive'
+SCRIPTS=Path(__file__).resolve().parents[2]/'scripts/research/historical_replay/task6a'
 sys.path.insert(0,str(SCRIPTS))
 import task6a_l0 as job
 import task6a_l0_prepare as pre
@@ -68,9 +68,10 @@ def test_builder_rejects_bad_anchor():
 
 def test_builder_full_script_science_contract(tmp_path):
     repo=tmp_path/'repo'
-    (repo/'scripts/adaptive').mkdir(parents=True)
+    (repo/'scripts/research/historical_replay/task6a').mkdir(parents=True)
     (repo/'scripts/run_astrominn_historical_replay.py').write_text('ORIGINAL')
-    (repo/'scripts/adaptive/task4_build_runner.py').write_text('''
+    (repo/'scripts/research/historical_replay/task4').mkdir(parents=True)
+    (repo/'scripts/research/historical_replay/task4/task4_build_runner.py').write_text('''
 def build_runner(source):
     return """    if args.bootstrap_source_suite_id == args.suite_id:
         raise ValueError("Use a distinct suite ID for Task 4.")

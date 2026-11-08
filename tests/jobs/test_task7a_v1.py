@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'scripts/adaptive'))
+sys.path.insert(0,str(ROOT/'scripts/research/historical_replay/task7a'))
 import task7a as jobs
 import task7a_build as build
 import task7a_prepare as prep
@@ -103,8 +103,8 @@ def test_simulated_patch_is_scientifically_isolated():
 
 
 def test_common_contract_and_gpu_worker():
-    common=(ROOT/'scripts/adaptive/task7a_common.sh').read_text()
-    worker=(ROOT/'scripts/adaptive/task7a_worker.sbatch').read_text()
+    common=(ROOT/'scripts/research/historical_replay/task7a/task7a_common.sh').read_text()
+    worker=(ROOT/'scripts/research/historical_replay/task7a/task7a_worker.sbatch').read_text()
     assert '--bootstrap-source-suite-id "$TASK7A_BASE" --require-existing-bootstrap' in common
     assert '--training-initialization warm_start --strategies entropy' in common
     assert '--max-cycles 9 --complete-pool' in common
@@ -132,7 +132,7 @@ def test_source_preflight_order_no_run(tmp_path,monkeypatch):
 
 
 def test_runner_has_correct_upstream_anchors():
-    s=(ROOT/'scripts/adaptive/task7a_build.py').read_text()
+    s=(ROOT/'scripts/research/historical_replay/task7a/task7a_build.py').read_text()
     assert 'task4_build_runner.py' in s
     assert 'if args.bootstrap_source_suite_id !=' in s
     assert 'class_weight_exponent=0.85' in s
@@ -144,7 +144,7 @@ def test_immutable_freeze(tmp_path,monkeypatch):
     # Freeze must not modify the editable repo, while refusing tampered snapshots.
     repo=tmp_path/'repo';src=repo/'src/al_pipeline/astronomy/experiments';src.mkdir(parents=True)
     (src/'simulated.py').write_text('original source')
-    scripts=repo/'scripts/adaptive';scripts.mkdir(parents=True)
+    scripts=repo/'scripts/research/historical_replay/task7a';scripts.mkdir(parents=True)
     for name in ('task7a.py','task7a_build.py','task7a_prepare.py','task7a_common.sh','task7a_worker.sbatch','task7a_temperature_science.py'):
         (scripts/name).write_text('x')
     monkeypatch.setattr(prep,'build_snapshot_files',lambda r:('runner','modified simulation','temperature science'))
@@ -155,7 +155,7 @@ def test_immutable_freeze(tmp_path,monkeypatch):
     assert (src/'simulated.py').read_text()=='original source'
     assert (job/'source/src/al_pipeline/astronomy/experiments/simulated.py').read_text()=='modified simulation'
     assert (job/'source/src/al_pipeline/astronomy/experiments/temperature_acquisition.py').read_text()=='temperature science'
-    assert (job/'source/scripts/adaptive/task7a.py').is_file()
+    assert (job/'source/scripts/research/historical_replay/task7a/task7a.py').is_file()
     prep.freeze(repo,job,reg)
     (job/'source/src/al_pipeline/astronomy/experiments/simulated.py').write_text('tampered')
     with pytest.raises(ValueError,match='damaged'):

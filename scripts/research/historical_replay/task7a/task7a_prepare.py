@@ -25,7 +25,7 @@ def freeze(repo:Path,job_dir:Path,registry:Path)->None:
     if not registry.is_file():raise FileNotFoundError(registry)
     generated,simulation,science=build_snapshot_files(repo)
     files=[*sorted((repo/'src/al_pipeline').rglob('*.py')),
-           repo/'scripts/adaptive/task7a.py',
+           repo/'scripts/research/historical_replay/task7a/task7a.py',
            *sorted((repo/'scripts/adaptive').glob('task7a_*.py')),
            *sorted((repo/'scripts/adaptive').glob('task7a_*.sh')),
            *sorted((repo/'scripts/adaptive').glob('task7a_*.sbatch'))]

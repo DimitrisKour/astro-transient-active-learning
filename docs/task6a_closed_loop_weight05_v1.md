@@ -31,7 +31,7 @@ cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -n /projects/bcrv/dkourtesis/task6a_weight05_overlay_v1.zip -d .
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 python -m pytest tests/jobs/test_task6a_weight05.py -q
-python -m py_compile scripts/adaptive/task6a_*.py
+python -m py_compile scripts/research/historical_replay/task6a/task6a_*.py
 ```
 
 Short unit tests only; no GPU or Slurm submission.
@@ -39,9 +39,9 @@ Short unit tests only; no GPU or Slurm submission.
 ## Prepare / preflight — no GPUs and no submission
 
 ```bash
-python scripts/adaptive/task6a.py prepare
-python scripts/adaptive/task6a.py verify
-python scripts/adaptive/task6a.py submit --walltime 00:24:00
+python scripts/research/historical_replay/task6a/task6a.py prepare
+python scripts/research/historical_replay/task6a/task6a.py verify
+python scripts/research/historical_replay/task6a/task6a.py submit --walltime 00:24:00
 ```
 
 Preparation creates a frozen source under:
@@ -55,9 +55,9 @@ It materializes a distinct, deterministic L0/U0 replay split *without model infe
 One **cycle 1, seed 135, entropy** fit is enough to check the patched runner, snapshot, data, GPU environment, and duration:
 
 ```bash
-python scripts/adaptive/task6a.py probe --walltime 00:24:00
+python scripts/research/historical_replay/task6a/task6a.py probe --walltime 00:24:00
 # DRY RUN only. When ready:
-python scripts/adaptive/task6a.py probe --walltime 00:24:00 --submit
+python scripts/research/historical_replay/task6a/task6a.py probe --walltime 00:24:00 --submit
 ```
 
 This queues **one single-A40 job**, not the whole suite. Inspect it:
@@ -76,9 +76,9 @@ Confirm `COMPLETED`/`0:0`; the log should show Task 6A exponent 0.5 and the expe
 ## Full 54-fit submission (explicit action only)
 
 ```bash
-python scripts/adaptive/task6a.py submit --walltime 00:24:00
+python scripts/research/historical_replay/task6a/task6a.py submit --walltime 00:24:00
 # Inspect the dry-run plan first. When ready:
-python scripts/adaptive/task6a.py submit --walltime 00:24:00 --submit
+python scripts/research/historical_replay/task6a/task6a.py submit --walltime 00:24:00 --submit
 ```
 
 This queues nine **SLURM arrays** with six GPU tasks per array; `%3` limits concurrent tasks to three, and cycle `c+1` has an `afterok` dependency on the entire cycle `c` array. This is intentionally conservative: a failure prevents future cycles from training on incomplete histories. The successful probe is reused by the framework, not retrained.
@@ -91,7 +91,7 @@ Expected *maximum requested* GPU time: `54 × 24 min = 21.6 GPU-hours` (actual s
 squeue -u "$USER"
 J=/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_warm_weight05_v1
 cat "$J/submission.json"
-python scripts/adaptive/task6a_report.py
+python scripts/research/historical_replay/task6a/task6a_report.py
 ```
 
 The reporter audits all available new trajectory checkpoints and exports matched **validation** metrics versus Task 4 into `$J/report/paired_validation.csv`, per-class metrics into `paired_per_class.csv`, statuses into `run_status.csv`, and summary stats into `summary.json`. It is safe on partial runs; only completed cycles appear.

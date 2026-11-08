@@ -20,7 +20,7 @@ def replace_exact(text: str, old: str, new: str) -> str:
 
 
 def build_runner(repo: Path) -> str:
-    upstream_builder = repo / "scripts" / "adaptive" / "task4_build_runner.py"
+    upstream_builder = repo / "scripts" / "research" / "historical_replay" / "task4" / "task4_build_runner.py"
     source = repo / "scripts" / "run_astrominn_historical_replay.py"
     if not upstream_builder.is_file() or not source.is_file():
         raise FileNotFoundError("Task 6A requires original Task 4 builder and historical replay runner")

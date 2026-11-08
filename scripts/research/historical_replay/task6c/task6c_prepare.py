@@ -33,10 +33,10 @@ def freeze(repo:Path,mode:str)->Path:
     if not registry.is_file(): raise FileNotFoundError('Task4 routed registry missing: '+str(registry))
     runner,training=build_snapshot(repo,mode)
     files=sorted((repo/'src'/'al_pipeline').rglob('*.py'))
-    files += sorted((repo/'scripts'/'adaptive').glob('task6c_*.py'))
-    files += sorted((repo/'scripts'/'adaptive').glob('task6c_*.sh'))
-    files += sorted((repo/'scripts'/'adaptive').glob('task6c_*.sbatch'))
-    files += [repo/'scripts'/'adaptive'/'task6c.py']
+    files += sorted((repo/'scripts'/'research'/'historical_replay'/'task6c').glob('task6c_*.py'))
+    files += sorted((repo/'scripts'/'research'/'historical_replay'/'task6c').glob('task6c_*.sh'))
+    files += sorted((repo/'scripts'/'research'/'historical_replay'/'task6c').glob('task6c_*.sbatch'))
+    files += [repo/'scripts'/'research'/'historical_replay'/'task6c'/'task6c.py']
     if not files or any(not x.is_file() for x in files): raise FileNotFoundError('Incomplete Task6C source')
     src={str(p.relative_to(repo)):p.read_bytes() for p in files}
     src['src/al_pipeline/astronomy/astrominn/training.py']=training.encode()
@@ -121,7 +121,7 @@ def _environment()->dict[str,str]:
 def materialize(mode:str)->None:
     dest=job_dir(mode)
     env=_environment();env['PYTHONPATH']=str(dest/'source'/'src')
-    cmd=[sys.executable,str(dest/'source/scripts/adaptive/task6c_split.py'),
+    cmd=[sys.executable,str(dest/'source/scripts/research/historical_replay/task6c/task6c_split.py'),
          '--registry',str(dest/'registry.toml'),'--persistent',str(PERSISTENT),
          '--suite',MODES[mode]['suite']]
     subprocess.run(cmd,check=True,env=env)

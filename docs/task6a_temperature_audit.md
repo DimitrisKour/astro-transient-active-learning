@@ -30,13 +30,13 @@ For `entropy_balanced_explore`, the entropy ranking is explicitly labeled a **pr
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -n /projects/bcrv/dkourtesis/task6a_temperature_audit_v1.zip -d .
 python -m pytest tests/astronomy/test_task6a_temperature_audit.py -q
-python scripts/adaptive/task6a_temperature_audit.py plan
+python scripts/research/historical_replay/task6a/task6a_temperature_audit.py plan
 ```
 
 Run offline after both suites have their checkpoints and evaluations:
 
 ```bash
-python scripts/adaptive/task6a_temperature_audit.py run
+python scripts/research/historical_replay/task6a/task6a_temperature_audit.py run
 ```
 
 Outputs under `/projects/bcrv/dkourtesis/applecider_adaptive/diagnostics/temperature_05_vs_085_v1`:
@@ -52,8 +52,8 @@ Outputs under `/projects/bcrv/dkourtesis/applecider_adaptive/diagnostics/tempera
 `submit` **without `--submit` is a dry run**. It reads the 57-job Task6A submission manifest and validates the per-seed/per-policy dependency graph. On actual submit, it queues one CPU job depending on successful completion of all **six final cycle-9 jobs**. It never resubmits any Task6A work.
 
 ```bash
-python scripts/adaptive/task6a_temperature_audit.py submit
-python scripts/adaptive/task6a_temperature_audit.py submit --submit
+python scripts/research/historical_replay/task6a/task6a_temperature_audit.py submit
+python scripts/research/historical_replay/task6a/task6a_temperature_audit.py submit --submit
 ```
 
 The CPU job calls only the audit script and writes to the diagnostic output folder. If you queue this after Task6A cycle-9 jobs have long since left the scheduler's accounting, dependency resolution can fail. In that case run the `run` command directly (no SLURM dependencies). If the analysis reports missing evaluation artifacts, inspect the relevant Task6A jobs and re-run only the diagnostic after resolving their outputs; do not touch training source.

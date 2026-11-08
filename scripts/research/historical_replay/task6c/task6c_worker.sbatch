@@ -9,7 +9,7 @@
 #SBATCH --time=00:20:00
 set -euo pipefail
 source_root="$1"; selection="$2"; seed="$3"; cycle="$4"; policy="$5"
-source "$source_root/scripts/adaptive/task6c_common.sh"
+source "$source_root/scripts/research/historical_replay/task6c/task6c_common.sh"
 task6c_config "$selection"
 task6c_activate
 export PYTHONPATH="$source_root/src${PYTHONPATH:+:$PYTHONPATH}"
@@ -20,7 +20,7 @@ case "$policy" in entropy|entropy_balanced_explore) ;; *) echo "Invalid policy $
 runtime="$TASK6C_DATA/runs/$TASK6C_SUITE_ID/shared/seed_$seed/runtime/${SLURM_JOB_ID:-manual}"
 mkdir -p "$runtime"/{tmp,matplotlib,torch,jupyter}
 export TMPDIR="$runtime/tmp" MPLCONFIGDIR="$runtime/matplotlib" TORCH_HOME="$runtime/torch" JUPYTER_RUNTIME_DIR="$runtime/jupyter"
-python "$source_root/scripts/adaptive/task6c_prepare.py" verify --selection "$selection" --job-dir "$TASK6C_JOB_DIR"
+python "$source_root/scripts/research/historical_replay/task6c/task6c_prepare.py" verify --selection "$selection" --job-dir "$TASK6C_JOB_DIR"
 task6c_arguments "$selection" "$seed" "$policy"
 echo "TASK6C selection=$selection; equal_object; class_weight=.85; seed=$seed policy=$policy cycle=$cycle"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader

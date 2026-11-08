@@ -47,9 +47,9 @@ cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -n /projects/bcrv/dkourtesis/task6a_l0_weight05_v2.zip -d .
 
 python -m pytest tests/jobs/test_task6a_l0_v2.py -q
-python scripts/adaptive/task6a_l0.py prepare
-python scripts/adaptive/task6a_l0.py verify
-python scripts/adaptive/task6a_l0.py plan --through 9 --walltime 00:20:00 --l0-walltime 00:20:00
+python scripts/research/historical_replay/task6a/task6a_l0.py prepare
+python scripts/research/historical_replay/task6a/task6a_l0.py verify
+python scripts/research/historical_replay/task6a/task6a_l0.py plan --through 9 --walltime 00:20:00 --l0-walltime 00:20:00
 ```
 
 `prepare` freezes its **own source**, materializes the immutable candidate split with no training, verifies matching original split content, and verifies each seed's no-run preflight. `plan` is read-only. In an environment where import of `sqlite3` fails with `CXXABI_1.3.15`, run the commands via the existing Conda `al-pipeline` environment with its proper C++ library configuration, or a subprocess of `task6a_l0_activate`, not by sourcing that function into the interactive session. The worker itself performs the full activation and library configuration.
@@ -57,7 +57,7 @@ python scripts/adaptive/task6a_l0.py plan --through 9 --walltime 00:20:00 --l0-w
 ## Submit only after prepare and plan both succeed
 
 ```bash
-python scripts/adaptive/task6a_l0.py submit \
+python scripts/research/historical_replay/task6a/task6a_l0.py submit \
   --through 9 \
   --walltime 00:20:00 \
   --l0-walltime 00:20:00 \
@@ -77,7 +77,7 @@ ls -ltr "$J/logs" | tail
 Read-only results reporting after runs finish:
 
 ```bash
-python scripts/adaptive/task6a_l0_report.py
+python scripts/research/historical_replay/task6a/task6a_l0_report.py
 ```
 
 The reporter verifies the newly trained per-seed L0 exponent, warm-start checkpoint ancestry, cycle objectives, distinct acquisitions, and paired validation metrics against Task 4, including per-class precision, recall, F1. The test split must remain report-only when selecting which objective to retain.

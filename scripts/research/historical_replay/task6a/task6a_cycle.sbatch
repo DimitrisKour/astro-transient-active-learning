@@ -9,7 +9,7 @@
 #SBATCH --time=00:24:00
 set -euo pipefail
 source_root="$1"; cycle="$2"
-source "$source_root/scripts/adaptive/task6a_common.sh"
+source "$source_root/scripts/research/historical_replay/task6a/task6a_common.sh"
 task6a_activate
 export PYTHONPATH="$source_root/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
@@ -22,7 +22,7 @@ seed="${seeds[$((index/2))]}"; policy="${policies[$((index%2))]}"
 runtime="$TASK6A_DATA/runs/$TASK6A_SUITE_ID/shared/seed_$seed/runtime/${SLURM_JOB_ID:-manual}_${index}"
 mkdir -p "$runtime"/{tmp,matplotlib,torch,jupyter}
 export TMPDIR="$runtime/tmp" MPLCONFIGDIR="$runtime/matplotlib" TORCH_HOME="$runtime/torch" JUPYTER_RUNTIME_DIR="$runtime/jupyter"
-python "$source_root/scripts/adaptive/task6a_prepare.py" --verify-only \
+python "$source_root/scripts/research/historical_replay/task6a/task6a_prepare.py" --verify-only \
   --job-dir "$TASK6A_JOB_DIR"
 task6a_arguments "$seed" "$policy"
 echo "TASK6A weight exponent=0.5; loss-best; per-sample; seed=$seed policy=$policy cycle=$cycle"

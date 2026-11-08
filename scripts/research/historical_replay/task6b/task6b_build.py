@@ -20,7 +20,7 @@ def replace_one(text: str, old: str, new: str) -> str:
 
 
 def build_runner(repo: Path) -> str:
-    src=repo/'scripts/adaptive/task4_build_runner.py'
+    src=repo/'scripts/research/historical_replay/task4/task4_build_runner.py'
     spec=importlib.util.spec_from_file_location('task6b_upstream_builder',src)
     if spec is None or spec.loader is None:
         raise RuntimeError(f'Unable to load Task4 builder: {src}')

@@ -20,7 +20,7 @@ def replace_one(text: str, old: str, new: str) -> str:
 
 
 def build_runner(repo: Path) -> str:
-    upstream_builder = repo/'scripts/adaptive/task4_build_runner.py'
+    upstream_builder = repo/'scripts/research/historical_replay/task4/task4_build_runner.py'
     original_runner = repo/'scripts/run_astrominn_historical_replay.py'
     if not upstream_builder.is_file() or not original_runner.is_file():
         raise FileNotFoundError('Requires Task4 generator and original historical replay runner')

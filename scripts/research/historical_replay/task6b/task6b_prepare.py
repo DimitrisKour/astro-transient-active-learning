@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze a NEW Task6A-L0 source and prove the original L0/U0 object split.
+"""Freeze Task6B source and audit the unchanged historical L0/U0 split.
 
 No scientific training or acquisition happens in this file.
 """
@@ -13,8 +13,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from task6b_build import build_snapshot_files
+
 SEEDS = (135, 246, 357)
-SUITE = 'astrominn_closed_loop_warm_weight05_newl0_v1'
+SUITE = 'astrominn_closed_loop_warm_f1best_085_v1'
 BASE = 'astrominn_historical_replay_v1'
 REFERENCE = 'astrominn_closed_loop_warm_v1'
 
@@ -29,12 +31,12 @@ def digest(path: Path) -> str:
 
 def selected_files(repo: Path) -> list[Path]:
     files = [*sorted((repo / 'src' / 'al_pipeline').rglob('*.py')),
-             repo / 'scripts' / 'run_task6a_l0_closed_loop.py',
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6a_l0_*.py')),
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6a_l0_*.sh')),
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6a_l0_*.sbatch'))]
+             repo/'scripts/research/historical_replay/task6b/task6b.py',
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6b').glob('task6b_*.py')),
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6b').glob('task6b_*.sh')),
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6b').glob('task6b_*.sbatch'))]
     if not files or any(not f.is_file() for f in files):
-        raise FileNotFoundError('Missing Task6A code before freezing')
+        raise FileNotFoundError('Required Task6B source file missing')
     return files
 
 
@@ -42,35 +44,40 @@ def verify(job_dir: Path) -> None:
     snapshot = job_dir / 'source_snapshot.json'
     registry = job_dir / 'registry.toml'
     if not snapshot.is_file() or not registry.is_file():
-        raise FileNotFoundError('Task6A frozen source/registry is not prepared')
+        raise FileNotFoundError('Task6B frozen source/registry is not prepared')
     manifest = json.loads(snapshot.read_text(encoding='utf-8'))
     for rel, expected in manifest.items():
         path = job_dir / 'source' / rel
         if not path.is_file() or digest(path) != expected:
-            raise ValueError(f'Task6A frozen-source mismatch: {path}')
+            raise ValueError(f'Task6B frozen-source mismatch: {path}')
     config = json.loads((job_dir / 'contract.json').read_text(encoding='utf-8'))
-    if (config['suite_id'] != SUITE or config['weight_exponent'] != 0.5
-            or config['bootstrap_weight_exponent'] != 0.5
+    if (config['suite_id'] != SUITE or config['weight_exponent'] != 0.85
+            or config['bootstrap_weight_exponent'] != 0.85
             or config['bootstrap_source_suite_id'] != SUITE
-            or config['checkpoint'] != 'loss_best'):
-        raise ValueError('Task6A contract mismatch')
+            or config['checkpoint'] != 'object_macro_f1_best'):
+        raise ValueError('Task6B contract mismatch')
     if digest(registry) != config['registry_sha256']:
-        raise ValueError('Task6A registry mismatch')
+        raise ValueError('Task6B registry mismatch')
 
 
 def freeze(repo: Path, job_dir: Path, source_registry: Path) -> None:
     if not source_registry.is_file():
         raise FileNotFoundError(f'No Task4 registry: {source_registry}')
-    subprocess.run([sys.executable, str(repo / 'scripts' / 'adaptive' / 'task6a_l0_build.py'),
-                    '--repo', str(repo)], check=True)
+    runner, training = build_snapshot_files(repo)
     files = selected_files(repo)
-    sha = {str(f.relative_to(repo)): digest(f) for f in files}
+    content = {str(f.relative_to(repo)): f.read_bytes() for f in files}
+    content['scripts/run_task6b_closed_loop.py'] = runner.encode('utf-8')
+    content['src/al_pipeline/astronomy/astrominn/training.py'] = training.encode('utf-8')
+    sha = {name: hashlib.sha256(value).hexdigest() for name, value in content.items()}
     registry_bytes = source_registry.read_bytes()
     contract = {
-        'schema': 'task6a_new_l0_contract_v2', 'suite_id': SUITE,
+        'schema': 'task6b_macro_f1_checkpoint_v1', 'suite_id': SUITE,
         'reference_suite_id': REFERENCE, 'bootstrap_source_suite_id': SUITE,
-        'weight_exponent': 0.5, 'bootstrap_weight_exponent': 0.5, 'reference_weight_exponent': 0.85,
-        'checkpoint': 'loss_best', 'sample_weighting': 'per_sample',
+        'weight_exponent': 0.85, 'bootstrap_weight_exponent': 0.85, 'reference_weight_exponent': 0.85,
+        'checkpoint': 'object_macro_f1_best',
+        'early_stopping': 'best_weighted_validation_loss',
+        'optimizer_schedule': 'weighted_validation_loss',
+        'sample_weighting': 'per_sample',
         'training_initialization': 'warm_start',
         'policies': ['entropy', 'entropy_balanced_explore'], 'seeds': list(SEEDS),
         'split_seed': 135, 'cycles': 9, 'acquisition_size': 473,
@@ -82,20 +89,20 @@ def freeze(repo: Path, job_dir: Path, source_registry: Path) -> None:
     destination = job_dir / 'source'
     if snapshot.exists():
         if json.loads(snapshot.read_text(encoding='utf-8')) != sha:
-            raise ValueError('Task6A source changed after freeze. Use a new suite ID.')
+            raise ValueError('Task6B source changed after freeze. Use a new suite ID.')
         if json.loads((job_dir / 'contract.json').read_text(encoding='utf-8')) != contract:
-            raise ValueError('Task6A scientific contract changed after freeze')
+            raise ValueError('Task6B scientific contract changed after freeze')
         if (job_dir / 'registry.toml').read_bytes() != registry_bytes:
-            raise ValueError('Task6A routed registry changed after freeze')
+            raise ValueError('Task6B routed registry changed after freeze')
         verify(job_dir)
         return
     if destination.exists() or (job_dir / 'contract.json').exists() or (job_dir / 'registry.toml').exists():
-        raise ValueError('Partial Task6A snapshot: inspect instead of overwriting')
+        raise ValueError('Partial Task6B snapshot: inspect instead of overwriting')
     destination.mkdir()
-    for f in files:
-        dest = destination / f.relative_to(repo)
+    for name, value in content.items():
+        dest = destination / name
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(f, dest)
+        dest.write_bytes(value)
     (job_dir / 'registry.toml').write_bytes(registry_bytes)
     (job_dir / 'contract.json').write_text(json.dumps(contract, indent=2, sort_keys=True)+'\n')
     snapshot.write_text(json.dumps(sha, indent=2, sort_keys=True)+'\n')
@@ -123,13 +130,13 @@ def check_splits(persistent: Path, data: Path) -> None:
               'candidate_sample_label_counts','overlap_checks')
     for key in fields:
         if orig.get(key) != now.get(key):
-            raise ValueError(f'Task6A replay split mismatch in {key}')
+            raise ValueError(f'Task6B replay split mismatch in {key}')
     for name in ('initial_labeled_manifest.csv','hidden_labels.csv'):
         if normalized_csv(origin / name) != normalized_csv(current / name):
-            raise ValueError(f'Task6A replay split mismatch: {name}')
+            raise ValueError(f'Task6B replay split mismatch: {name}')
     sub = Path('candidate_pool/candidate_pool.csv')
     if normalized_csv(origin / sub, frozenset({'pool_id'})) != normalized_csv(current / sub, frozenset({'pool_id'})):
-        raise ValueError('Task6A candidate pool differs from original')
+        raise ValueError('Task6B candidate pool differs from original')
     for seed in SEEDS:
         l0 = data / 'runs' / BASE / 'shared' / f'seed_{seed}' / 'bootstrap_training'
         if not (l0/'best_vit_tower.pth').is_file() or not (l0/'training_summary.json').is_file():
@@ -148,14 +155,14 @@ def main() -> None:
     a = p.parse_args()
     if a.verify_only:
         verify(a.job_dir)
-        print('Task6A source and contract verified')
+        print('Task6B source and contract verified')
         return
     if any(x is None for x in (a.repo, a.source_registry, a.persistent, a.data)):
         p.error('Freeze requires --repo, --source-registry, --persistent, --data')
     if not a.job_dir.resolve().is_relative_to(a.persistent.resolve()):
         raise ValueError('Job directory must reside under persistent root')
     freeze(a.repo.resolve(), a.job_dir, a.source_registry)
-    print('Frozen Task6A source and registry:', a.job_dir)
+    print('Frozen Task6B source and registry:', a.job_dir)
 
 if __name__ == '__main__':
     main()

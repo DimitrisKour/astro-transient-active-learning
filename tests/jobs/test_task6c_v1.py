@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 import pytest
 
-SCRIPTS=Path(__file__).resolve().parents[2]/'scripts/adaptive'
+SCRIPTS=Path(__file__).resolve().parents[2]/'scripts/research/historical_replay/task6c'
 sys.path.insert(0,str(SCRIPTS))
 import task6c
 import task6c_build as b
@@ -80,7 +80,7 @@ def test_checked_replacements_fail_closed():
 def test_science_runner_uses_per_sample_bootstrap_and_equal_object_cycles(tmp_path):
     # Mock builders emit their EXACT documented runner anchors; the upstream
     # builders are independently tested in their corresponding Task4/6B suite.
-    t=tmp_path/'repo';(t/'scripts/adaptive').mkdir(parents=True)
+    t=tmp_path/'repo';(t/'scripts/research/historical_replay/task6c').mkdir(parents=True)
     (t/'src/al_pipeline/astronomy/astrominn').mkdir(parents=True)
     (t/'src/al_pipeline/astronomy/astrominn/training.py').write_text('training original')
     (t/'scripts/run_astrominn_historical_replay.py').write_text('historical source')

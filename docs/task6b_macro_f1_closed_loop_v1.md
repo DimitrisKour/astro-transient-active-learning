@@ -70,15 +70,15 @@ python -m pytest tests/jobs/test_task6b_v1.py -q
 snapshot and the split after calling the no-`--run` generated runner:
 
 ```bash
-python scripts/adaptive/task6b.py prepare
-python scripts/adaptive/task6b.py verify
-python scripts/adaptive/task6b.py plan --walltime 00:20:00 --l0-walltime 00:20:00
+python scripts/research/historical_replay/task6b/task6b.py prepare
+python scripts/research/historical_replay/task6b/task6b.py verify
+python scripts/research/historical_replay/task6b/task6b.py plan --walltime 00:20:00 --l0-walltime 00:20:00
 ```
 
 Only submit after these commands succeed:
 
 ```bash
-python scripts/adaptive/task6b.py submit --walltime 00:20:00 --l0-walltime 00:20:00 --submit
+python scripts/research/historical_replay/task6b/task6b.py submit --walltime 00:20:00 --l0-walltime 00:20:00 --submit
 ```
 
 Observe jobs:
@@ -96,7 +96,7 @@ Submission manifest:
 Report while running, or when completed:
 
 ```bash
-python scripts/adaptive/task6b_report.py
+python scripts/research/historical_replay/task6b/task6b_report.py
 ```
 
 Results:

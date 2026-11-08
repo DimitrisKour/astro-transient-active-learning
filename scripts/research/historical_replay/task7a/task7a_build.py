@@ -13,7 +13,7 @@ def replace_one(text:str,old:str,new:str)->str:
     return text.replace(old,new,1)
 
 def runner(repo:Path)->str:
-    builder=repo/'scripts/adaptive/task4_build_runner.py'
+    builder=repo/'scripts/research/historical_replay/task4/task4_build_runner.py'
     orig=repo/'scripts/run_astrominn_historical_replay.py'
     if not builder.is_file() or not orig.is_file():
         raise FileNotFoundError('Task7A requires checked-in Task4 builder and historical-replay runner')
@@ -83,5 +83,5 @@ def simulated(source:str)->str:
 
 def build_snapshot_files(repo:Path)->tuple[str,str,str]:
     src=(repo/'src/al_pipeline/astronomy/experiments/simulated.py').read_text(encoding='utf-8')
-    science=(repo/'scripts/adaptive/task7a_temperature_science.py').read_text(encoding='utf-8')
+    science=(repo/'scripts/research/historical_replay/task7a/task7a_temperature_science.py').read_text(encoding='utf-8')
     return runner(repo),simulated(src),science

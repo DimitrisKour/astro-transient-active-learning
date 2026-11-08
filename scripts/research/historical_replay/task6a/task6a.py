@@ -32,7 +32,7 @@ def _run(command: list[str], **opts) -> subprocess.CompletedProcess:
 
 
 def _source_arg_lines(source: Path, seed: int, policy: str) -> list[str]:
-    q = ['bash', '-lc', 'source ' + str(source/'scripts/adaptive/task6a_common.sh') +
+    q = ['bash', '-lc', 'source ' + str(source/'scripts/research/historical_replay/task6a/task6a_common.sh') +
          f'; task6a_arguments {seed} {policy}; '
          'printf "%s\\n" "${TASK6A_ARGS[@]}"']
     output = _run(q, capture_output=True)
@@ -59,7 +59,7 @@ def _audit_state(job_dir: Path, *, expect_at_least: int = 0) -> None:
 
 def prepare(repo: Path, job_dir: Path) -> None:
     registry = PERSISTENT/'closed_loop'/REFERENCE/'registry.toml'
-    _run([sys.executable, str(repo/'scripts/adaptive/task6a_prepare.py'),
+    _run([sys.executable, str(repo/'scripts/research/historical_replay/task6a/task6a_prepare.py'),
           '--repo', str(repo), '--job-dir', str(job_dir),
           '--source-registry', str(registry),
           '--persistent', str(PERSISTENT), '--data', str(DATA)])
@@ -105,7 +105,7 @@ def probe(job_dir: Path, *, submit: bool, walltime: str) -> None:
     source = job_dir/'source'
     cmd = ['sbatch','--parsable','--array=0','--time='+walltime,
            '--job-name=T6A_probe','--output='+str(job_dir/'logs'/'probe_%A_%a.out'),
-           str(source/'scripts/adaptive/task6a_cycle.sbatch'),str(source),'1']
+           str(source/'scripts/research/historical_replay/task6a/task6a_cycle.sbatch'),str(source),'1']
     print('PROBE:', ' '.join(cmd))
     if not submit:
         print('DRY RUN -- no jobs queued')
@@ -151,7 +151,7 @@ def submit_all(job_dir: Path, *, submit: bool, walltime: str, through: int) -> N
                  '--output='+str(job_dir/'logs'/f'c{c}_%A_%a.out')]
             if ids:
                 cmd+=['--dependency=afterok:'+ids[-1]]
-            cmd += [str(source/'scripts/adaptive/task6a_cycle.sbatch'),str(source),str(c)]
+            cmd += [str(source/'scripts/research/historical_replay/task6a/task6a_cycle.sbatch'),str(source),str(c)]
             answer=_run(cmd,capture_output=True).stdout.strip().split(';')[0]
             if not answer.isdigit():
                 raise RuntimeError('Bad sbatch response: '+answer)
@@ -177,7 +177,7 @@ def main() -> None:
         a=cmd.add_parser(name)
         a.add_argument('--job-dir', type=Path,default=JOB_DIR)
         if name=='prepare':
-            a.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
+            a.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[4])
         if name in ('probe','submit'):
             a.add_argument('--walltime',default='00:24:00')
             a.add_argument('--submit',action='store_true')

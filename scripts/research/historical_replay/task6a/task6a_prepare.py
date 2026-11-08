@@ -30,9 +30,9 @@ def digest(path: Path) -> str:
 def selected_files(repo: Path) -> list[Path]:
     files = [*sorted((repo / 'src' / 'al_pipeline').rglob('*.py')),
              repo / 'scripts' / 'run_task6a_closed_loop.py',
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6a_*.py')),
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6a_*.sh')),
-             *sorted((repo / 'scripts' / 'adaptive').glob('task6a_*.sbatch'))]
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6a').glob('task6a_*.py')),
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6a').glob('task6a_*.sh')),
+             *sorted((repo / 'scripts' / 'research' / 'historical_replay' / 'task6a').glob('task6a_*.sbatch'))]
     if not files or any(not f.is_file() for f in files):
         raise FileNotFoundError('Missing Task6A code before freezing')
     return files
@@ -58,7 +58,7 @@ def verify(job_dir: Path) -> None:
 def freeze(repo: Path, job_dir: Path, source_registry: Path) -> None:
     if not source_registry.is_file():
         raise FileNotFoundError(f'No Task4 registry: {source_registry}')
-    subprocess.run([sys.executable, str(repo / 'scripts' / 'adaptive' / 'task6a_build_runner.py'),
+    subprocess.run([sys.executable, str(repo / 'scripts' / 'research' / 'historical_replay' / 'task6a' / 'task6a_build_runner.py'),
                     '--repo', str(repo)], check=True)
     files = selected_files(repo)
     sha = {str(f.relative_to(repo)): digest(f) for f in files}

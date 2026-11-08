@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 import pytest
 
-SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts' / 'adaptive'
+SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts' / 'research' / 'historical_replay' / 'task6a'
 sys.path.insert(0,str(SCRIPTS))
 import task6a_build_runner as build
 import task6a_prepare as prepare
@@ -15,7 +15,7 @@ import task6a
 
 def make_repo(tmp_path: Path) -> Path:
     repo=tmp_path/'repo'
-    (repo/'scripts'/'adaptive').mkdir(parents=True)
+    (repo/'scripts'/'research'/'historical_replay'/'task6a').mkdir(parents=True)
     (repo/'scripts'/'run_astrominn_historical_replay.py').write_text('''
     if args.bootstrap_only and not args.run:
         raise RuntimeError()
@@ -27,7 +27,8 @@ def make_repo(tmp_path: Path) -> Path:
         "cycle_training_initialization": args.training_initialization,
     }
 ''')
-    (repo/'scripts'/'adaptive'/'task4_build_runner.py').write_text('''
+    (repo/'scripts'/'research'/'historical_replay'/'task4').mkdir(parents=True)
+    (repo/'scripts'/'research'/'historical_replay'/'task4'/'task4_build_runner.py').write_text('''
 def build_runner(source):
     return source
 ''')
@@ -78,7 +79,7 @@ def test_contract_freeze_and_detects_drift(tmp_path):
     (repo/'src'/'al_pipeline').mkdir(parents=True)
     (repo/'src'/'al_pipeline'/'__init__.py').write_text('# test\n')
     for f in SCRIPTS.glob('task6a_*'):
-        (repo/'scripts'/'adaptive'/f.name).write_bytes(f.read_bytes())
+        (repo/'scripts'/'research'/'historical_replay'/'task6a'/f.name).write_bytes(f.read_bytes())
     persistent=tmp_path/'persistent'
     job=persistent/'closed_loop'/prepare.SUITE
     registry=tmp_path/'registry.toml'

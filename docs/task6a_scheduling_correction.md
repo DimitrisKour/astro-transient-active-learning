@@ -23,8 +23,8 @@ cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -n /projects/bcrv/dkourtesis/task6a_independent_chains_patch_v1.zip -d .
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 python -m pytest tests/jobs/test_task6a_independent_chains.py -q
-python scripts/adaptive/task6a.py verify
-python scripts/adaptive/task6a_submit_chains.py plan --walltime 00:20:00
+python scripts/research/historical_replay/task6a/task6a.py verify
+python scripts/research/historical_replay/task6a/task6a_submit_chains.py plan --walltime 00:20:00
 ```
 
 **Do not run `task6a.py prepare` again**, and **do not run `task6a.py submit`**; that is the old whole-array-barrier scheduler. Do not alter the frozen Task 6A source under `/projects/.../closed_loop/astrominn_closed_loop_warm_weight05_v1/source`.
@@ -32,7 +32,7 @@ python scripts/adaptive/task6a_submit_chains.py plan --walltime 00:20:00
 After checking the plan, queue with:
 
 ```bash
-python scripts/adaptive/task6a_submit_chains.py submit --walltime 00:20:00
+python scripts/research/historical_replay/task6a/task6a_submit_chains.py submit --walltime 00:20:00
 ```
 
 To give every task a little extra walltime, use `00:24:00` instead for both `plan` and `submit`.
