@@ -148,6 +148,7 @@ def prepare(*, repo: str | Path, job_dir: str | Path = JOB) -> None:
             raise RuntimeError("Frozen Task11 source unexpectedly already contains Task13 core")
         shutil.copytree(repo / "src/al_pipeline/core/meta_acquisition", core)
         script_dir = stage / "scripts/research/historical_replay/task13"
+        script_dir.mkdir(parents=True, exist_ok=True)
         for file in sorted((repo / "scripts/research/historical_replay/task13").glob("task13*")):
             if file.suffix in {".py", ".sbatch", ".sh"}:
                 shutil.copy2(file, script_dir / file.name)
