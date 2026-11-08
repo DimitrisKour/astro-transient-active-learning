@@ -56,11 +56,11 @@ if [[ -f "$CONDA_PREFIX/lib/libstdc++.so.6" ]]; then
   export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
 
-python scripts/adaptive/task13.py plan
-python scripts/adaptive/task13.py prepare --repo "$PWD"
-python scripts/adaptive/task13.py verify
-python scripts/adaptive/task13.py preflight --pilot-seed 135
-python scripts/adaptive/task13.py pilot-status
+python scripts/research/historical_replay/task13/task13.py plan
+python scripts/research/historical_replay/task13/task13.py prepare --repo "$PWD"
+python scripts/research/historical_replay/task13/task13.py verify
+python scripts/research/historical_replay/task13/task13.py preflight --pilot-seed 135
+python scripts/research/historical_replay/task13/task13.py pilot-status
 ```
 
 `prepare` constructs a **new** frozen source under
@@ -81,12 +81,12 @@ TASK13_JOB=/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_t
 
 sbatch --parsable --time=00:45:00 --job-name=T13_pilot_tailor \
   --output="$TASK13_JOB/logs/%x_%j.out" --error="$TASK13_JOB/logs/%x_%j.err" \
-  "$TASK13_JOB/source/scripts/adaptive/task13_worker.sbatch" \
+  "$TASK13_JOB/source/scripts/research/historical_replay/task13/task13_worker.sbatch" \
   "$TASK13_JOB" pilot tailor_diversity 135
 
 sbatch --parsable --time=00:45:00 --job-name=T13_pilot_uniform \
   --output="$TASK13_JOB/logs/%x_%j.out" --error="$TASK13_JOB/logs/%x_%j.err" \
-  "$TASK13_JOB/source/scripts/adaptive/task13_worker.sbatch" \
+  "$TASK13_JOB/source/scripts/research/historical_replay/task13/task13_worker.sbatch" \
   "$TASK13_JOB" pilot uniform_mixture 135
 ```
 
@@ -105,8 +105,8 @@ selection, not just Fisher selections.
 Only after both pilots pass:
 
 ```bash
-python scripts/adaptive/task13.py pilot-status
-python scripts/adaptive/task13.py submit --walltime 00:45:00
+python scripts/research/historical_replay/task13/task13.py pilot-status
+python scripts/research/historical_replay/task13/task13.py submit --walltime 00:45:00
 ```
 
 This submits **24 held jobs** with independent `afterok` cycle chains for
@@ -116,14 +116,14 @@ Submitting does not release any jobs.
 Inspect:
 
 ```bash
-python scripts/adaptive/task13.py status
+python scripts/research/historical_replay/task13/task13.py status
 squeue -u dkourtesis -o '%.18i %.25j %.2t %.10M %.10l %R'
 ```
 
 Once satisfied that all six chains are correct, explicitly release:
 
 ```bash
-python scripts/adaptive/task13.py release
+python scripts/research/historical_replay/task13/task13.py release
 ```
 
 `release` is retry-safe if interrupted. Every worker verifies source hashes
@@ -137,7 +137,7 @@ Collect compact results on Delta without model weights, raw training samples,
 or the full hidden-label pool:
 
 ```bash
-python scripts/adaptive/task13.py collect \
+python scripts/research/historical_replay/task13/task13.py collect \
   --destination /u/dkourtesis/task13_results_20261028.zip
 ```
 

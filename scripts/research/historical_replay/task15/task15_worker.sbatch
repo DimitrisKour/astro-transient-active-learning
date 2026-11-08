@@ -28,13 +28,13 @@ export TMPDIR="$RUNTIME/tmp"
 export MPLCONFIGDIR="$RUNTIME/matplotlib"
 export TORCH_HOME="$RUNTIME/torch"
 export JUPYTER_RUNTIME_DIR="$RUNTIME/jupyter"
-python "$JOB/source/scripts/adaptive/task15.py" verify --job-dir "$JOB"
-python "$JOB/source/scripts/adaptive/task15.py" filesystem-probe
+python "$JOB/source/scripts/research/historical_replay/task15/task15.py" verify --job-dir "$JOB"
+python "$JOB/source/scripts/research/historical_replay/task15/task15.py" filesystem-probe
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 if [[ "$MODE" == "pilot" ]]; then
-  python "$JOB/source/scripts/adaptive/task15.py" pilot --policy "$POLICY" --seed "$SEED"
+  python "$JOB/source/scripts/research/historical_replay/task15/task15.py" pilot --policy "$POLICY" --seed "$SEED"
 elif [[ "$MODE" == "job" ]]; then
-  python "$JOB/source/scripts/adaptive/task15.py" job "$POLICY" "$SEED" "$CYCLE" --job-dir "$JOB"
+  python "$JOB/source/scripts/research/historical_replay/task15/task15.py" job "$POLICY" "$SEED" "$CYCLE" --job-dir "$JOB"
 else
   echo "Unknown Task15 worker mode: $MODE" >&2; exit 2
 fi

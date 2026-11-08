@@ -8,7 +8,7 @@ import pytest
 
 ROOT=Path(__file__).resolve().parents[1]
 # Use the checked-out package; integration tests create patched frozen copies.
-sys.path.insert(0,str(ROOT/'scripts/adaptive'))
+sys.path.insert(0,str(ROOT/'scripts/research/historical_replay/task14'))
 from al_pipeline.core.advanced_acquisition.similar import SimilarInput, SimilarScorer, SimilarSelector
 from al_pipeline.core.pool import Pool
 

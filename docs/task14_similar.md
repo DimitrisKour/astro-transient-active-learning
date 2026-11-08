@@ -44,10 +44,10 @@ export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 if [[ -f "$CONDA_PREFIX/lib/libstdc++.so.6" ]]; then
   export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
-python scripts/adaptive/task14.py plan
-python scripts/adaptive/task14.py prepare
-python scripts/adaptive/task14.py verify
-python scripts/adaptive/task14.py preflight
+python scripts/research/historical_replay/task14/task14.py plan
+python scripts/research/historical_replay/task14/task14.py prepare
+python scripts/research/historical_replay/task14/task14.py verify
+python scripts/research/historical_replay/task14/task14.py preflight
 ```
 
 ## Acquisition-only GPU pilots; do not submit 81 fits until inspected
@@ -58,9 +58,9 @@ for policy in similar_fl similar_flcg similar_flqmi_rare; do
   sbatch --parsable --time=00:45:00 \
     --job-name="T14_pilot_${policy}" \
     --output="$JOB/logs/%x_%j.out" --error="$JOB/logs/%x_%j.err" \
-    "$JOB/source/scripts/adaptive/task14_worker.sbatch" "$JOB" pilot "$policy" 135
+    "$JOB/source/scripts/research/historical_replay/task14/task14_worker.sbatch" "$JOB" pilot "$policy" 135
 done
-python scripts/adaptive/task14.py pilot-status
+python scripts/research/historical_replay/task14/task14.py pilot-status
 ```
 
 **Scientific pilot review:** compare selected IDs against Task4 entropy, check intra-/inter-cycle similarity, class enrichment only *after* label resolution, selector runtime, filesystem and CUDA errors. Test that the first complete training cycle writes its selection, labels, checkpoint, validation metrics and state before releasing later held cycles.
@@ -68,12 +68,12 @@ python scripts/adaptive/task14.py pilot-status
 ## Full training: separate explicit actions after pilots
 
 ```bash
-python scripts/adaptive/task14.py submit --walltime 00:35:00
+python scripts/research/historical_replay/task14/task14.py submit --walltime 00:35:00
 # 81 Slurm jobs are submitted HELD, without releasing or running any of them.
-python scripts/adaptive/task14.py release --policy similar_fl --seed 135 --cycle 1
+python scripts/research/historical_replay/task14/task14.py release --policy similar_fl --seed 135 --cycle 1
 # After verifying first-cycle output, release others individually or:
-python scripts/adaptive/task14.py release --all
-python scripts/adaptive/task14.py status
+python scripts/research/historical_replay/task14/task14.py release --all
+python scripts/research/historical_replay/task14/task14.py status
 ```
 
 Time limit intentionally starts conservatively at 35 min; after timing initial work, decide whether to reduce it to 20 min. A delayed filesystem read or GPU backend can cause Slurm timeouts despite fast selectors. Be careful that Slurm may refuse TimeLimit updates after jobs start.
@@ -81,7 +81,7 @@ Time limit intentionally starts conservatively at 35 min; after timing initial w
 To collect:
 
 ```bash
-python scripts/adaptive/task14.py collect --destination /u/dkourtesis/task14_similar_results.zip
+python scripts/research/historical_replay/task14/task14.py collect --destination /u/dkourtesis/task14_similar_results.zip
 ```
 
 Then Windows PowerShell:

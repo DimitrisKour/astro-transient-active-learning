@@ -12,7 +12,7 @@ import pytest
 ROOT=Path(__file__).resolve().parents[1]
 LOCAL_SOURCE=ROOT/'src'
 sys.path.insert(0,str(LOCAL_SOURCE))
-sys.path.insert(0,str(ROOT/'scripts/adaptive'))
+sys.path.insert(0,str(ROOT/'scripts/research/historical_replay/task15'))
 from al_pipeline.core.advanced_acquisition.direct import (DirectInput,DirectSelector,_losses,
                     _optimal_threshold,_shrink_interval,_allocation,_margins)
 

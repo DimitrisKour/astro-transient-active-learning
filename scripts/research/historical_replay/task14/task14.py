@@ -116,8 +116,9 @@ def prepare(overlay):
         shutil.copytree(TASK11/'source',tmp,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
         for old_path in (tmp/'scripts/adaptive').glob('task11*'):
             old_path.unlink()
-        for path in (overlay/'scripts/adaptive').glob('task14*'):
-            shutil.copy2(path,tmp/'scripts/adaptive'/path.name)
+        (tmp/'scripts/research/historical_replay/task14').mkdir(parents=True, exist_ok=True)
+        for path in (overlay/'scripts/research/historical_replay/task14').glob('task14*'):
+            shutil.copy2(path,tmp/'scripts/research/historical_replay/task14'/path.name)
         patch_source(tmp,overlay)
         import ast
         for p in files(tmp):
@@ -302,7 +303,7 @@ def submit(walltime):
                   '--output',str(JOB/'logs/%x_%j.out'),
                   '--error',str(JOB/'logs/%x_%j.err')]
             if before:opts.extend(['--dependency',f'afterok:{before}'])
-            opts.extend([str(JOB/'source/scripts/adaptive/task14_worker.sbatch'),
+            opts.extend([str(JOB/'source/scripts/research/historical_replay/task14/task14_worker.sbatch'),
                          str(JOB),'job',policy,str(seed),str(cycle)])
             result=subprocess.check_output(opts,text=True).strip().split(';')[0]
             if not result.isdigit():raise RuntimeError('Unexpected sbatch response '+result)
@@ -397,7 +398,7 @@ def main():
                      'filesystem-probe','submit','release','status','collect','job'))
     ap.add_argument('policy_pos',nargs='?');ap.add_argument('seed_pos',nargs='?',type=int)
     ap.add_argument('cycle_pos',nargs='?',type=int)
-    ap.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
+    ap.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[4])
     ap.add_argument('--job-dir',type=Path,default=JOB)
     ap.add_argument('--seed',type=int,default=None)
     ap.add_argument('--policy',choices=POLICIES)

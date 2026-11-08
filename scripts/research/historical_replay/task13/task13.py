@@ -133,8 +133,8 @@ def prepare(*, repo: str | Path, job_dir: str | Path = JOB) -> None:
     for item in (
         repo / "src/al_pipeline/core/meta_acquisition/tailor.py",
         repo / "src/al_pipeline/core/meta_acquisition/mixed_selection.py",
-        repo / "scripts/adaptive/task13_patch.py",
-        repo / "scripts/adaptive/task13_worker.sbatch",
+        repo / "scripts/research/historical_replay/task13/task13_patch.py",
+        repo / "scripts/research/historical_replay/task13/task13_worker.sbatch",
     ):
         if not item.is_file():
             raise FileNotFoundError(f"Required version-controlled Task13 overlay is absent: {item}")
@@ -147,8 +147,9 @@ def prepare(*, repo: str | Path, job_dir: str | Path = JOB) -> None:
         if core.exists():
             raise RuntimeError("Frozen Task11 source unexpectedly already contains Task13 core")
         shutil.copytree(repo / "src/al_pipeline/core/meta_acquisition", core)
-        script_dir = stage / "scripts/adaptive"
-        for file in sorted((repo / "scripts/adaptive").glob("task13*")):
+        script_dir = stage / "scripts/research/historical_replay/task13"
+        script_dir.mkdir(parents=True, exist_ok=True)
+        for file in sorted((repo / "scripts/research/historical_replay/task13").glob("task13*")):
             if file.suffix in {".py", ".sbatch", ".sh"}:
                 shutil.copy2(file, script_dir / file.name)
         patch_source(stage)
@@ -517,7 +518,7 @@ def submit(*, walltime: str = "00:45:00", job_dir: str | Path = JOB) -> None:
         if parent:
             cmd.extend(["--dependency", f"afterok:{parent}"])
         cmd.extend([
-            str(job / "source/scripts/adaptive/task13_worker.sbatch"),
+            str(job / "source/scripts/research/historical_replay/task13/task13_worker.sbatch"),
             str(job), "job", policy, str(seed), str(cycle),
         ])
         output = subprocess.check_output(cmd, text=True).strip()
