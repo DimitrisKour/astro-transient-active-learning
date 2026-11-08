@@ -4,7 +4,7 @@ import json
 import numpy as np
 import pytest
 
-HERE=Path(__file__).parents[2]/'scripts/adaptive'
+HERE=Path(__file__).parents[2]/'scripts/research/historical_replay/task8b'
 
 def module(name):
     spec=importlib.util.spec_from_file_location(name,HERE/f'{name}.py')
