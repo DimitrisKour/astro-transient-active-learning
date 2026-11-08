@@ -2,8 +2,9 @@
 """Prepare a *small*, real, CPU-loadable AppleCiDEr school dataset.
 
 Run this one-time export where the historical manifest and referenced .npy
-samples are accessible (e.g., your research storage). The teaching notebook
-never reads those sources and never needs PyTorch or model checkpoints.
+samples are accessible (e.g., your research storage). The teaching notebook never reads those sources and never needs PyTorch or
+model checkpoints. Historical .npy files may contain pickled PyTorch objects,
+so the one-time preparation environment must provide torch to deserialize them.
 
 Example (replace with your verified manifest/column paths):
   python scripts/examples/export_astro_school_features.py \
@@ -155,7 +156,19 @@ def export(args):
                 raise FileNotFoundError(path)
             # Historical AstroMiNN files store a trusted Python mapping in an
             # .npy file. allow_pickle=True is ONLY used on trusted research input.
-            sample = np.load(path, allow_pickle=True).item()
+            try:
+                sample = np.load(path, allow_pickle=True).item()
+            except ModuleNotFoundError as exc:
+                if exc.name != "torch":
+                    raise
+                raise RuntimeError(
+                    "This trusted historical .npy sample contains pickled PyTorch "
+                    "objects. The one-time instructor export requires an environment "
+                    "with torch installed (such as the research environment), even "
+                    "though the exported .npz and the student notebook are CPU-only "
+                    "and do not require PyTorch. Rerun the exporter using that "
+                    "environment; do not install torch in the teaching environment."
+                ) from exc
             if str(sample.get("obj_id")) != oid:
                 raise ValueError(f"Manifest/sample object mismatch: {oid}, {path}")
             sample_alert = sample.get("alerte", sample.get("alert", last_alert))
