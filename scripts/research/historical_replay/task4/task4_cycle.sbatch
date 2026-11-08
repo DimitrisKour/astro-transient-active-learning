@@ -9,7 +9,7 @@
 #SBATCH --time=00:20:00
 set -euo pipefail
 source_root="$1"; seed="$2"; cycle="$3"; policy="$4"
-source "$source_root/scripts/adaptive/task4_common.sh"
+source "$source_root/scripts/research/historical_replay/task4/task4_common.sh"
 task4_activate
 export PYTHONPATH="$source_root/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
@@ -19,7 +19,7 @@ export TMPDIR="$runtime/tmp"
 export MPLCONFIGDIR="$runtime/matplotlib"
 export TORCH_HOME="$runtime/torch"
 export JUPYTER_RUNTIME_DIR="$runtime/jupyter"
-python "$source_root/scripts/adaptive/task4_prepare.py" \
+python "$source_root/scripts/research/historical_replay/task4/task4_prepare.py" \
   --repo "$source_root" --job-dir "$TASK4_JOB_DIR" \
   --source-registry "$TASK4_REGISTRY" \
   --persistent "$TASK4_PERSISTENT" --data "$TASK4_DATA" --verify-only

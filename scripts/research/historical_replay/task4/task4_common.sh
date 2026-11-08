@@ -1,7 +1,7 @@
 #!/bin/bash
 # Task 4 is intentionally isolated from the original policy suite.
 set -euo pipefail
-TASK4_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+TASK4_REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 TASK4_SUITE_ID="astrominn_closed_loop_warm_v1"
 TASK4_BASE_SUITE_ID="astrominn_historical_replay_v1"
 TASK4_PERSISTENT="/projects/bcrv/dkourtesis/applecider_adaptive"
