@@ -1,0 +1,44 @@
+name: Archived fusion L0 contract checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/archive/fusion_image/early_l0/**"
+      - "tests/jobs/test_fusion_early_l0_archive.py"
+      - "tests/astronomy/fusion_image/test_fusion_l0_matrix.py"
+      - ".github/workflows/fusion-early-l0-archive.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - run: python -m pytest tests/jobs/test_fusion_early_l0_archive.py -q
+      - name: Parse archived shell launchers
+        run: |
+          find scripts/archive/fusion_image/early_l0 -type f -name '*.sh' -exec bash -n {} \;
+          find scripts/archive/fusion_image/early_l0 -type f -name '*.sbatch' -exec bash -n {} \;
+
+  original-l0-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pytest tests/astronomy/fusion_image/test_fusion_l0_matrix.py -q

@@ -1,3 +1,5 @@
+> **Historical/archived workflow:** The initial L0-only cache/benchmark scripts have been moved to `scripts/archive/fusion_image/early_l0/`. They are retained for reproduction, not recommended as the current full-historical Task 0/Task 1 workflow. See `scripts/archive/fusion_image/early_l0/README.md` before running any old submission commands.
+
 # Full historical ZTF cache: data gate before Task 0
 
 **2026-10-18. No GPU training is launched by this package.**

@@ -1,3 +1,5 @@
+> **Historical/archived workflow:** The initial L0-only cache/benchmark scripts have been moved to `scripts/archive/fusion_image/early_l0/`. They are retained for reproduction, not recommended as the current full-historical Task 0/Task 1 workflow. See `scripts/archive/fusion_image/early_l0/README.md` before running any old submission commands.
+
 # Full cached L0 pretrained seed-135 baseline (validation only)
 
 This overlay DOES NOT modify existing training implementations. It reuses the
@@ -23,7 +25,7 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-python scripts/adaptive/fusion_cached_l0_full_seed135.py check
+python scripts/archive/fusion_image/early_l0/fusion_cached_l0_full_seed135.py check
 ```
 
 If check succeeds, queue one A40 job:
@@ -32,7 +34,7 @@ If check succeeds, queue one A40 job:
 ROOT=/projects/bcrv/dkourtesis/applecider_adaptive/new_image_l0_cached_full_pretrained_seed135_v1
 mkdir -p "$ROOT-logs"
 sbatch --output="$ROOT-logs/job_%j.out" --error="$ROOT-logs/job_%j.err" \
-  scripts/adaptive/fusion_cached_l0_full_seed135.sbatch
+  scripts/archive/fusion_image/early_l0/fusion_cached_l0_full_seed135.sbatch
 ```
 
 After completion, examine:

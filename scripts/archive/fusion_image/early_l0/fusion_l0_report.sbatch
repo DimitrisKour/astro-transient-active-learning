@@ -15,4 +15,4 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-python -u scripts/adaptive/fusion_l0_matrix.py report --run-root "$FUSION_L0_ROOT"
+python -u scripts/archive/fusion_image/early_l0/fusion_l0_matrix.py report --run-root "$FUSION_L0_ROOT"

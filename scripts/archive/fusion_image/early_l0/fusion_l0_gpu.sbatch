@@ -35,7 +35,7 @@ PY
 if [[ "$FUSION_L0_KIND" == pilot ]]; then
     : "${FUSION_L0_INIT:?Missing FUSION_L0_INIT}"
     [[ "$FUSION_L0_INIT" == pretrained || "$FUSION_L0_INIT" == randomized ]] || exit 2
-    python -u scripts/adaptive/fusion_l0_matrix.py run \
+    python -u scripts/archive/fusion_image/early_l0/fusion_l0_matrix.py run \
       --run-root "$FUSION_L0_ROOT" --initialization "$FUSION_L0_INIT" \
       --seed 135 --pilot --device cuda
 elif [[ "$FUSION_L0_KIND" == full ]]; then
@@ -44,7 +44,7 @@ elif [[ "$FUSION_L0_KIND" == full ]]; then
     seeds=(135 246 357 135 246 357)
     index="$SLURM_ARRAY_TASK_ID"
     [[ "$index" =~ ^[0-5]$ ]] || { echo 'Unexpected array index' >&2; exit 2; }
-    python -u scripts/adaptive/fusion_l0_matrix.py run \
+    python -u scripts/archive/fusion_image/early_l0/fusion_l0_matrix.py run \
       --run-root "$FUSION_L0_ROOT" --initialization "${inits[$index]}" \
       --seed "${seeds[$index]}" --device cuda
 else
