@@ -1,0 +1,60 @@
+name: Task 8–9 research packaging
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/research/historical_replay/task8a/**"
+      - "scripts/research/historical_replay/task8b/**"
+      - "scripts/research/historical_replay/task8c1/**"
+      - "scripts/research/historical_replay/task8c2/**"
+      - "scripts/research/historical_replay/task9/**"
+      - "tests/jobs/test_task8*.py"
+      - "tests/jobs/test_task9*.py"
+      - ".github/workflows/task8-task9-packaging.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-contracts:
+    name: Checkpoint audit and experiment/scheduler contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run data-free Task8 and ensemble tests
+        run: |
+          python -m pytest -q \
+            tests/jobs/test_task8a_v1.py \
+            tests/jobs/test_task8a_shards.py \
+            tests/jobs/test_task8b.py \
+            tests/jobs/test_task8c1_preparation.py \
+            tests/jobs/test_task8c1_retention_decisions.py \
+            tests/jobs/test_task8c2_retry_gate.py \
+            tests/jobs/test_task8c2_schedule.py \
+            tests/jobs/test_task9a_ensemble.py
+
+  pytorch-contracts:
+    name: SWA and BatchNorm continuation contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Run synthetic SWA tests
+        run: |
+          python -m pytest -q \
+            tests/jobs/test_task9b_swa.py \
+            tests/jobs/test_task9b_swa_bn_v2.py
