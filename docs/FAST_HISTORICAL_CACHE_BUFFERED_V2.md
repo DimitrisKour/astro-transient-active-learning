@@ -29,7 +29,7 @@ python -m pytest \
   tests/astronomy/fusion_image/test_fast_cache_buffered_v2.py -q
 ```
 
-The code uses the original `scripts/adaptive/fusion_fastcache.py` CLI from `fusion_fastcache_v1.zip`, which must already be installed (it is in the user's current Delta setup).
+The code uses the original `scripts/research/fusion_image/cache/fusion_fastcache.py` CLI from `fusion_fastcache_v1.zip`, which must already be installed (it is in the user's current Delta setup).
 
 ## Submit one CPU-only job
 
