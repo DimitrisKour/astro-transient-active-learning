@@ -16,7 +16,7 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-python -u scripts/adaptive/fusion_full_historical_cache_v1.py prepare \
+python -u scripts/research/fusion_image/cache/fusion_full_historical_cache_v1.py prepare \
    --source-plan "$FUSION_FULL_SOURCE_PLAN" \
    --cache-root "$FUSION_FULL_CACHE_ROOT" --shards "$FUSION_FULL_SHARDS"
 if [[ "$MODE" == --prepare ]]; then
@@ -24,7 +24,7 @@ if [[ "$MODE" == --prepare ]]; then
   exit 0
 fi
 if [[ "$MODE" == --status ]]; then
-  python -u scripts/adaptive/fusion_full_historical_cache_v1.py status \
+  python -u scripts/research/fusion_image/cache/fusion_full_historical_cache_v1.py status \
     --source-plan "$FUSION_FULL_SOURCE_PLAN" \
     --cache-root "$FUSION_FULL_CACHE_ROOT" --shards "$FUSION_FULL_SHARDS"
   if [[ -f "$PIPE/submitted_jobs.tsv" ]]; then cat "$PIPE/submitted_jobs.tsv"; fi
@@ -63,7 +63,7 @@ if [[ ${#missing[@]} -gt 0 ]]; then
   shards_id=$(sbatch --parsable --array="${array}%${PARALLEL}" \
     --export=ALL,FUSION_FULL_SOURCE_PLAN,FUSION_FULL_CACHE_ROOT,FUSION_FULL_SHARDS \
     --output="$PIPE/logs/shard_%A_%a.out" --error="$PIPE/logs/shard_%A_%a.err" \
-    scripts/adaptive/fusion_full_historical_cache_shard.sbatch)
+    scripts/research/fusion_image/cache/fusion_full_historical_cache_shard.sbatch)
   dep="afterok:$shards_id"
 else
   shards_id=none
@@ -73,12 +73,12 @@ if [[ -n "$dep" ]]; then
   join_id=$(sbatch --parsable --dependency="$dep" \
     --export=ALL,FUSION_FULL_SOURCE_PLAN,FUSION_FULL_CACHE_ROOT,FUSION_FULL_SHARDS \
     --output="$PIPE/logs/join_%j.out" --error="$PIPE/logs/join_%j.err" \
-    scripts/adaptive/fusion_full_historical_cache_finalize.sbatch)
+    scripts/research/fusion_image/cache/fusion_full_historical_cache_finalize.sbatch)
 else
   join_id=$(sbatch --parsable \
     --export=ALL,FUSION_FULL_SOURCE_PLAN,FUSION_FULL_CACHE_ROOT,FUSION_FULL_SHARDS \
     --output="$PIPE/logs/join_%j.out" --error="$PIPE/logs/join_%j.err" \
-    scripts/adaptive/fusion_full_historical_cache_finalize.sbatch)
+    scripts/research/fusion_image/cache/fusion_full_historical_cache_finalize.sbatch)
 fi
 {
   printf 'kind\tjob_id\n'
@@ -86,4 +86,4 @@ fi
   printf 'cpu_finalize\t%s\n' "$join_id"
 } > "$PIPE/submitted_jobs.tsv"
 echo "Submitted CPU jobs only. Shards $shards_id; finalize $join_id."
-echo "Track with: squeue -u \"\$USER\" or bash scripts/adaptive/submit_fusion_full_historical_cache_v1.sh --status"
+echo "Track with: squeue -u \"\$USER\" or bash scripts/research/fusion_image/cache/submit_fusion_full_historical_cache_v1.sh --status"

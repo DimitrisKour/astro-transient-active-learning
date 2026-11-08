@@ -10,7 +10,7 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-SCRIPT=scripts/adaptive/fusion_pre_task0_extensions.py
+SCRIPT=scripts/research/fusion_image/recipe/fusion_pre_task0_extensions.py
 
 verify_probe() {
   python - "$REFERENCE/resident_probe/probe.json" <<'PYPROBE'
@@ -76,7 +76,7 @@ case "$MODE" in
        --export="ALL,PRETASK_EXT_CASE=$FIT" \
        --output="$ROOT/logs/${FIT}_%j.out" \
        --error="$ROOT/logs/${FIT}_%j.err" \
-       scripts/adaptive/fusion_pre_task0_extensions.sbatch)
+       scripts/research/fusion_image/recipe/fusion_pre_task0_extensions.sbatch)
     printf '%s\t%s\n' "$FIT" "$JOB" >> "$ROOT/submitted_jobs.tsv"
     echo "Submitted $FIT, SLURM JobID=$JOB, max wall-time=15 minutes"
     ;;

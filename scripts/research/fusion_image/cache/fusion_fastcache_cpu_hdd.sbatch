@@ -28,14 +28,14 @@ if [[ -e "$TARGET" ]]; then
   echo "ERROR: consolidated target already exists: $TARGET" >&2
   exit 1
 fi
-if [[ ! -f scripts/adaptive/fusion_fastcache.py ]]; then
+if [[ ! -f scripts/research/fusion_image/cache/fusion_fastcache.py ]]; then
   echo 'ERROR: install fusion_fastcache_buffered_v2 first' >&2
   exit 1
 fi
 echo '=== HDD BUFFERED BUILD ==='
-python -u scripts/adaptive/fusion_fastcache.py build --source "$SOURCE" --target "$TARGET"
+python -u scripts/research/fusion_image/cache/fusion_fastcache.py build --source "$SOURCE" --target "$TARGET"
 echo '=== VALIDATION ==='
-python -u scripts/adaptive/fusion_fastcache.py check --source "$SOURCE" --target "$TARGET"
+python -u scripts/research/fusion_image/cache/fusion_fastcache.py check --source "$SOURCE" --target "$TARGET"
 echo '=== HDD IO BENCHMARK ==='
-python -u scripts/adaptive/fusion_fastcache.py bench --source "$SOURCE" --target "$TARGET" --scan-all
+python -u scripts/research/fusion_image/cache/fusion_fastcache.py bench --source "$SOURCE" --target "$TARGET" --scan-all
 echo '=== DONE ==='

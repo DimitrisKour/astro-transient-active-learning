@@ -8,7 +8,7 @@ module load miniforge3-python
 eval "$(conda shell.bash hook)"
 conda activate al-pipeline
 export PYTHONPATH="/projects/bcrv/dkourtesis:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-SCRIPT=scripts/adaptive/fusion_pre_task0_resident.py
+SCRIPT=scripts/research/fusion_image/recipe/fusion_pre_task0_resident.py
 case "$MODE" in
   --check) python "$SCRIPT" check ;;
   --prepare) python "$SCRIPT" prepare; echo 'Prepared, no GPU jobs submitted.' ;;
@@ -19,7 +19,7 @@ case "$MODE" in
     if [[ -f "$ROOT/probe_job_id.txt" ]]; then echo 'Probe previously submitted; inspect status' >&2; exit 1; fi
     mkdir -p "$ROOT/logs"
     JOB=$(sbatch --parsable --output="$ROOT/logs/probe_%j.out" \
-      --error="$ROOT/logs/probe_%j.err" scripts/adaptive/fusion_resident_probe.sbatch)
+      --error="$ROOT/logs/probe_%j.err" scripts/research/fusion_image/recipe/fusion_resident_probe.sbatch)
     printf '%s\n' "$JOB" > "$ROOT/probe_job_id.txt"
     echo "Submitted short resident-RAM GPU probe: $JOB"
     ;;
@@ -65,7 +65,7 @@ PYPROBE
     mkdir -p "$ROOT/logs"
     JID=$(sbatch --parsable --export="ALL,PRETASK_CASE=$FIT" \
       --output="$ROOT/logs/${FIT}_%j.out" --error="$ROOT/logs/${FIT}_%j.err" \
-      scripts/adaptive/fusion_pre_task0_resident.sbatch)
+      scripts/research/fusion_image/recipe/fusion_pre_task0_resident.sbatch)
     printf '%s\t%s\n' "$FIT" "$JID" >> "$ROOT/submitted_jobs.tsv"
     echo "Submitted $FIT job=$JID"
     ;;
