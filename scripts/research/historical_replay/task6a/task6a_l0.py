@@ -29,7 +29,7 @@ def _run(args: list[str], **kwargs):
 
 
 def _arguments(source: Path, seed: int, policy: str) -> list[str]:
-    script = source/'scripts/adaptive/task6a_l0_common.sh'
+    script = source/'scripts/research/historical_replay/task6a/task6a_l0_common.sh'
     code = 'source "$1"; task6a_l0_arguments "$2" "$3"; printf "%s\\n" "${TASK6A_L0_ARGS[@]}"'
     proc = _run(['bash','-c',code,'_',str(script),str(seed),policy],capture_output=True)
     return proc.stdout.splitlines()
@@ -160,7 +160,7 @@ def sbatch_command(job_dir:Path, source:Path, row:dict, *, parent_job:str|None,w
          f'--error={job_dir}/logs/%x_%j.err']
     if parent_job is not None:
         cmd.append('--dependency=afterok:'+parent_job)
-    return cmd+[str(source/'scripts/adaptive/task6a_l0_worker.sbatch'), str(source),str(seed),str(cycle),policy]
+    return cmd+[str(source/'scripts/research/historical_replay/task6a/task6a_l0_worker.sbatch'), str(source),str(seed),str(cycle),policy]
 
 
 def submit(job_dir: Path, *, through:int=9,walltime:str='00:20:00',l0_walltime:str='00:20:00',actually_submit:bool=False):
@@ -214,7 +214,7 @@ def main() -> None:
     for cmd in ('prepare','verify','plan','submit'):
         p=sub.add_parser(cmd)
         p.add_argument('--job-dir',type=Path,default=JOB_DIR)
-        if cmd=='prepare': p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[2])
+        if cmd=='prepare': p.add_argument('--repo',type=Path,default=Path(__file__).resolve().parents[4])
         if cmd in ('plan','submit'):
             p.add_argument('--through',type=int,default=9)
             p.add_argument('--walltime',default='00:20:00')
