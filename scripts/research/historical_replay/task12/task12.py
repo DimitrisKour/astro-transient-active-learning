@@ -120,10 +120,10 @@ def prepare(repo, overlay):
     if temp.exists():raise RuntimeError('Source staging area already exists')
     try:
         shutil.copytree(base/'src/al_pipeline',temp/'src/al_pipeline')
-        (temp/'scripts/adaptive').mkdir(parents=True)
+        (temp/'scripts/research/historical_replay/task12').mkdir(parents=True)
         shutil.copy2(base/'scripts/run_astrominn_closed_loop.py',temp/'scripts/run_astrominn_closed_loop.py')
-        for src in (overlay/'scripts/adaptive').glob('task12*'):
-            shutil.copy2(src,temp/'scripts/adaptive'/src.name)
+        for src in (overlay/'scripts/research/historical_replay/task12').glob('task12*'):
+            shutil.copy2(src,temp/'scripts/research/historical_replay/task12'/src.name)
         patch_source(temp,overlay)
         import ast
         for file in source_files(temp):
@@ -303,7 +303,7 @@ def submit(walltime):
                       '--error',str(JOB/'logs/%x_%j.err')]
                 parent=f'afterok:{prior}' if prior else dependency
                 if parent:args+=['--dependency',parent]
-                args += [str(JOB/'source/scripts/adaptive/task12_worker.sbatch'),
+                args += [str(JOB/'source/scripts/research/historical_replay/task12/task12_worker.sbatch'),
                          str(JOB),'job',str(seed),str(cycle)]
                 response=subprocess.check_output(args,text=True).strip()
                 jobid=response.split(';')[0]
@@ -350,7 +350,7 @@ def main():
     p.add_argument('seed_pos',nargs='?',type=int)
     p.add_argument('cycle_pos',nargs='?',type=int)
     p.add_argument('--repo',type=Path,default=Path.cwd())
-    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
+    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[4])
     p.add_argument('--job-dir',type=Path,default=JOB)
     p.add_argument('--seed',type=int,default=135)
     p.add_argument('--walltime',default='01:30:00')
