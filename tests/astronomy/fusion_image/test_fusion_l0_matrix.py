@@ -15,7 +15,7 @@ from al_pipeline.astronomy.fusion_image.backends import weighted_loss_from_logit
 
 def matrix_module():
     import sys
-    path = Path(__file__).resolve().parents[3] / 'scripts' / 'adaptive' / 'fusion_l0_matrix.py'
+    path = Path(__file__).resolve().parents[3] / 'scripts' / 'archive' / 'fusion_image' / 'early_l0' / 'fusion_l0_matrix.py'
     spec = importlib.util.spec_from_file_location('fusion_l0_matrix_tested', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -53,7 +53,7 @@ def test_report_refuses_missing_fits(tmp_path,monkeypatch):
 def test_source_list_includes_optimized_validation_and_runner():
     m=matrix_module()
     assert 'src/al_pipeline/astronomy/fusion_image/backends.py' in m.SOURCE_FILES
-    assert 'scripts/adaptive/fusion_l0_matrix.py' in m.SOURCE_FILES
+    assert 'scripts/archive/fusion_image/early_l0/fusion_l0_matrix.py' in m.SOURCE_FILES
 
 
 def test_prepare_rejects_entire_training_split_as_l0(tmp_path,monkeypatch):
