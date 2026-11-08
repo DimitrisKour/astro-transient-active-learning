@@ -134,7 +134,7 @@ def prepare(repo,overlay):
     if tmp.exists():raise RuntimeError('Source staging directory already exists')
     try:
         shutil.copytree(base/'src/al_pipeline',tmp/'src/al_pipeline')
-        (tmp/'scripts/adaptive').mkdir(parents=True)
+        (tmp/'scripts/research/historical_replay/task11').mkdir(parents=True)
         shutil.copy2(base/'scripts/run_astrominn_closed_loop.py',tmp/'scripts/run_astrominn_closed_loop.py')
         # Task4 may predate opt-in advanced selectors. Import those three
         # model-independent modules only from the current verified checkout;
@@ -147,8 +147,8 @@ def prepare(repo,overlay):
             if not (tmp/rel).exists():
                 (tmp/rel).parent.mkdir(parents=True,exist_ok=True)
                 shutil.copy2(incoming,tmp/rel)
-        for file in (overlay/'scripts/adaptive').glob('task11*'):
-            shutil.copy2(file,tmp/'scripts/adaptive'/file.name)
+        for file in (overlay/'scripts/research/historical_replay/task11').glob('task11*'):
+            shutil.copy2(file,tmp/'scripts/research/historical_replay/task11'/file.name)
         patch_source(tmp,overlay)
         for py in source_files(tmp):
             if py.suffix=='.py':
@@ -353,7 +353,7 @@ def submit(walltime,require_pilots=True):
                   '--error',str(JOB/'logs/%x_%j.err')]
             last=previous.get((policy,seed))
             if last:opts+=['--dependency',f'afterok:{last}']
-            opts += [str(JOB/'source/scripts/adaptive/task11_worker.sbatch'),str(JOB),'job',policy,str(seed),str(cycle)]
+            opts += [str(JOB/'source/scripts/research/historical_replay/task11/task11_worker.sbatch'),str(JOB),'job',policy,str(seed),str(cycle)]
             result=subprocess.check_output(opts,text=True).strip()
             jobid=result.split(';')[0]
             if not jobid.isdigit():raise RuntimeError(f'Unexpected sbatch ID {result}')
@@ -395,7 +395,7 @@ def main():
     p.add_argument('seed',nargs='?',type=int)
     p.add_argument('cycle',nargs='?',type=int)
     p.add_argument('--repo',type=Path,default=Path.cwd())
-    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
+    p.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[4])
     p.add_argument('--job-dir',type=Path,default=JOB)
     p.add_argument('--walltime',default='00:20:00')
     p.add_argument('--seed',dest='pilot_seed',type=int,default=135)

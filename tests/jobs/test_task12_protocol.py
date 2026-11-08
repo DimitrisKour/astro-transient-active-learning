@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 import pytest
 ROOT=Path(__file__).resolve().parents[2]
-spec=importlib.util.spec_from_file_location('task12_admin',ROOT/'scripts/adaptive/task12.py')
+spec=importlib.util.spec_from_file_location('task12_admin',ROOT/'scripts/research/historical_replay/task12/task12.py')
 mod=importlib.util.module_from_spec(spec)
 sys.modules[spec.name]=mod;spec.loader.exec_module(mod)
 
@@ -18,18 +18,18 @@ def test_plan_scientific_freeze_and_computational_budget():
 
 
 def test_bald_runner_scoped_and_after_task11_required():
-    s=(ROOT/'scripts/adaptive/task12_patch.py').read_text()
+    s=(ROOT/'scripts/research/historical_replay/task12/task12_patch.py').read_text()
     assert 'Task12 runner supports BALD only' in s
     assert 'validation' in s
     assert '"test": dataset.test_manifest' in s  # expected original source anchor, which is removed
-    a=(ROOT/'scripts/adaptive/task12.py').read_text()
+    a=(ROOT/'scripts/research/historical_replay/task12/task12.py').read_text()
     assert 'Task11 not yet fully completed or submitted' in a
     assert "'afterok:'" in a
     assert "'--hold'" in a
 
 
 def test_patch_fails_closed_when_upstream_anchor_missing():
-    p=ROOT/'scripts/adaptive/task12_patch.py'
+    p=ROOT/'scripts/research/historical_replay/task12/task12_patch.py'
     spec=importlib.util.spec_from_file_location('task12_patch',p)
     s=importlib.util.module_from_spec(spec);sys.modules[spec.name]=s;spec.loader.exec_module(s)
     with pytest.raises(ValueError,match='patch anchor'):
@@ -37,10 +37,10 @@ def test_patch_fails_closed_when_upstream_anchor_missing():
 
 
 def test_package_uses_normal_training_settings():
-    a=(ROOT/'scripts/adaptive/task12.py').read_text()
+    a=(ROOT/'scripts/research/historical_replay/task12/task12.py').read_text()
     for expected in ('--max-epochs','--patience','--batch-size',"'warm_start'",'--complete-pool'):
         assert expected in a
-    for f in (ROOT/'scripts/adaptive').glob('task12*.py'):
+    for f in (ROOT/'scripts/research/historical_replay/task12').glob('task12*.py'):
         ast.parse(f.read_text())
 
 
@@ -72,7 +72,7 @@ def test_strict_patch_updates_exact_scientific_boundaries(tmp_path):
     put('scripts/run_astrominn_closed_loop.py',
         '            "entropy_balanced_explore",\n        ),\n'
         '    args = parse_args()\n')
-    q=ROOT/'scripts/adaptive/task12_patch.py'
+    q=ROOT/'scripts/research/historical_replay/task12/task12_patch.py'
     spec=importlib.util.spec_from_file_location('task12_patch_smoke',q)
     m=importlib.util.module_from_spec(spec);sys.modules[spec.name]=m;spec.loader.exec_module(m)
     m.patch_source(src,overlay)

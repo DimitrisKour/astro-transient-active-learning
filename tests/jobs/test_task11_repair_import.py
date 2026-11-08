@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import pytest
 
-SCRIPT = Path(__file__).resolve().parents[2] / 'scripts/adaptive/task11_repair_import.py'
+SCRIPT = Path(__file__).resolve().parents[2] / 'scripts/research/historical_replay/task11/task11_repair_import.py'
 spec=importlib.util.spec_from_file_location('task11_repair_import', SCRIPT)
 module=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)

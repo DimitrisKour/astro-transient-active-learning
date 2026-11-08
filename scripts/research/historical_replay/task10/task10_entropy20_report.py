@@ -14,6 +14,17 @@ import sys
 
 import numpy as np
 
+# Task8B's validation reader is shared with this historical experiment.
+# Prefer the reorganized checkout, but support Task10 frozen source copies
+# that retain the original Task8B report path.
+_SOURCE_ROOT = Path(__file__).resolve().parents[4]
+_SHARED_READER_DIR = _SOURCE_ROOT / "scripts/research/historical_replay/task8b"
+if not (_SHARED_READER_DIR / "task8b_report.py").is_file():
+    _SHARED_READER_DIR = _SOURCE_ROOT / "scripts/adaptive"
+if not (_SHARED_READER_DIR / "task8b_report.py").is_file():
+    raise FileNotFoundError("Task10 requires the matching Task8B report dependency")
+sys.path.insert(0, str(_SHARED_READER_DIR))
+
 from al_pipeline.core.analysis.seed_recovery import sha256, macro_tolerance_accept
 from task8b_report import load_prediction, aligned, scores, compare, CLASSES
 from task10_entropy20 import ROOT, SCHEMA, CASE_KEY, SEEDS, verify, read, write

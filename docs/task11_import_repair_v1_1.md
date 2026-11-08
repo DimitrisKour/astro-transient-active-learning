@@ -10,9 +10,9 @@ Usage from checkout after transferring/unzipping:
 
 ```bash
 python -m pytest tests/jobs/test_task11_repair_import.py -q
-python scripts/adaptive/task11_repair_import.py
-python scripts/adaptive/task11.py verify
-python scripts/adaptive/task11.py preflight
+python scripts/research/historical_replay/task11/task11_repair_import.py
+python scripts/research/historical_replay/task11/task11.py verify
+python scripts/research/historical_replay/task11/task11.py preflight
 ```
 
 Keep the Conda `LD_PRELOAD` workaround set in the interactive shell. Do not run pilot jobs until the preflight passes.

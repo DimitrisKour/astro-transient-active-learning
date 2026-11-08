@@ -20,13 +20,13 @@ Commands from editable active-learning repository, with `conda activate al-pipel
 
 ```bash
 python -m pytest tests/jobs/test_task10_entropy20.py -q
-python scripts/adaptive/task10_entropy20.py plan
-python scripts/adaptive/task10_entropy20.py prepare
-python scripts/adaptive/task10_entropy20.py verify
-python scripts/adaptive/task10_entropy20.py submit --walltime 00:20:00 --max-concurrent 2
-python scripts/adaptive/task10_entropy20.py status
+python scripts/research/historical_replay/task10/task10_entropy20.py plan
+python scripts/research/historical_replay/task10/task10_entropy20.py prepare
+python scripts/research/historical_replay/task10/task10_entropy20.py verify
+python scripts/research/historical_replay/task10/task10_entropy20.py submit --walltime 00:20:00 --max-concurrent 2
+python scripts/research/historical_replay/task10/task10_entropy20.py status
 # Only after all 20 finish:
-python scripts/adaptive/task10_entropy20_report.py
+python scripts/research/historical_replay/task10/task10_entropy20_report.py
 ```
 
 One **20-element SLURM GPU array, max two concurrent**, training seeds 2001..2020. Each element is independent; jobs may run in parallel. Submission marker and frozen plan block accidental resubmission. Stdout/err in `logs/T10_<arrayjob>_<task>.{out,err}`. To inspect status use `sacct -j <array job ID> --format=JobID,JobName,State,ExitCode,Elapsed`.

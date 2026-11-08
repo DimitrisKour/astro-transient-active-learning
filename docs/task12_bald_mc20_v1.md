@@ -77,10 +77,10 @@ From repository root on Delta:
     export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     export LD_PRELOAD="$CONDA_PREFIX/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
     python -m pytest tests/jobs/test_task12_bald.py tests/jobs/test_task12_protocol.py -q
-    python scripts/adaptive/task12.py plan
-    python scripts/adaptive/task12.py prepare
-    python scripts/adaptive/task12.py verify
-    python scripts/adaptive/task12.py preflight
+    python scripts/research/historical_replay/task12/task12.py plan
+    python scripts/research/historical_replay/task12/task12.py prepare
+    python scripts/research/historical_replay/task12/task12.py verify
+    python scripts/research/historical_replay/task12/task12.py preflight
 
 Task 12 freezes a patched copy of the verified ORIGINAL Task 4 source into a
 new suite-specific directory. Repeated `prepare` verifies rather than edits.
@@ -94,7 +94,7 @@ Once prepared and preflight succeeds, queue **one GPU acquisition-only pilot**:
     sbatch --parsable --job-name=T12_pilot_s135 \
       --output="$JOB/logs/pilot_%j.out" --error="$JOB/logs/pilot_%j.err" \
       --time=00:45:00 \
-      "$JOB/source/scripts/adaptive/task12_worker.sbatch" "$JOB" pilot 135
+      "$JOB/source/scripts/research/historical_replay/task12/task12_worker.sbatch" "$JOB" pilot 135
 
 This loads the seed-135 L0 checkpoint and performs T=20 coherent MC passes
 on U0. It compares the 473-object selection to Task 4 entropy and records
@@ -103,13 +103,13 @@ nonzero scores and matching L0/U0 provenance. There is **no training**.
 If this fails due to zero dropout or excessive runtime, STOP; do not queue
 27 fits or alter frozen code.
 
-    python scripts/adaptive/task12.py pilot-status
+    python scripts/research/historical_replay/task12/task12.py pilot-status
 
 ## Submission after Task 11
 
 After the pilot passes and the full Task 11 81-fit suite has been queued, run:
 
-    python scripts/adaptive/task12.py submit --walltime 01:30:00
+    python scripts/research/historical_replay/task12/task12.py submit --walltime 01:30:00
 
 The launcher requires proof that Task 11 has completed all nine trajectories
 OR reads its submitted-job manifest and binds `afterok` dependencies to all
@@ -121,7 +121,7 @@ A failed Task 11 terminal job prevents BALD from proceeding.
 
 Monitor with:
 
-    python scripts/adaptive/task12.py status
+    python scripts/research/historical_replay/task12/task12.py status
     squeue -u "$USER"
 
 **Walltime must be reevaluated after the pilot.** BALD runs a separate
@@ -132,7 +132,7 @@ actual Task 11 cycle timings and BALD pilot. One worker occupies one A40.
 
 ## Reporting after 27 fits
 
-    python scripts/adaptive/task12_report.py
+    python scripts/research/historical_replay/task12/task12_report.py
 
 The reporter produces validation trajectories, per-cycle paired comparisons
 to Task 4 random/entropy/entropy-diversity/entropy-balanced-explore,

@@ -9,7 +9,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src'))
-sys.path.insert(0, str(ROOT / 'scripts/adaptive'))
+sys.path.insert(0, str(ROOT / 'scripts/research/historical_replay/task10'))
 import task10_entropy20 as task
 
 
@@ -38,8 +38,8 @@ def test_plan_fixed_manifest(monkeypatch, tmp_path):
 def test_submit_marker_and_slurm_array(monkeypatch, tmp_path):
     job = tmp_path
     (job/'logs').mkdir()
-    (job/'source/scripts/adaptive').mkdir(parents=True)
-    (job/'source/scripts/adaptive/task10_entropy20_worker.sbatch').write_text('worker')
+    (job/'source/scripts/research/historical_replay/task10').mkdir(parents=True)
+    (job/'source/scripts/research/historical_replay/task10/task10_entropy20_worker.sbatch').write_text('worker')
     p = {'jobs': [{'retry_seed': s} for s in task.SEEDS]}
     monkeypatch.setattr(task, 'verify', lambda job, deep=False: p)
     monkeypatch.setattr(task, 'status', lambda job: {'invalid': [], 'completed': 0, 'pending_seeds': list(task.SEEDS)})
