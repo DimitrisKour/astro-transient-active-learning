@@ -5,7 +5,38 @@ Notebook [02](../02_applecider_astronomy_active_learning.ipynb) has two modes:
 - **No data files:** a conspicuously marked, deterministic **synthetic** demonstration of a CPU-only active-learning loop, plus a few actual *presentation-level* AstroMiNN statistics. This is fully runnable offline but **is not an astronomical experiment**.
 - **Real export installed:** the same notebook uses the compact object-level astronomical feature file `astro_real_v1.npz` for its interactive loop. If vetted historical CSVs are present, it also displays recorded AstroMiNN learning curves and class acquisition summaries.
 
-We do **not** bundle raw historical `.npy` samples, trained AstroMiNN/PyTorch model checkpoints, Felipe's model sources, or private broker credentials. The supported notebook therefore needs only `pip install -e ".[teaching]"` and CPU time.
+We do **not** bundle raw historical `.npy` samples, trained AstroMiNN/PyTorch model checkpoints, external training-source files, or private broker credentials. The supported notebook therefore needs only `pip install -e ".[teaching]"` and CPU time.
+
+## Instructor preparation from an existing dataset registry
+
+If the historical dataset is already described in a local TOML registry,
+**reuse that configuration rather than copying raw samples**. The following
+CPU command prepares a small provisional feature file and *lists possible*
+historical report directories. It does not select a report automatically.
+
+```bash
+python scripts/examples/prepare_astro_school_exports.py \
+  --registry /path/to/research/configs/delta.toml \
+  --report-root /path/to/research/reports \
+  --output-directory examples/data
+```
+
+Inspect the listed report candidates and choose an appropriate **validated**
+report with compatible suites and seeds. You can then export Part B without
+rebuilding Part A:
+
+```bash
+python scripts/examples/prepare_astro_school_exports.py \
+  --registry /path/to/research/configs/delta.toml \
+  --skip-features \
+  --report-directory /path/to/reviewed/report \
+  --output-directory examples/data
+```
+
+The registry path is supplied **only to the instructor's export tool**;
+participants do not need a machine-specific configuration. The generated
+provenance file can contain local file paths, and outputs are **not**
+automatically publishable. Review all exported information before committing.
 
 ## A · One-time real features export
 
@@ -24,7 +55,7 @@ python scripts/examples/export_astro_school_features.py \
   --output examples/data/astro_real_v1.npz
 ```
 
-The actual column names may be different. Check `configs/delta.toml` (locally, not distributed) or the relevant `DatasetSpec` fields for `object_id_column`, `sample_file_column`, `label_column` and the three source manifests. The script also requires an integer `alert` column and trusted samples containing `obj_id`, `metadata` (34 values), and `image` (3×63×63).
+The actual column names may be different. Check the locally available dataset registry or the relevant `DatasetSpec` fields for `object_id_column`, `sample_file_column`, `label_column` and the three source manifests. The script also requires an integer `alert` column and trusted samples containing `obj_id`, `metadata` (34 values), and `image` (3×63×63).
 
 Features are *deterministic CPU image summaries*: 8×8 averages from median-subtracted, standard-deviation-scaled science/reference/difference cutouts plus 34 clipped metadata features. They are **not** AstroMiNN ViT embeddings. The latest available alert per object is retained, and the number of available alert rows is stored separately. The exported benchmark is capped, preferentially keeps up to 12 objects/class in training and 4 objects/class in each evaluation split, and deliberately ensures rare classes have support; **its class proportions are not population estimates**.
 
