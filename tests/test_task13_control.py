@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts/adaptive"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts/research/historical_replay/task13"))
 import task13  # noqa: E402
 
 
