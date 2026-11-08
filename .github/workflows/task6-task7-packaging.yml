@@ -1,0 +1,42 @@
+name: Task 6-7 historical research packaging
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/research/historical_replay/task6a/**"
+      - "scripts/research/historical_replay/task6b/**"
+      - "scripts/research/historical_replay/task6c/**"
+      - "scripts/research/historical_replay/task7a/**"
+      - "tests/jobs/test_task6*.py"
+      - "tests/jobs/test_task7a_v1.py"
+      - "tests/astronomy/test_task6a_temperature_audit.py"
+      - ".github/workflows/task6-task7-packaging.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Frozen-source and scheduler contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install synthetic test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Check Task6A/6B/6C/7A and temperature audit tests
+        run: |
+          python -m pytest -q \
+            tests/jobs/test_task6a_weight05.py \
+            tests/jobs/test_task6a_independent_chains.py \
+            tests/jobs/test_task6a_l0_v2.py \
+            tests/jobs/test_task6b_v1.py \
+            tests/jobs/test_task6c_v1.py \
+            tests/jobs/test_task7a_v1.py \
+            tests/astronomy/test_task6a_temperature_audit.py
