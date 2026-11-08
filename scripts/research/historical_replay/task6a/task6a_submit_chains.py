@@ -6,8 +6,8 @@ frozen scientific source. One held singleton-array sbatch per seed/policy/cycle.
 Each job depends exclusively on its own previous-cycle job. No global GPU cap
 is falsely advertised: at most six trajectories may use six GPUs at once.
 
-Usage: python scripts/adaptive/task6a_submit_chains.py plan [--walltime HH:MM:SS]
-       python scripts/adaptive/task6a_submit_chains.py submit [--walltime HH:MM:SS]
+Usage: python scripts/research/historical_replay/task6a/task6a_submit_chains.py plan [--walltime HH:MM:SS]
+       python scripts/research/historical_replay/task6a/task6a_submit_chains.py submit [--walltime HH:MM:SS]
 """
 from __future__ import annotations
 
@@ -78,7 +78,7 @@ def make_command(*, source: Path, job_dir: Path, plan: dict,
     ]
     if predecessor is not None:
         command.append(f'--dependency=afterok:{predecessor}')
-    command += [str(source/'scripts/adaptive/task6a_cycle.sbatch'), str(source), str(cycle)]
+    command += [str(source/'scripts/research/historical_replay/task6a/task6a_cycle.sbatch'), str(source), str(cycle)]
     return command
 
 

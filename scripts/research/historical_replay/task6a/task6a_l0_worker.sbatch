@@ -9,7 +9,7 @@
 #SBATCH --time=00:24:00
 set -euo pipefail
 source_root="$1"; seed="$2"; cycle="$3"; policy="$4"
-source "$source_root/scripts/adaptive/task6a_l0_common.sh"
+source "$source_root/scripts/research/historical_replay/task6a/task6a_l0_common.sh"
 task6a_l0_activate
 export PYTHONPATH="$source_root/src${PYTHONPATH:+:$PYTHONPATH}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
@@ -24,7 +24,7 @@ case "$seed" in 135|246|357) ;; *) echo "Invalid seed $seed" >&2; exit 2;; esac
 runtime="$TASK6A_L0_DATA/runs/$TASK6A_L0_SUITE_ID/shared/seed_$seed/runtime/${SLURM_JOB_ID:-manual}"
 mkdir -p "$runtime"/{tmp,matplotlib,torch,jupyter}
 export TMPDIR="$runtime/tmp" MPLCONFIGDIR="$runtime/matplotlib" TORCH_HOME="$runtime/torch" JUPYTER_RUNTIME_DIR="$runtime/jupyter"
-python "$source_root/scripts/adaptive/task6a_l0_prepare.py" --verify-only \
+python "$source_root/scripts/research/historical_replay/task6a/task6a_l0_prepare.py" --verify-only \
   --job-dir "$TASK6A_L0_JOB_DIR"
 if [[ "$cycle" == 0 ]]; then
   task6a_l0_arguments "$seed" entropy
