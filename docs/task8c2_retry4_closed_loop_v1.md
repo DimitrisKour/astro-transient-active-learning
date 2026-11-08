@@ -36,9 +36,9 @@ cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 conda activate al-pipeline
 unzip -n /projects/bcrv/dkourtesis/task8c2_bounded_retries_v1.zip -d .
 python -m pytest tests/jobs/test_task8c2_schedule.py tests/jobs/test_task8c2_retry_gate.py -q
-python scripts/adaptive/task8c2.py plan
-python scripts/adaptive/task8c2.py prepare
-python scripts/adaptive/task8c2.py verify
+python scripts/research/historical_replay/task8c2/task8c2.py plan
+python scripts/research/historical_replay/task8c2/task8c2.py prepare
+python scripts/research/historical_replay/task8c2/task8c2.py verify
 ```
 
 No jobs are submitted by the commands above. A preparation failure does not imply GPUs have been scheduled.
@@ -46,9 +46,9 @@ No jobs are submitted by the commands above. A preparation failure does not impl
 ## Step 1: CPU prefill
 
 ```bash
-python scripts/adaptive/task8c2.py submit-prefill --walltime 00:20:00
+python scripts/research/historical_replay/task8c2/task8c2.py submit-prefill --walltime 00:20:00
 squeue -u "$USER"
-python scripts/adaptive/task8c2.py status
+python scripts/research/historical_replay/task8c2/task8c2.py status
 ```
 
 Expect `completed` equal to `4,4,5,4,3,6`, but `decisions` equal to `3,3,4,3,2,5` respectively, with each first-rejected base candidate pending retries. Check Slurm `sacct` first: the six CPU jobs must be `COMPLETED` with exit code `0:0`. The CPU worker includes the Conda `libstdc++` compatibility environment fix that 8C.1's first CPU submission lacked.
@@ -58,26 +58,26 @@ Expect `completed` equal to `4,4,5,4,3,6`, but `decisions` equal to `3,3,4,3,2,5
 Only after CPU prefill is verified. Recommended: queue **one** case first (index 0 = entropy seed 135), inspect successful first retry, then queue remaining cases. Jobs are held until all stages in each case are registered, then released in reverse dependency order.
 
 ```bash
-python scripts/adaptive/task8c2.py submit --case-index 0 --walltime 00:20:00
+python scripts/research/historical_replay/task8c2/task8c2.py submit --case-index 0 --walltime 00:20:00
 squeue -u "$USER" -o '%.18i %.32j %.2t %.10M %R'
-python scripts/adaptive/task8c2.py status
+python scripts/research/historical_replay/task8c2/task8c2.py status
 ```
 
 After confirming the first trajectory's staged jobs behave correctly, submit other **unsubmitted** cases individually:
 
 ```bash
 for i in 1 2 3 4 5; do
-  python scripts/adaptive/task8c2.py submit --case-index "$i" --walltime 00:20:00 || break
+  python scripts/research/historical_replay/task8c2/task8c2.py submit --case-index "$i" --walltime 00:20:00 || break
 done
 ```
 
-Alternatively, before any GPU case has been queued, `python scripts/adaptive/task8c2.py submit --walltime 00:20:00` queues all six chains at once. **Do not repeat** `submit` for already-submitted cases; the submission markers are designed to refuse duplicates. Job names have the form `T8C2_<case-index>_c<cycle>_b` or `_r1.._r4`. On a failed stage, `afterok` stops dependent stages; inspect stdout/stderr and persisted `training_summary.json`/retry markers before attempting recovery.
+Alternatively, before any GPU case has been queued, `python scripts/research/historical_replay/task8c2/task8c2.py submit --walltime 00:20:00` queues all six chains at once. **Do not repeat** `submit` for already-submitted cases; the submission markers are designed to refuse duplicates. Job names have the form `T8C2_<case-index>_c<cycle>_b` or `_r1.._r4`. On a failed stage, `afterok` stops dependent stages; inspect stdout/stderr and persisted `training_summary.json`/retry markers before attempting recovery.
 
 Status and complete report:
 
 ```bash
-python scripts/adaptive/task8c2.py status
-python scripts/adaptive/task8c2_report.py
+python scripts/research/historical_replay/task8c2/task8c2.py status
+python scripts/research/historical_replay/task8c2/task8c2_report.py
 ```
 
 If all 6 trajectories completed, archive the entire report rather than cherry-picking metrics:
