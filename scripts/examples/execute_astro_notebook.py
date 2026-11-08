@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Execute the CPU astronomy notebook, save all figures, and check provenance.
+"""Execute the historical AstroMiNN learning-curve teaching notebook on a CPU.
 
-    python scripts/examples/execute_astro_notebook.py --output astro_executed.ipynb
+    python scripts/examples/execute_astro_notebook.py --output astro_replay_local.ipynb
 
-On a new clone the notebook uses its explicit synthetic fallback. A vetted
-real NPZ in examples/data/ takes precedence; no GPU, checkpoints or Slurm.
+Uses the small, bundled validation-only CSV. Does not load models, images,
+checkpoints, or test data. Does not overwrite an existing output notebook.
 """
 from __future__ import annotations
 
@@ -36,19 +36,20 @@ def main():
     nb=nbformat.read(SOURCE,as_version=4)
     nbformat.validate(nb)
     try:
-        executed=NotebookClient(nb,timeout=450,kernel_name='python3',
+        executed=NotebookClient(nb,timeout=180,kernel_name='python3',
                                 resources={'metadata':{'path':str(ROOT)}},
                                 allow_errors=False).execute()
         count=sum(bool(o.get('data',{}).get('image/png'))
-                  for c in executed.cells if c.cell_type=='code' for o in c.get('outputs',()))
-        if count < 5:
-            raise ValueError(f'Expected at least five embedded figures; got {count}')
+                  for c in executed.cells if c.cell_type=='code'
+                  for o in c.get('outputs',()))
+        if count < 4:
+            raise ValueError(f'Expected four embedded historical figures; got {count}')
     except Exception:
         nbformat.write(nb,dest)
         print('Notebook execution failed; diagnostic notebook:',dest)
         raise
     nbformat.write(executed,dest)
-    print('PASS: executed astronomy notebook saved:',dest)
+    print('PASS: historical astronomy notebook saved:',dest)
     print('Embedded figures:',count)
 
 
