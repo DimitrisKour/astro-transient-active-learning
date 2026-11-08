@@ -114,8 +114,9 @@ def prepare(overlay):
     if tmp.exists():raise RuntimeError('Previous staging directory exists')
     try:
         shutil.copytree(TASK11/'source',tmp,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
-        for old_path in (tmp/'scripts/research/historical_replay/task14').glob('task11*'):
+        for old_path in (tmp/'scripts/adaptive').glob('task11*'):
             old_path.unlink()
+        (tmp/'scripts/research/historical_replay/task14').mkdir(parents=True, exist_ok=True)
         for path in (overlay/'scripts/research/historical_replay/task14').glob('task14*'):
             shutil.copy2(path,tmp/'scripts/research/historical_replay/task14'/path.name)
         patch_source(tmp,overlay)
