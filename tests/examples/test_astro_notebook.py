@@ -30,7 +30,7 @@ def test_historical_notebook_executes_without_images_or_model_training():
     images = [o["data"]["image/png"] for c in result.cells
               if c.cell_type == "code" for o in c.get("outputs", ())
               if o.get("data", {}).get("image/png")]
-    assert len(images) == 4
+    assert len(images) == 6
     streams = "\n".join(str(o.get("text", ""))
                         for c in result.cells for o in c.get("outputs", ())
                         if o.get("output_type") == "stream")

@@ -3,7 +3,7 @@
 
     python scripts/examples/execute_astro_notebook.py --output astro_replay_local.ipynb
 
-Uses the small, bundled validation-only CSV. Does not load models, images,
+Uses the small, bundled validation and class-level metric tables. Does not load models, images,
 checkpoints, or test data. Does not overwrite an existing output notebook.
 """
 from __future__ import annotations
@@ -42,8 +42,8 @@ def main():
         count=sum(bool(o.get('data',{}).get('image/png'))
                   for c in executed.cells if c.cell_type=='code'
                   for o in c.get('outputs',()))
-        if count < 4:
-            raise ValueError(f'Expected four embedded historical figures; got {count}')
+        if count < 6:
+            raise ValueError(f'Expected six embedded historical figures; got {count}')
     except Exception:
         nbformat.write(nb,dest)
         print('Notebook execution failed; diagnostic notebook:',dest)
