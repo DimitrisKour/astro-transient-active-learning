@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - "examples/**"
+      - "scripts/examples/**"
       - "tests/examples/test_digits_notebook.py"
       - "pyproject.toml"
       - ".github/workflows/teaching-notebook.yml"
@@ -41,3 +42,7 @@ jobs:
           python -m pip install pytest
       - name: Validate notebook syntax, contracts and execute every cell on CPU
         run: python -m pytest -q tests/examples/test_digits_notebook.py
+      - name: Verify Delta-style runner writes an executed notebook
+        run: |
+          python scripts/examples/execute_digits_notebook.py --output "${{ runner.temp }}/digits_executed.ipynb"
+          test -s "${{ runner.temp }}/digits_executed.ipynb"
