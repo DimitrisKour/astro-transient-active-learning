@@ -12,6 +12,7 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 analysis = ["pandas", "matplotlib", "scikit-learn"]
+teaching = ["pandas", "matplotlib", "scikit-learn", "ipykernel", "nbformat", "nbclient"]
 astronomy = ["torch", "torchvision", "astropy", "pandas", "matplotlib", "scikit-learn"]
 dev = ["pytest", "ruff", "pandas", "matplotlib", "scikit-learn"]
 

@@ -1,0 +1,48 @@
+name: CPU teaching notebook
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "examples/**"
+      - "scripts/examples/**"
+      - "tests/examples/test_digits_notebook.py"
+      - "pyproject.toml"
+      - ".github/workflows/teaching-notebook.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    name: Notebook end-to-end / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      MPLBACKEND: "Agg"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install local teaching extras and pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[teaching]"
+          python -m pip install pytest
+      - name: Validate notebook syntax, contracts and execute every cell on CPU
+        run: python -m pytest -q tests/examples/test_digits_notebook.py
+      - name: Verify Delta-style runner writes an executed notebook
+        run: |
+          python scripts/examples/execute_digits_notebook.py --output "${{ runner.temp }}/digits_executed.ipynb"
+          test -s "${{ runner.temp }}/digits_executed.ipynb"
