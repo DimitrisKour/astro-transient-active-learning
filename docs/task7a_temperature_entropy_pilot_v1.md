@@ -57,9 +57,9 @@ On Delta:
 cd /projects/bcrv/dkourtesis/applecider-al-workspace/active-learning
 unzip -n /projects/bcrv/dkourtesis/task7a_temperature_entropy_pilot_v1.zip -d .
 python -m pytest tests/jobs/test_task7a_v1.py -q
-python scripts/adaptive/task7a.py prepare
-python scripts/adaptive/task7a.py verify
-python scripts/adaptive/task7a.py plan
+python scripts/research/historical_replay/task7a/task7a.py prepare
+python scripts/research/historical_replay/task7a/task7a.py verify
+python scripts/research/historical_replay/task7a/task7a.py plan
 ```
 
 `prepare` **never submits jobs** and its CPU preflight **does not train**. The frozen source is in `/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_warm_temperature_entropy_v1/source`.
@@ -67,8 +67,8 @@ python scripts/adaptive/task7a.py plan
 **When ready to queue (after Task6C as requested):**
 
 ```bash
-python scripts/adaptive/task7a.py submit --walltime 00:20:00
-python scripts/adaptive/task7a.py submit --walltime 00:20:00 --submit
+python scripts/research/historical_replay/task7a/task7a.py submit --walltime 00:20:00
+python scripts/research/historical_replay/task7a/task7a.py submit --walltime 00:20:00 --submit
 squeue -u "$USER" -o '%.18i %.32j %.2t %.10M %R'
 ```
 
@@ -77,7 +77,7 @@ The first command is a **dry run**; the second is the one that actually submits 
 ### Reporting
 
 ```bash
-python scripts/adaptive/task7a_report.py
+python scripts/research/historical_replay/task7a/task7a_report.py
 ```
 
 Report output: `/projects/bcrv/dkourtesis/applecider_adaptive/closed_loop/astrominn_closed_loop_warm_temperature_entropy_v1/report/`.
