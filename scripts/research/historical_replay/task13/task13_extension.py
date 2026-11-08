@@ -47,7 +47,7 @@ def digest(path):
 
 
 def frozen_task13():
-    location = T13 / 'source/scripts/adaptive/task13.py'
+    location = T13 / 'source/scripts/research/historical_replay/task13/task13.py'
     spec = importlib.util.spec_from_file_location('_frozen_task13_extension_parent', location)
     if spec is None or spec.loader is None:
         raise RuntimeError('Cannot load frozen Task13 manager')
@@ -80,7 +80,7 @@ def prepare(controller=CONTROL, repo=None):
         return
     if controller.exists() and any(controller.iterdir()):
         raise RuntimeError('Extension controller exists without a manifest; inspect it')
-    origin = Path(repo) / 'scripts/adaptive' if repo else Path(__file__).resolve().parent
+    origin = Path(repo) / 'scripts/research/historical_replay/task13' if repo else Path(__file__).resolve().parent
     for name in FILES:
         if not (origin / name).is_file():
             raise FileNotFoundError(origin / name)

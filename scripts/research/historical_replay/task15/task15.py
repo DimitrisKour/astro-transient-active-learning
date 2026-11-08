@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Task14: frozen Task11-matched SIMILAR facility-location acquisition study.
+"""Task15: frozen Task11-matched DIRECT / VReduce interactive acquisition study.
 
 No jobs submitted by prepare, preflight or pilot. Jobs are held at submission;
 only an explicit release command makes any job runnable. Independent policy/seed
@@ -21,10 +21,10 @@ import time
 import zipfile
 from pathlib import Path
 
-POLICIES=('similar_fl','similar_flcg','similar_flqmi_rare')
+POLICIES=('direct',)
 SEEDS=(135,246,357)
 CYCLES=9
-SUITE='astrominn_task14_similar_facility_v1'
+SUITE='astrominn_task15_direct_vreduce_v1'
 PERSISTENT=Path('/projects/bcrv/dkourtesis/applecider_adaptive')
 DATA=Path('/work/hdd/bcrv/dkourtesis/applecider_adaptive')
 JOB=PERSISTENT/'closed_loop'/SUITE
@@ -60,25 +60,27 @@ def hashes(root):return {str(p.relative_to(root)):sha(p) for p in files(root)}
 
 def plan():
     return {
-      'suite':SUITE,'method':'SIMILAR_facility_location_variants',
-      'paper':'Kothawade, Beck, Killamsetty and Iyer, NeurIPS 2021',
-      'policies':list(POLICIES),'seeds':list(SEEDS),'cycles':CYCLES,'fits':81,
-      'similarity_kernel':'nonnegative_cosine_factored_last_linear_softmax_pseudolabel_gradients',
-      'kernel_details':{'clip_negative':True,'normalize_gradient':True,'bias':True,'dtype':'float32'},
-      'objectives':{
-          'similar_fl':'FL coverage of U_t, standard AL',
-          'similar_flcg':'FL conditional gain conditioned on confirmed L_t',
-          'similar_flqmi_rare':'FL2MI (sum query coverage + modular candidate relevance) with two least frequent L0 classes; query objects confirmed in L_t'},
-      'rare_target_policy':'two least common confirmed object-level classes in L0, fixed for entire run; no validation query',
-      'optimizer':'monotone_lazy_greedy_cardinality',
+      'suite':SUITE,'method':'DIRECT interactive VReduce one-vs-rest',
+      'paper':'Nuggehalli, Zhang, Jain, Nowak, ICML 2025, Algorithms 1 and 2',
+      'policies':list(POLICIES),'seeds':list(SEEDS),'cycles':CYCLES,'fits':27,
+      'classes':5,'parallel_annotation_batch':5,
+      'oracle':'clean retrospective hidden-label provider; queried subbatches only',
+      'oracle_journal':'atomic query transcript, deterministic replay after interruption',
+      'phase_budget':'floor(B/2) VReduce and remainder near thresholds; allocated by seeded class order',
+      'class_score':'p_k - max_j(p_j), j includes k, ties p_k descending',
+      'initial_version':'conservative confirmed label interval; full-range fallback on overlap',
+      'interval_objective':'minimize max empirical threshold loss at interval endpoints',
+      'interval_rounding':'integer geometric reduction with half-up rounding',
+      'threshold_ties':'closest to midpoint; neighbor ties by ranked index',
       'dataset':'Task4 identical L0/U0, 10% batch, complete pool',
       'bootstrap_source_suite':BASE,'split_seed':135,'warm_start':True,
       'training':{'epochs':50,'patience':10,'batch_size':512,'validation_batch_size':2048,
                   'learning_rate':1e-4,'sample_weighting':'per_sample'},
       'evaluation':'frozen_validation_only; no test selection',
-      'source_baseline':'verified immutable Task11 frozen source; only Task14 patches',
-      'dependency':'within policy/seed chain afterok only; no Task11/12/13 DAG dependencies',
-      'caveat':'SIMILAR-inspired bounded kernel instantiations; not all SIMILAR functions nor OOD SCMI'}
+      'source_baseline':'verified immutable Task11 frozen source; only Task15 patches',
+      'dependency':'within policy/seed afterok only; no Task11-14 DAG dependencies',
+      'noisy_oracle_extension':'not included; clean labels only in primary benchmark',
+      'caveat':'object-level budget rounding and interval initialization specified here; not a claim of bitwise reproduction of paper code'}
 
 
 def registry_routed(text):
@@ -97,10 +99,10 @@ def registry_routed(text):
 
 
 def prepare(overlay):
-    from task14_patch import patch_source
+    from task15_patch import patch_source
     if (JOB/'frozen_manifest.json').exists():verify();print('Already prepared');return
     if (JOB/'source').exists() or (JOB/'registry.toml').exists():
-        raise RuntimeError('Partial Task14 preparation: inspect without overwriting')
+        raise RuntimeError('Partial Task15 preparation: inspect without overwriting')
     expected=load(TASK11/'frozen_manifest.json')
     old=hashes(TASK11/'source')
     if old!=expected:raise RuntimeError('Task11 source differs from its frozen manifest')
@@ -114,10 +116,10 @@ def prepare(overlay):
     if tmp.exists():raise RuntimeError('Previous staging directory exists')
     try:
         shutil.copytree(TASK11/'source',tmp,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
-        for old_path in (tmp/'scripts/adaptive').glob('task11*'):
+        for old_path in (tmp/'scripts/research/historical_replay/task15').glob('task11*'):
             old_path.unlink()
-        for path in (overlay/'scripts/adaptive').glob('task14*'):
-            shutil.copy2(path,tmp/'scripts/adaptive'/path.name)
+        for path in (overlay/'scripts/research/historical_replay/task15').glob('task15*'):
+            shutil.copy2(path,tmp/'scripts/research/historical_replay/task15'/path.name)
         patch_source(tmp,overlay)
         import ast
         for p in files(tmp):
@@ -140,7 +142,7 @@ def verify(job=None):
     if hashes(job/'source')!=load(job/'frozen_manifest.json'):
         raise RuntimeError('Frozen source no longer matches hash manifest')
     if not (job/'registry.toml').is_file():raise FileNotFoundError(job/'registry.toml')
-    print(f'Task14 frozen source verified ({len(files(job/"source"))} files)')
+    print(f'Task15 frozen source verified ({len(files(job/"source"))} files)')
 
 
 def runner_args(policy,seed):
@@ -163,97 +165,102 @@ def preflight(seed):
     for policy in POLICIES:
         subprocess.run([sys.executable,str(JOB/'source/scripts/run_astrominn_closed_loop.py'),
               *runner_args(policy,seed)],env=env,check=True)
-    print('Task14 preflight complete; no GPU training/inference')
+    print('Task15 preflight complete; no GPU training/inference')
 
 
 def pilot(policy,seed):
+    """Pilot REAL interactive acquisition; no training or validation/test reads.
+
+    Unlike non-oracle policies, this pilot intentionally queries *selected*
+    historical hidden labels in subrounds. All query IDs are persisted.
+    """
     verify()
     if policy not in POLICIES or seed not in SEEDS:raise ValueError('Unknown case')
     out=JOB/'pilot'/policy/f'seed_{seed}'/'result.json'
-    if out.is_file():print(json.dumps({k:v for k,v in load(out).items() if k!='selected_ids'},indent=2));return
+    if out.exists():
+        print(json.dumps({k:v for k,v in load(out).items() if k!='selected_ids'},indent=2));return
     import numpy as np
     from dataclasses import replace
     from al_pipeline.astronomy.data.registry import DatasetRegistry
     from al_pipeline.astronomy.experiments.historical_replay import materialize_astrominn_historical_replay_split
     from al_pipeline.astronomy.astrominn.inference.astrominn_vit import DEFAULT_LEGACY_CODE_DIR,predict_astrominn_vit_pool
     from al_pipeline.astronomy.analysis.task11_labeled_features import predict_confirmed_objects
-    from al_pipeline.core.advanced_acquisition.similar import SimilarInput, SimilarScorer, SimilarSelector
-    from al_pipeline.core.pool import Pool
     from al_pipeline.astronomy.astrominn.training import MODEL_CLASS_NAMES, LABEL_TO_INDEX
     from al_pipeline.astronomy.data.candidate_pool import CandidatePoolManifest
+    from al_pipeline.core.advanced_acquisition.direct import DirectInput,DirectSelector
     registry=DatasetRegistry.from_toml(JOB/'registry.toml')
     resolved=registry.resolve_profile('astrominn_ztf');ds=resolved.dataset
     replay=materialize_astrominn_historical_replay_split(
         dataset=ds,destination=PERSISTENT/'runs'/SUITE/'shared/historical_replay_split',
         initial_fraction=.10,minimum_initial_per_class=5,split_seed=135,
         pool_id=SUITE+'_historical_u0',excluded_object_manifests=[EXCLUDE])
-    def ids_from_csv(path):
-        with Path(path).open(newline='') as f:
-            return {row[ds.object_id_column] for row in csv.DictReader(f)}
-    task4_base=PERSISTENT/'runs'/TASK4/'shared/historical_replay_split'
-    if ids_from_csv(replay.initial_manifest)!=ids_from_csv(task4_base/'initial_labeled_manifest.csv'):
-        raise RuntimeError('Task14 initial labeled objects differ from Task4')
+    def object_ids(path):
+        with Path(path).open(newline='') as stream:
+            return {row[ds.object_id_column] for row in csv.DictReader(stream)}
+    task4=PERSISTENT/'runs'/TASK4/'shared/historical_replay_split'
+    if object_ids(replay.initial_manifest)!=object_ids(task4/'initial_labeled_manifest.csv'):
+        raise RuntimeError('Task15 L0 mismatch')
     u=CandidatePoolManifest.from_csv(replay.candidate_pool_dir/'candidate_pool.csv')
-    u4=CandidatePoolManifest.from_csv(task4_base/'candidate_pool/candidate_pool.csv')
-    if tuple(u.object_ids)!=tuple(u4.object_ids):raise RuntimeError('U0 order mismatch')
-    checkpoint=DATA/'runs'/BASE/'shared'/f'seed_{seed}/bootstrap_training/best_vit_tower.pth'
+    u4=CandidatePoolManifest.from_csv(task4/'candidate_pool/candidate_pool.csv')
+    if tuple(u.object_ids)!=tuple(u4.object_ids):raise RuntimeError('Task15 U0 mismatch')
+    cp=DATA/'runs'/BASE/'shared'/f'seed_{seed}/bootstrap_training/best_vit_tower.pth'
     artifact=Path(resolved.profile.options['checkpoint']).parent
     t0=time.perf_counter()
-    pred=predict_astrominn_vit_pool(
-        pool_path=replay.candidate_pool_dir,object_ids=tuple(u.object_ids),
-        batch_size=64,num_workers=0,device='cuda',legacy_code_dir=DEFAULT_LEGACY_CODE_DIR,
-        artifact_dir=artifact,vit_checkpoint=checkpoint)
-    pool_seconds=time.perf_counter()-t0
-    if pred.embeddings is None:raise RuntimeError('Missing candidate classifier-input representations')
+    pred=predict_astrominn_vit_pool(pool_path=replay.candidate_pool_dir,
+        object_ids=tuple(u.object_ids),batch_size=64,num_workers=0,device='cuda',
+        legacy_code_dir=DEFAULT_LEGACY_CODE_DIR,artifact_dir=artifact,vit_checkpoint=cp)
+    pool_time=time.perf_counter()-t0
+    t0=time.perf_counter()
+    anchor=predict_confirmed_objects(manifest_path=replay.initial_manifest,
+        dataset=replace(ds,train_manifest=replay.initial_manifest),checkpoint_path=cp,
+        artifact_dir=artifact,device='cuda',batch_size=64,num_workers=0,
+        legacy_code_dir=DEFAULT_LEGACY_CODE_DIR)
+    anchor_time=time.perf_counter()-t0
     known={}
-    with Path(replay.initial_manifest).open(newline='') as f:
-        for row in csv.DictReader(f):
+    with replay.initial_manifest.open(newline='') as stream:
+        for row in csv.DictReader(stream):
             oid=row[ds.object_id_column]
-            raw=row[ds.label_column]
-            label=MODEL_CLASS_NAMES[LABEL_TO_INDEX[raw]]
+            label=MODEL_CLASS_NAMES[LABEL_TO_INDEX[row[ds.label_column]]]
             if oid in known and known[oid]!=label:raise ValueError('Conflicting L0 labels')
             known[oid]=label
-    rare=tuple(sorted(MODEL_CLASS_NAMES,key=lambda name:(sum(x==name for x in known.values()),
-                            MODEL_CLASS_NAMES.index(name)))[:2])
-    labeled=None
-    if policy!='similar_fl':
-        t1=time.perf_counter()
-        labeled=predict_confirmed_objects(manifest_path=replay.initial_manifest,
-               dataset=replace(ds,train_manifest=replay.initial_manifest),
-               checkpoint_path=checkpoint,artifact_dir=artifact,device='cuda',
-               batch_size=64,num_workers=0,legacy_code_dir=DEFAULT_LEGACY_CODE_DIR)
-        anchor_seconds=time.perf_counter()-t1
-        if set(labeled.object_ids)!=set(known):raise RuntimeError('L0 reference mismatch')
-    else:anchor_seconds=0.
-    data=SimilarInput(
-         candidate_ids=tuple(pred.object_ids),candidate_probabilities=pred.predictions.as_probabilities(),
-         candidate_embeddings=pred.embeddings,
-         reference_ids=() if labeled is None else tuple(labeled.object_ids),
-         reference_probabilities=None if labeled is None else labeled.predictions.as_probabilities(),
-         reference_embeddings=None if labeled is None else labeled.embeddings,
-         reference_labels=() if labeled is None else tuple(known[x] for x in labeled.object_ids),
-         rare_classes=rare if policy=='similar_flqmi_rare' else (),policy=policy)
+    if set(anchor.object_ids)!=set(known):raise ValueError('Confirmed L0 inference mismatch')
+    obj=DirectInput(candidate_ids=tuple(pred.object_ids),
+        probabilities=pred.predictions.as_probabilities(),
+        confirmed_ids=tuple(anchor.object_ids),
+        confirmed_probabilities=anchor.predictions.as_probabilities(),
+        confirmed_labels=tuple(known[x] for x in anchor.object_ids),
+        class_names=tuple(MODEL_CLASS_NAMES))
+    # The pilot oracle exposes only labels explicitly requested via query.
+    with replay.hidden_labels.open(newline='') as stream:
+        reader=csv.DictReader(stream)
+        rows=list(reader)
+    if not rows:raise RuntimeError('Hidden-label file empty')
+    candidates={row['object_id']:MODEL_CLASS_NAMES[LABEL_TO_INDEX[row['target_label']]] for row in rows}
+    if set(candidates)!=set(pred.object_ids):raise RuntimeError('Hidden table does not match U0')
+    logs=[]
+    def query(ids,*,phase,class_name,subround):
+        if any(x not in candidates for x in ids):raise KeyError('Unknown requested object')
+        labels=[candidates[x] for x in ids]
+        logs.append({'phase':phase,'class':class_name,'subround':subround,'ids':list(ids),'labels':labels})
+        return labels
     budget=min(len(pred.object_ids),math.ceil(load(replay.summary_path)['historical_objects']*.10))
-    t2=time.perf_counter()
-    scored=SimilarScorer().score(data)
-    selected=SimilarSelector(data).select(ids=pred.object_ids,scores=scored,k=budget,
-                                         pool=Pool.from_ids(pred.object_ids))
-    seconds=time.perf_counter()-t2
-    if len(set(selected.ids))!=budget:raise RuntimeError('SIMILAR pilot duplicate selection')
+    t0=time.perf_counter()
+    seed_int=int(np.random.SeedSequence([seed,1,15015]).generate_state(1)[0])
+    selected=DirectSelector(obj,parallel_batch=5,seed=seed_int).select(budget=budget,query=query)
+    selection_seconds=time.perf_counter()-t0
+    revealed={x for entry in logs for x in entry['ids']}
+    if len(revealed)!=budget or set(selected.ids)!=revealed:raise RuntimeError('Pilot oracle trace mismatch')
     reference=load(PERSISTENT/'runs'/TASK4/'entropy'/f'seed_{seed}/cycle_001/selection.json')['ids']
-    if len(reference)!=budget:raise ValueError('Different acquisition budget from Task4')
-    overlap=len(set(selected.ids)&set(reference))
-    dump(out,{'policy':policy,'seed':seed,'selected_ids':selected.ids,'selected_unique':True,
-       'candidate_count':len(pred.object_ids),'selection_budget':budget,
-       'reference_count':len(known) if labeled is not None else 0,'rare_classes_from_L0':rare,
-       'query_size':selected.metadata['query_size'],'metadata':selected.metadata,
-       'selection_seconds':seconds,'pool_inference_seconds':pool_seconds,
-       'reference_inference_seconds':anchor_seconds,
-       'entropy_overlap_count':overlap,'entropy_overlap_fraction':overlap/budget,
-       'checkpoint_sha256':sha(checkpoint),'initial_manifest_sha256':sha(replay.initial_manifest),
-       'hidden_candidate_labels_accessed':False,'validation_labels_accessed':False,
-       'task4_L0_U0_equal':True})
-    print(json.dumps({k:v for k,v in load(out).items() if k!='selected_ids'},indent=2))
+    dump(out,{'policy':policy,'seed':seed,'selected_ids':selected.ids,
+        'selected_unique':True,'selection_budget':budget,'candidate_count':len(pred.object_ids),
+        'pilot_oracle_transcript':logs,'metadata':selected.metadata,
+        'pool_inference_seconds':pool_time,'anchor_inference_seconds':anchor_time,
+        'selection_seconds':selection_seconds,'oracle_subrounds':len(logs),
+        'entropy_overlap_count':len(set(selected.ids)&set(reference)),
+        'checkpoint_sha256':sha(cp),'initial_manifest_sha256':sha(replay.initial_manifest),
+        'task4_L0_U0_equal':True,'unqueried_labels_used_in_acquisition':False,
+        'validation_labels_accessed':False,'test_labels_accessed':False})
+    print(json.dumps({k:v for k,v in load(out).items() if k not in ('selected_ids','pilot_oracle_transcript')},indent=2))
 
 
 def pilot_status():
@@ -273,8 +280,8 @@ def filesystem_probe():
     try:
         with temp.open('wb') as fh:
             fh.write(payload);fh.flush();os.fsync(fh.fileno())
-        if temp.read_bytes()!=payload:raise RuntimeError('Task14 /work/hdd readback failed')
-        print('Task14 /work/hdd 16MiB filesystem probe passed')
+        if temp.read_bytes()!=payload:raise RuntimeError('Task15 /work/hdd readback failed')
+        print('Task15 /work/hdd 16MiB filesystem probe passed')
     finally:temp.unlink(missing_ok=True)
 
 
@@ -292,17 +299,17 @@ def submit(walltime):
         f=JOB/'pilot'/policy/'seed_135/result.json'
         if not f.is_file() or not load(f).get('selected_unique'):
             raise RuntimeError(f'Missing successful acquisition-only GPU pilot: {policy}')
-    if (JOB/'submitted.json').exists():raise RuntimeError('Task14 already submitted')
+    if (JOB/'submitted.json').exists():raise RuntimeError('Task15 already submitted')
     made=[];ledger=[];prev={}
     try:
         for policy,seed,cycle in jobs():
             before=prev.get((policy,seed))
             opts=['sbatch','--parsable','--hold','--time',walltime,
-                  '--job-name',f'T14_{policy}_{seed}_{cycle}',
+                  '--job-name',f'T15_{policy}_{seed}_{cycle}',
                   '--output',str(JOB/'logs/%x_%j.out'),
                   '--error',str(JOB/'logs/%x_%j.err')]
             if before:opts.extend(['--dependency',f'afterok:{before}'])
-            opts.extend([str(JOB/'source/scripts/adaptive/task14_worker.sbatch'),
+            opts.extend([str(JOB/'source/scripts/research/historical_replay/task15/task15_worker.sbatch'),
                          str(JOB),'job',policy,str(seed),str(cycle)])
             result=subprocess.check_output(opts,text=True).strip().split(';')[0]
             if not result.isdigit():raise RuntimeError('Unexpected sbatch response '+result)
@@ -313,7 +320,7 @@ def submit(walltime):
     except Exception:
         if made and not (JOB/'submitted.json').exists():subprocess.run(['scancel',*made],check=False)
         raise
-    print(f'Submitted {len(made)} HELD Task14 jobs in nine independent chains. No jobs released.')
+    print(f'Submitted {len(made)} HELD Task15 jobs in three independent chains. No jobs released.')
 
 
 def release(policy=None,seed=None,cycle=None,all_jobs=False):
@@ -365,7 +372,7 @@ def collect(destination):
                 paths.append(run/name)
             for cycle in range(0,CYCLES+1):
                 cy=run/f'cycle_{cycle:03d}'
-                for name in ('selection.json','revealed_labels.json','cycle_summary.json'):
+                for name in ('selection.json','revealed_labels.json','direct_oracle_journal.json','cycle_summary.json'):
                     paths.append(cy/name)
                 acy=artifact/f'cycle_{cycle:03d}'/'evaluation'
                 for name in ('evaluation_summary.json','validation_per_class_metrics.json',
@@ -383,7 +390,7 @@ def collect(destination):
 
 def training_job(policy,seed,cycle,job_dir):
     if policy not in POLICIES or seed not in SEEDS or cycle not in range(1,CYCLES+1):
-        raise ValueError('Invalid Task14 training case')
+        raise ValueError('Invalid Task15 training case')
     verify(job_dir)
     env=dict(os.environ,PYTHONPATH=str(Path(job_dir)/'source/src')+os.pathsep+os.environ.get('PYTHONPATH',''))
     runner=Path(job_dir)/'source/scripts/run_astrominn_closed_loop.py'
@@ -397,7 +404,7 @@ def main():
                      'filesystem-probe','submit','release','status','collect','job'))
     ap.add_argument('policy_pos',nargs='?');ap.add_argument('seed_pos',nargs='?',type=int)
     ap.add_argument('cycle_pos',nargs='?',type=int)
-    ap.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[2])
+    ap.add_argument('--overlay',type=Path,default=Path(__file__).resolve().parents[4])
     ap.add_argument('--job-dir',type=Path,default=JOB)
     ap.add_argument('--seed',type=int,default=None)
     ap.add_argument('--policy',choices=POLICIES)
@@ -417,7 +424,7 @@ def main():
     if command=='submit':submit(arg.walltime);return
     if command=='release':release(arg.policy,arg.seed,arg.cycle,arg.all);return
     if command=='status':status();return
-    if command=='collect':collect(arg.destination or Path('/u/dkourtesis/task14_results.zip'));return
+    if command=='collect':collect(arg.destination or Path('/u/dkourtesis/task15_results.zip'));return
     if command=='job':training_job(arg.policy_pos,arg.seed_pos,arg.cycle_pos,arg.job_dir);return
 
 if __name__=='__main__':main()
