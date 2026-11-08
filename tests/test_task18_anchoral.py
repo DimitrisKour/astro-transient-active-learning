@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'scripts/adaptive'))
+sys.path.insert(0,str(ROOT/'scripts/research/historical_replay/task18'))
 from al_pipeline.core.advanced_acquisition.anchoral import AnchorALInput,AnchorALSelector
 from al_pipeline.core.pool import Pool
 import task18
