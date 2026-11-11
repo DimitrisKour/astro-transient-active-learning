@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="478" viewBox="0 0 1200 478" role="img" aria-labelledby="title desc">
+  <title id="title">The pool-based active-learning cycle</title>
+  <desc id="desc">The labeled pool is used for model training. The model predicts on the unlabeled pool; an acquisition strategy selects a query batch, an oracle reveals its labels, and the pools are updated. The expanded labeled pool feeds the next cycle.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#66868B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="478" fill="#FAFBFA"/>
+  <g font-family="Inter, 'Segoe UI', Arial, sans-serif" fill="#2B3D46">
+    <text x="40" y="50" font-size="17" font-weight="700" letter-spacing="2">THE ACTIVE-LEARNING CYCLE</text>
+    <text x="40" y="80" font-size="16" fill="#6A7980">A reference for the digits and astronomical-transient notebooks</text>
+    <g fill="none" stroke="#66868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)">
+      <path d="M 220 205 H 257"/>
+      <path d="M 450 205 H 487"/>
+      <path d="M 680 205 H 717"/>
+      <path d="M 910 205 H 947"/>
+      <path d="M 1059 258 V 305"/>
+      <path d="M 950 347 H 913"/>
+      <path d="M 720 347 H 683"/>
+      <path d="M 585 146 V 157"/>
+    </g>
+    <path d="M 585 388 V 433 H 125 V 262" fill="none" stroke="#66868B" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <text x="264" y="423" font-size="12" font-weight="700" letter-spacing="1.5" fill="#66868B">NEXT CYCLE</text>
+
+    <rect x="490" y="104" width="190" height="42" rx="12" fill="#E9F0F4" stroke="#C9D7DE" stroke-width="1.2"/>
+    <text x="585" y="130" font-size="15" font-weight="600" text-anchor="middle">Uₜ · Unlabeled pool</text>
+
+    <rect x="30" y="158" width="190" height="100" rx="15" fill="#E8F1EE" stroke="#BED5CD" stroke-width="1.4"/>
+    <rect x="260" y="158" width="190" height="100" rx="15" fill="#FFFFFF" stroke="#C9D7DE" stroke-width="1.4"/>
+    <rect x="490" y="158" width="190" height="100" rx="15" fill="#FFFFFF" stroke="#C9D7DE" stroke-width="1.4"/>
+    <rect x="720" y="158" width="190" height="100" rx="15" fill="#EAF0F5" stroke="#C9D7DE" stroke-width="1.4"/>
+    <rect x="950" y="158" width="220" height="100" rx="15" fill="#EAF0F5" stroke="#C9D7DE" stroke-width="1.4"/>
+
+    <text x="125" y="194" font-size="23" font-weight="700" text-anchor="middle">Lₜ</text>
+    <text x="125" y="217" font-size="16" font-weight="600" text-anchor="middle">Labeled pool</text>
+    <text x="125" y="237" font-size="12.5" fill="#6A7980" text-anchor="middle">Available labels</text>
+
+    <text x="355" y="199" font-size="18" font-weight="650" text-anchor="middle">Training</text>
+    <text x="355" y="227" font-size="14" fill="#6A7980" text-anchor="middle">Fit model on Lₜ</text>
+
+    <text x="585" y="199" font-size="18" font-weight="650" text-anchor="middle">Inference</text>
+    <text x="585" y="227" font-size="14" fill="#6A7980" text-anchor="middle">Predict over Uₜ</text>
+
+    <text x="815" y="199" font-size="18" font-weight="650" text-anchor="middle">Acquisition</text>
+    <text x="815" y="227" font-size="13.5" fill="#6A7980" text-anchor="middle">Choose a batch</text>
+
+    <text x="1060" y="194" font-size="23" font-weight="700" text-anchor="middle">Qₜ</text>
+    <text x="1060" y="217" font-size="16" font-weight="600" text-anchor="middle">Queried objects</text>
+    <text x="1060" y="237" font-size="12.5" fill="#6A7980" text-anchor="middle">Selected from Uₜ</text>
+
+    <rect x="950" y="306" width="220" height="82" rx="15" fill="#F5EDEC" stroke="#E2CAC7" stroke-width="1.4"/>
+    <rect x="720" y="306" width="190" height="82" rx="15" fill="#FFFFFF" stroke="#C9D7DE" stroke-width="1.4"/>
+    <rect x="490" y="306" width="190" height="82" rx="15" fill="#E8F1EE" stroke="#BED5CD" stroke-width="1.4"/>
+
+    <text x="1060" y="342" font-size="18" font-weight="650" text-anchor="middle">Oracle</text>
+    <text x="1060" y="366" font-size="13.5" fill="#6A7980" text-anchor="middle">Reveal labels for Qₜ</text>
+
+    <text x="815" y="342" font-size="18" font-weight="650" text-anchor="middle">Update pools</text>
+    <text x="815" y="366" font-size="13" fill="#6A7980" text-anchor="middle">Move labeled objects</text>
+
+    <text x="585" y="339" font-size="22" font-weight="700" text-anchor="middle">Lₜ₊₁</text>
+    <text x="585" y="367" font-size="13.5" fill="#6A7980" text-anchor="middle">Expanded labeled pool</text>
+  </g>
+</svg>
