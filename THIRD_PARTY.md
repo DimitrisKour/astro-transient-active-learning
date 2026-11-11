@@ -18,8 +18,6 @@ The tables under `examples/data/` are aggregated or class-level **validation mea
 
 The GPLv3 software license should **not** be interpreted as a new license for underlying survey data, data services, model weights or third-party content. Users who reproduce historical experiments must independently obtain access to the relevant data and code and comply with their terms. See [the export provenance and interpretation notes](examples/data/README.md).
 
-Previously published MIT-licensed revisions remain available under their original terms. The current GPLv3 license applies to new distributions of this version of the author's original material; it does not retroactively revoke earlier MIT grants.
-
 The repository's historical HPC directory names and paths are references to non-bundled inputs, not files redistributed by the project. No endorsement by any named institution or research team is implied.
 
 ## Copyright versus scientific credit
