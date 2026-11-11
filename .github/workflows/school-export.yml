@@ -1,0 +1,53 @@
+name: Rubin school export reproducibility
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/examples/export_rubin_school.py"
+      - "scripts/examples/school_templates/**"
+      - "tests/examples/test_school_export.py"
+      - "examples/**"
+      - ".github/workflows/school-export.yml"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-school-checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MPLBACKEND: Agg
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install public CPU-only teaching dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[teaching]"
+          python -m pip install pytest
+      - name: Validate exporter, notebook source, data paths and no-overwrite behavior
+        run: python -m pytest -q tests/examples/test_school_export.py
+      - name: Create temporary school checkout and export complete teaching material
+        run: |
+          mkdir -p "/tmp/Rubin-ML-Training-School/.git"
+          mkdir -p "/tmp/Rubin-ML-Training-School/day3/01_active_learning"
+          printf 'placeholder\n' > "/tmp/Rubin-ML-Training-School/day3/01_active_learning/README.md"
+          python scripts/examples/export_rubin_school.py --school-root /tmp/Rubin-ML-Training-School --overwrite
+      - name: Re-execute both exported notebooks from school checkout
+        run: |
+          cd /tmp/Rubin-ML-Training-School
+          python day3/01_active_learning/run_notebooks.py --output-dir /tmp/school-notebook-results
+          test -s /tmp/school-notebook-results/01_active_learning_digits_executed.ipynb
+          test -s /tmp/school-notebook-results/02_applecider_astronomy_active_learning_executed.ipynb
