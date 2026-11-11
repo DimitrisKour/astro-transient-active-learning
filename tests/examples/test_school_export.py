@@ -57,7 +57,7 @@ def test_school_export_has_executable_notebooks_and_bundled_data(tmp_path):
     for filename in module.DATA_FILES:
         file = session / "teaching_data" / filename
         assert file.is_file()
-        assert filename in manifest["content"]
+        assert f"teaching_data/{filename}" in manifest["content"]
     for file in manifest["content"]:
         assert (session / file).is_file()
 
