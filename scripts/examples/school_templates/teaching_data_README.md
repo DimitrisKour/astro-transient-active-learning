@@ -18,4 +18,4 @@ The cumulative Jaccard table covers the objects selected in the first two acquis
 
 For complete reproductions of the **historical AstroMiNN model-training runs**, separate datasets, checkpoint files, model implementations and computational resources would be necessary. This school exercise intentionally reproduces the **analysis and its plots**, not those underlying historical fits.
 
-The original notebook and associated software are copyright (c) 2026 Dimitris Kourtesis, under the repository's MIT terms as applicable; no additional ownership of third-party data or models is claimed. See [the included MIT notice](../LICENSE_AL_PIPELINE) and [upstream third-party clarification](https://github.com/DimitrisKour/astro-transient-active-learning/blob/main/THIRD_PARTY.md).
+The original teaching notebook and associated software are copyright (c) 2026 Dimitris Kourtesis, contributed under the [school's GPLv3 license](../../../LICENSE). No additional ownership of third-party data or models is claimed. See [upstream third-party clarification](https://github.com/DimitrisKour/astro-transient-active-learning/blob/main/THIRD_PARTY.md).

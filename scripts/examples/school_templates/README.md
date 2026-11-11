@@ -70,6 +70,6 @@ Successful execution verifies the teaching workflow, not numerical retraining of
 
 ## Sources, license, and attribution
 
-The software, original notebook code and accompanying teaching material originate in [Dimitris Kourtesis's active-learning repository](https://github.com/DimitrisKour/astro-transient-active-learning), revision `__SOURCE_COMMIT__`. The original software is released under MIT; the full notice is preserved in [LICENSE_AL_PIPELINE](LICENSE_AL_PIPELINE). The wider school repository has its own GPLv3 license; the MIT notice is retained for these imported materials.
+The original software, teaching notebook code and accompanying material originate in [Dimitris Kourtesis's active-learning repository](https://github.com/DimitrisKour/astro-transient-active-learning), revision `__SOURCE_COMMIT__`. These materials are contributed by the author (copyright © 2026) under the school's existing [GPLv3 license](../../LICENSE); the current public source repository also uses GPLv3. No additional license file is required in this session folder.
 
 The archived validation tables have accompanying provenance files, and are **not** raw ZTF or Rubin datasets. This repository makes no claim over third-party survey data, model checkpoints or upstream AstroMiNN/AppleCiDEr implementations. See [`teaching_data/README.md`](teaching_data/README.md) and the [source project's attribution](https://github.com/DimitrisKour/astro-transient-active-learning/blob/main/THIRD_PARTY.md).

@@ -31,7 +31,8 @@ def test_school_export_has_executable_notebooks_and_bundled_data(tmp_path):
     assert len(manifest["source_commit"]) == 40
     assert "__SOURCE_COMMIT__" not in (session / "README.md").read_text()
     assert "al-pipeline[teaching]" in (session / "README.md").read_text()
-    assert (session / "LICENSE_AL_PIPELINE").read_text().startswith("MIT License")
+    assert not (session / "LICENSE_AL_PIPELINE").exists()
+    assert "school's existing [GPLv3 license]" in (session / "README.md").read_text()
     assert (session / "run_notebooks.py").is_file()
 
     for name in ("01_active_learning_digits.ipynb",
@@ -58,6 +59,7 @@ def test_school_export_has_executable_notebooks_and_bundled_data(tmp_path):
         file = session / "teaching_data" / filename
         assert file.is_file()
         assert f"teaching_data/{filename}" in manifest["content"]
+    assert "LICENSE_AL_PIPELINE" not in manifest["content"]
     for file in manifest["content"]:
         assert (session / file).is_file()
 

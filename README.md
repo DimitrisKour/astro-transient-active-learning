@@ -29,7 +29,7 @@ source .venv/bin/activate                 # macOS/Linux
 python -m pip install -e ".[teaching]"
 ```
 
-On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead. The repository may require GitHub access while it remains private.
+On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead. The repository is publicly accessible on GitHub.
 
 Both student notebooks **already contain executed figures** and can be opened immediately in Jupyter or VS Code. To run them from scratch on CPU and save separate, executed copies:
 
@@ -106,6 +106,6 @@ The default suite runs without private astronomy data or GPUs. Historical experi
 
 ## License, authorship, attribution and citation
 
-**Copyright (c) 2026 Dimitris Kourtesis.** The original software and its accompanying documentation are released under the [MIT License](LICENSE), to the extent that their copyright is held by the stated author. The project is authored and maintained independently; the integrations do not imply ownership of upstream AppleCiDEr, AstroMiNN, FLARE, Hyrax, survey infrastructure, model architectures, or datasets. See [third-party and research-output scope](THIRD_PARTY.md) for distinctions between this repository's original code and separately supplied scientific systems and data.
+**Copyright (c) 2026 Dimitris Kourtesis.** The original software and its accompanying documentation are released under the [GNU General Public License v3.0 (GPL-3.0-only)](LICENSE), to the extent that their copyright is held by the stated author. The project is authored and maintained independently; the integrations do not imply ownership of upstream AppleCiDEr, AstroMiNN, FLARE, Hyrax, survey infrastructure, model architectures, or datasets. See [third-party and research-output scope](THIRD_PARTY.md) for distinctions between this repository's original code and separately supplied scientific systems and data.
 
-For research attribution, see [CITATION.cff](CITATION.cff). For publication and Git-history security checks, see the [pre-publication review](docs/publication_review.md). The experimental notebooks and research scripts are provided for reproducibility; they are not claims of equivalence with independently maintained upstream model implementations.
+Previously published MIT-licensed revisions remain available under their original terms; changing the license for future revisions does not revoke existing permissions. For research attribution, see [CITATION.cff](CITATION.cff). For publication and Git-history security checks, see the [pre-publication review](docs/publication_review.md). The experimental notebooks and research scripts are provided for reproducibility; they are not claims of equivalence with independently maintained upstream model implementations.

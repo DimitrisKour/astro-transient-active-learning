@@ -10,6 +10,10 @@ on:
       - "examples/**"
       - ".github/workflows/school-export.yml"
       - "pyproject.toml"
+      - "LICENSE"
+      - "README.md"
+      - "CITATION.cff"
+      - "THIRD_PARTY.md"
   workflow_dispatch:
 
 permissions:
