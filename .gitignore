@@ -20,3 +20,19 @@ runs/
 
 # Python core dumps from HPC nodes (never commit binary crash memory)
 /core.python.*
+
+# Additional private credentials, tokens, downloaded datasets, and checkpoints
+.secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.ckpt
+*.safetensors
+*.parquet
+*.sqlite
+*.sqlite3
+wandb/
+.mlflow/
+.DS_Store
