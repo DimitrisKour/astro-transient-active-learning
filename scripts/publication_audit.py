@@ -21,11 +21,11 @@ RULES = {
     "jwt-literal": re.compile(rb"\beyJ[A-Za-z0-9_-]{18,}\.eyJ[A-Za-z0-9_-]{18,}\.[A-Za-z0-9_-]{8,}"),
     "password-assignment": re.compile(
         rb"(?i)\b(?:password|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)"
-        rb"\s*[:=]\s*['\\"][A-Za-z0-9_./+=-]{16,}['\\"]"
+        rb"""\s*[:=]\s*['"][A-Za-z0-9_./+=-]{16,}['"]"""
     ),
 }
 INFORMATIONAL = {
-    "hpc-local-path": re.compile(rb"/(?:projects|work)/(?:bcrv|hdd|nvme)/[^\s'\\"]{8,}"),
+    "hpc-local-path": re.compile(rb"""/(?:projects|work)/(?:bcrv|hdd|nvme)/[^\s'"]{8,}"""),
     "personal-home-path": re.compile(rb"(?:/home/[A-Za-z0-9._-]+/|C:\\Users\\[A-Za-z0-9._-]+\\)"),
 }
 TEXT_SUFFIXES = {
