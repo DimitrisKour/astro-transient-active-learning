@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this repository in research, please cite the software."
+type: software
+title: "Active Learning for Astronomical Transients"
+authors:
+  - family-names: Kourtesis
+    given-names: Dimitris
+repository-code: "https://github.com/DimitrisKour/astro-transient-active-learning"
+license: MIT
+version: "0.1.0"
+keywords:
+  - active learning
+  - astronomical transients
+  - pool-based sampling
+  - uncertainty sampling
+  - scientific machine learning
