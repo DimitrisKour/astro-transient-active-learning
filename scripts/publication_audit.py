@@ -16,17 +16,17 @@ from pathlib import Path
 RULES = {
     "private-key-marker": re.compile(rb"-----BEGIN (?:[A-Z ]*PRIVATE KEY|OPENSSH PRIVATE KEY)-----"),
     "github-token": re.compile(rb"(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})"),
-    "cloud-aws-access-key": re.compile(rb"\\b(?:AKIA|ASIA)[A-Z0-9]{16}\\b"),
-    "openai-secret": re.compile(rb"\\bsk-(?:proj-)?[A-Za-z0-9_-]{25,}"),
-    "jwt-literal": re.compile(rb"\\beyJ[A-Za-z0-9_-]{18,}\\.eyJ[A-Za-z0-9_-]{18,}\\.[A-Za-z0-9_-]{8,}"),
+    "cloud-aws-access-key": re.compile(rb"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
+    "openai-secret": re.compile(rb"\bsk-(?:proj-)?[A-Za-z0-9_-]{25,}"),
+    "jwt-literal": re.compile(rb"\beyJ[A-Za-z0-9_-]{18,}\.eyJ[A-Za-z0-9_-]{18,}\.[A-Za-z0-9_-]{8,}"),
     "password-assignment": re.compile(
-        rb"(?i)\\b(?:password|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)"
-        rb"\\s*[:=]\\s*['\\\"][A-Za-z0-9_./+=-]{16,}['\\\"]"
+        rb"(?i)\b(?:password|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)"
+        rb"\s*[:=]\s*['\\"][A-Za-z0-9_./+=-]{16,}['\\"]"
     ),
 }
 INFORMATIONAL = {
-    "hpc-local-path": re.compile(rb"/(?:projects|work)/(?:bcrv|hdd|nvme)/[^\\s'\\\"]{8,}"),
-    "personal-home-path": re.compile(rb"(?:/home/[A-Za-z0-9._-]+/|C:\\\\Users\\\\[A-Za-z0-9._-]+\\\\)"),
+    "hpc-local-path": re.compile(rb"/(?:projects|work)/(?:bcrv|hdd|nvme)/[^\s'\\"]{8,}"),
+    "personal-home-path": re.compile(rb"(?:/home/[A-Za-z0-9._-]+/|C:\\Users\\[A-Za-z0-9._-]+\\)"),
 }
 TEXT_SUFFIXES = {
     ".py", ".md", ".rst", ".txt", ".toml", ".json", ".yaml", ".yml", ".sh",
@@ -58,7 +58,7 @@ def findings(content: bytes, *, include_paths: bool) -> list[str]:
 def scan_tracked(include_paths: bool) -> tuple[int, int]:
     count = 0
     flagged = 0
-    for raw in git("ls-files", "-z").split(b"\\x00"):
+    for raw in git("ls-files", "-z").split(b"\x00"):
         if not raw:
             continue
         path = raw.decode("utf-8", errors="replace")
@@ -83,7 +83,7 @@ def scan_history(include_paths: bool) -> tuple[int, int]:
     # without requiring the content of uninteresting Git objects.
     shas = [entry.split(b" ", 1)[0] for entry in entries if entry]
     types = git("cat-file", "--batch-check=%(objectname) %(objecttype) %(objectsize)",
-                input=b"\\n".join(shas) + b"\\n").splitlines()
+                input=b"\n".join(shas) + b"\n").splitlines()
     metadata = {line.split()[0]: (line.split()[1], int(line.split()[2]))
                 for line in types if len(line.split()) == 3}
     # Keep one path per object. Identical content is inspected once.
