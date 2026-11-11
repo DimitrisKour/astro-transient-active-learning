@@ -91,7 +91,7 @@ def export(school_root: Path, *, overwrite: bool) -> Path:
         dest / "teaching_data" / filename: DATA_SOURCE / filename
         for filename in DATA_FILES
     })
-    copied[dest / "teaching_data/README.md"] = DATA_SOURCE / "README.md"
+    copied[dest / "teaching_data/README.md"] = (SOURCE_ROOT / "scripts/examples/school_templates/teaching_data_README.md")
     copied[dest / "run_notebooks.py"] = RUNNER_SOURCE
     copied[dest / "LICENSE_AL_PIPELINE"] = MIT_SOURCE
 
@@ -144,7 +144,9 @@ def export(school_root: Path, *, overwrite: bool) -> Path:
             )
         else:
             shutil.copyfile(src, path)
-    readme_path.write_text(school_readme, encoding="utf-8")
+    readme_path.write_text(
+        school_readme.replace("__SOURCE_COMMIT__", source_commit()), encoding="utf-8"
+    )
 
     manifest = {
         "source_repository": "https://github.com/DimitrisKour/astro-transient-active-learning",
