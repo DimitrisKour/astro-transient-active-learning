@@ -11,59 +11,7 @@ Both notebooks illustrate the same pool-based active-learning cycle:
 
 ![Active-learning cycle: labeled pool → training → inference on unlabeled candidates → acquisition → oracle → update pools → next cycle](active_learning_loop.svg)
 
-**Figure.** The model learns from the labeled pool # Example notebooks
-
-Hands-on examples of the reusable `al_pipeline` active-learning interfaces.
-The notebooks are designed for participants on their own computers, in Jupyter
-environments, or on shared computing systems. No particular institution or HPC
-platform is required for the introductory example.
-
-## The active-learning loop
-
-Both notebooks illustrate the same pool-based active-learning cycle:
-
-![Active-learning cycle: labeled pool → training → inference on unlabeled candidates → acquisition → oracle → update pools → next cycle](active_learning_loop.svg)
-
-L_t`$, scores candidates in the unlabeled pool # Example notebooks
-
-Hands-on examples of the reusable `al_pipeline` active-learning interfaces.
-The notebooks are designed for participants on their own computers, in Jupyter
-environments, or on shared computing systems. No particular institution or HPC
-platform is required for the introductory example.
-
-## The active-learning loop
-
-Both notebooks illustrate the same pool-based active-learning cycle:
-
-![Active-learning cycle: labeled pool → training → inference on unlabeled candidates → acquisition → oracle → update pools → next cycle](active_learning_loop.svg)
-
-U_t`$, and an acquisition policy selects a query batch # Example notebooks
-
-Hands-on examples of the reusable `al_pipeline` active-learning interfaces.
-The notebooks are designed for participants on their own computers, in Jupyter
-environments, or on shared computing systems. No particular institution or HPC
-platform is required for the introductory example.
-
-## The active-learning loop
-
-Both notebooks illustrate the same pool-based active-learning cycle:
-
-![Active-learning cycle: labeled pool → training → inference on unlabeled candidates → acquisition → oracle → update pools → next cycle](active_learning_loop.svg)
-
-Q_t`$. An oracle provides labels, which are added to form # Example notebooks
-
-Hands-on examples of the reusable `al_pipeline` active-learning interfaces.
-The notebooks are designed for participants on their own computers, in Jupyter
-environments, or on shared computing systems. No particular institution or HPC
-platform is required for the introductory example.
-
-## The active-learning loop
-
-Both notebooks illustrate the same pool-based active-learning cycle:
-
-![Active-learning cycle: labeled pool → training → inference on unlabeled candidates → acquisition → oracle → update pools → next cycle](active_learning_loop.svg)
-
-L_{t+1}`$ before the next cycle.
+**Figure.** The model learns from the labeled pool $`L_t`$, scores candidates in the unlabeled pool $`U_t`$, and an acquisition policy selects a query batch $`Q_t`$. An oracle provides labels, which are added to form $`L_{t+1}`$ before the next cycle.
 
 In **Notebook 01**, the oracle reveals held-back labels for handwritten digits as students explore acquisition rules. In **Notebook 02**, students examine **recorded AstroMiNN historical-replay results** from this workflow: archived labels were revealed during the original experiments, but the notebook itself analyzes saved metrics rather than rerunning training or acquisition.
 
