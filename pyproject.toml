@@ -7,6 +7,12 @@ name = "al-pipeline"
 version = "0.1.0"
 description = "Active learning for astronomical transients with a reusable model-independent core"
 readme = "README.md"
+license = "MIT"
+authors = [{name = "Dimitris Kourtesis"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.24"]
 

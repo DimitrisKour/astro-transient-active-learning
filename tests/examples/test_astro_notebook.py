@@ -23,7 +23,7 @@ def test_historical_notebook_executes_without_images_or_model_training():
     assert "make_synthetic_demo" not in text
     assert "Felipe" not in text
     assert "TODO:" in text
-    assert "len(policies) <= 3" in text
+    assert "1 <= len(policies) <= 4" in text
     result = NotebookClient(nb, timeout=180, kernel_name="python3",
                             allow_errors=False,
                             resources={"metadata": {"path": str(ROOT)}}).execute()

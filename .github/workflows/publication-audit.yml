@@ -1,0 +1,34 @@
+name: Publication safety audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/publication_audit.py"
+      - "docs/publication_review.md"
+      - "LICENSE"
+      - "THIRD_PARTY.md"
+      - "CITATION.cff"
+      - ".github/workflows/publication-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate audit scanner syntax
+        run: python -m py_compile scripts/publication_audit.py
+      - name: Scan current tracked files for potential secrets
+        run: python scripts/publication_audit.py
+      - name: Scan all fetched historical Git blobs for potential secrets
+        run: python scripts/publication_audit.py --history

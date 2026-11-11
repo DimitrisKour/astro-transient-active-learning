@@ -17,7 +17,10 @@ def test_notebook_format_all_code_parses_and_exercises_are_opt_in():
     cells = raw["cells"]
     assert len(cells) >= 30
     assert len({cell["id"] for cell in cells}) == len(cells)
-    codes = [cell["source"] for cell in cells if cell["cell_type"] == "code"]
+    codes = [
+        "".join(cell["source"]) if isinstance(cell["source"], list) else cell["source"]
+        for cell in cells if cell["cell_type"] == "code"
+    ]
     assert len(codes) >= 15
     for code in codes:
         ast.parse(code)

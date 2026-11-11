@@ -103,3 +103,9 @@ python -m pytest -q tests/examples                       # Notebook and export c
 The default suite runs without private astronomy data or GPUs. Historical experiment tests may need external artifacts, optional packages, and specific environments; consult the [testing guide](docs/testing.md) and [research script navigation](scripts/README.md). For implementation provenance, see the [migration notes](docs/migration.md).
 
 **Research-data note:** the included teaching tables contain summarized validation results, not raw survey observations or model weights. Differences across independently executed experiment suites are descriptive unless their full protocols are established as comparable. Review the [data and redistribution notes](examples/data/README.md) before sharing research-derived measurements outside an authorized audience.
+
+## License, authorship, attribution and citation
+
+**Copyright (c) 2026 Dimitris Kourtesis.** The original software and its accompanying documentation are released under the [MIT License](LICENSE), to the extent that their copyright is held by the stated author. The project is authored and maintained independently; the integrations do not imply ownership of upstream AppleCiDEr, AstroMiNN, FLARE, Hyrax, survey infrastructure, model architectures, or datasets. See [third-party and research-output scope](THIRD_PARTY.md) for distinctions between this repository's original code and separately supplied scientific systems and data.
+
+For research attribution, see [CITATION.cff](CITATION.cff). For publication and Git-history security checks, see the [pre-publication review](docs/publication_review.md). The experimental notebooks and research scripts are provided for reproducibility; they are not claims of equivalence with independently maintained upstream model implementations.
