@@ -36,7 +36,6 @@ DATA_FILES = (
 )
 DATA_SOURCE = SOURCE_ROOT / "examples/data"
 RUNNER_SOURCE = SOURCE_ROOT / "scripts/examples/school_templates/run_notebooks.py"
-MIT_SOURCE = SOURCE_ROOT / "LICENSE"
 
 # This code must remain executable whether the notebook is launched at the
 # school root or from its Day 3 folder. The school has a top-level data/ ignore
@@ -93,7 +92,6 @@ def export(school_root: Path, *, overwrite: bool) -> Path:
     })
     copied[dest / "teaching_data/README.md"] = (SOURCE_ROOT / "scripts/examples/school_templates/teaching_data_README.md")
     copied[dest / "run_notebooks.py"] = RUNNER_SOURCE
-    copied[dest / "LICENSE_AL_PIPELINE"] = MIT_SOURCE
 
     readme_path = dest / "README.md"
     school_readme = (SOURCE_ROOT / "scripts/examples/school_templates/README.md").read_text(
@@ -103,6 +101,12 @@ def export(school_root: Path, *, overwrite: bool) -> Path:
     extra_targets = (readme_path, metadata_path)
     occupied = [str(path) for path in (*copied.keys(), *extra_targets)
                 if path.exists()]
+    legacy_license = dest / "LICENSE_AL_PIPELINE"
+    if legacy_license.is_file() and overwrite:
+        # Remove only the exact notice produced by older exports.
+        legacy_mit_sha256 = "b1bf2d2d2033c91410bdb50ca0feba6798fbbf7605c2947f26977a42341d3bb0"
+        if sha256(legacy_license) == legacy_mit_sha256:
+            legacy_license.unlink()
     if occupied and not overwrite:
         raise FileExistsError(
             "Refusing to overwrite existing files (pass --overwrite after review): "
